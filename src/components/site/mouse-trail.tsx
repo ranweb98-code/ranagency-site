@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react"
 
 const PATH_COUNT = 70
+// Overall ribbon thickness multiplier — bump this up for a bolder trail.
+const SIZE_SCALE = 2.4
 // Slightly different lag per link (instead of one uniform value) breaks the
 // even resonance that made the chain look like a repeating sawtooth.
 const LAG_MIN = 3
@@ -91,12 +93,12 @@ export function MouseTrail() {
         if (i > 0) {
           const prev = pts[i - 1]
           const dist = Math.hypot(prev.x - pt.x, prev.y - pt.y)
-          const taper = 1 + 3 * Math.sin((i / PATH_COUNT) * Math.PI)
+          const taper = (1 + 3 * Math.sin((i / PATH_COUNT) * Math.PI)) * SIZE_SCALE
           const hue = HUE_START + (i / PATH_COUNT) * HUE_SPAN
           paths[i].setAttribute("d", `M${prev.x},${prev.y} L${pt.x},${pt.y}`)
           paths[i].setAttribute("stroke", `hsl(${hue} 82% 60%)`)
           paths[i].setAttribute("stroke-width", String(taper * Math.min(1, dist / 4)))
-          paths[i].setAttribute("opacity", "0.45")
+          paths[i].setAttribute("opacity", "0.55")
         }
         next = pt
       })

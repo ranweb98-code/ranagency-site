@@ -271,9 +271,9 @@ function HubDiagram({
       </svg>
 
       <div
-        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent shadow-[0_0_60px_-8px_var(--color-ran-primary)] ${s.hubClass}`}
+        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-ran-surface-dark shadow-[0_0_60px_-8px_var(--color-ran-primary)] ${s.hubClass}`}
       >
-        <span className={`font-extrabold text-white ${s.hubTextClass}`}>RA</span>
+        <img src="/images/logo-mark.png" alt="RanAgency" className="h-full w-full object-cover" />
       </div>
 
       {SERVICES.map((service, index) => {

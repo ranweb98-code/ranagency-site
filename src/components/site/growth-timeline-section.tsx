@@ -94,7 +94,11 @@ function clamp01(n: number) {
 }
 
 function formatAmount(p: number) {
-  const eased = Math.pow(clamp01(p), 1.9)
+  // Exponent < 1 eases OUT (quick at first, gentle near the end) instead of
+  // easing IN — the old 1.9 exponent made the count accelerate the closer
+  // it got to the end, which read as "shooting up too fast" right before
+  // the pin released.
+  const eased = Math.pow(clamp01(p), 0.65)
   const value = START_VALUE + (END_VALUE - START_VALUE) * eased
   return Math.round(value).toLocaleString("en-US")
 }
@@ -105,19 +109,38 @@ export function GrowthTimelineSection() {
     target: pinRef,
     offset: ["start start", "end end"],
   })
-  const progress = useSpring(scrollYProgress, { stiffness: 60, damping: 22, mass: 0.4 })
+  // Any spring smoothing here lags the raw scroll position by definition —
+  // fine for decorative motion, but the sticky pin's release is driven by
+  // the real (unsprung) scroll position, so a smoothed value can still be
+  // short of "done" when the pin lets go, no matter how tightly the spring
+  // is tuned (confirmed: even a ~150ms-settle spring visibly undershot on a
+  // fast flick). So the number/month that must land exactly on completion
+  // read straight off raw scrollYProgress; only the decorative glow/core
+  // pulse (where a frame or two of lag is invisible) gets the spring.
+  const glowProgress = useSpring(scrollYProgress, { stiffness: 800, damping: 50, mass: 1 })
 
   const months = useMonthLabels(MONTH_COUNT)
-  const activeIndex = useTransform(progress, (p) => clamp01(p) * (MONTH_COUNT - 1))
-  const amount = useTransform(progress, formatAmount)
+  const activeIndex = useTransform(scrollYProgress, (p) => clamp01(p) * (MONTH_COUNT - 1))
+  const amount = useTransform(scrollYProgress, formatAmount)
 
   return (
     // NOTE: no `overflow-hidden` here — it breaks `position: sticky` on the
     // pinned panel below (an ancestor with overflow other than visible
     // constrains the sticky containing block). Inner elements clip themselves.
     <section className="relative bg-white">
-      <div ref={pinRef} className="relative h-[200vh] md:h-[280vh]">
-        <div className="sticky top-0 flex h-[100dvh] items-center overflow-hidden pt-16 md:pt-20">
+      {/* Shorter pin than before — the previous 200/280vh scroll distance
+          made this section feel like it trapped the page scroll. */}
+      <div ref={pinRef} className="relative h-[130vh] md:h-[160vh]">
+        {/* Shorter sticky panel on mobile — the compact column is much
+            shorter than a full viewport, and centering it in a full 100dvh
+            panel left a huge dead-space gap below it before the next
+            section's text appeared. No `overflow-hidden` here (same reason
+            as the pinRef note below): the Indicator's blur-3xl glow is
+            large enough to reach this panel's edge once it's this short,
+            and clipping it showed as a hard line instead of a soft fade —
+            same white background on both sides, so letting it bleed
+            slightly past the box is invisible. */}
+        <div className="sticky top-0 flex h-[68dvh] items-center pt-8 md:h-[100dvh] md:pt-20">
           <SectionContainer className="w-full">
             <div dir="ltr" className="grid items-center gap-12 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-20">
               {/* animated timeline visual — identical composition at every size, just scaled */}
@@ -128,10 +151,10 @@ export function GrowthTimelineSection() {
                       <BenefitsIntro compact />
                     </Reveal>
                   </div>
-                  <TimelineWidget variant="compact" months={months} progress={progress} activeIndex={activeIndex} amount={amount} />
+                  <TimelineWidget variant="compact" months={months} progress={glowProgress} activeIndex={activeIndex} amount={amount} />
                 </div>
                 <div className="hidden md:block">
-                  <TimelineWidget variant="full" months={months} progress={progress} activeIndex={activeIndex} amount={amount} />
+                  <TimelineWidget variant="full" months={months} progress={glowProgress} activeIndex={activeIndex} amount={amount} />
                 </div>
               </div>
 
