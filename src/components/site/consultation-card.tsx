@@ -47,6 +47,8 @@ export function ConsultationCard() {
   const [selected, setSelected] = useState<string[]>([])
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
 
   const questionIndex = typeof step === "number" ? step : 0
 
@@ -90,19 +92,23 @@ export function ConsultationCard() {
     setSelected([])
     setName("")
     setPhone("")
+    setSubmitting(false)
+    setSubmitError(false)
   }
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim() || !phone.trim()) return
+    if (!name.trim() || !phone.trim() || submitting) return
+    setSubmitting(true)
+    setSubmitError(false)
     const qa = QUESTIONS.map((q, i) => ({ question: q.question, answer: answers[i] ?? "" }))
-    const summary = qa.map((a) => `${a.question} ${a.answer}`).join("\n")
-    const message = `היי, אני ${name} ומעוניין/ת בייעוץ חינם.\n${summary}\nטלפון ליצירת קשר: ${phone}`
-    window.open(`https://wa.me/972503610061?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer")
-    setStep("done")
-    // Fire-and-forget: WhatsApp is the primary channel, email is a backup
-    // notification — a slow/failed send shouldn't hold up the UI.
-    void sendLeadEmail({ name, phone, answers: qa }).catch(() => {})
+    const result = await sendLeadEmail({ name, phone, answers: qa }).catch(() => ({ ok: false as const }))
+    setSubmitting(false)
+    if (result.ok) {
+      setStep("done")
+    } else {
+      setSubmitError(true)
+    }
   }
 
   return (
@@ -261,7 +267,7 @@ export function ConsultationCard() {
               עוד רגע! איך נחזור אליך?
             </h3>
             <p className="mt-2 text-sm text-ran-text-on-light-muted">
-              נשלח לך את הפרטים בוואטסאפ ונחזור אליך תוך יום עסקים
+              נשלח את הפרטים ישירות אלינו במייל ונחזור אליך תוך יום עסקים
             </p>
             <div className="mt-6 flex w-full flex-col gap-3">
               <input
@@ -281,12 +287,31 @@ export function ConsultationCard() {
                 className="w-full rounded-full border border-ran-glass-border-light bg-white/90 px-5 py-3 text-center text-ran-text-on-light placeholder:text-ran-text-on-light-muted focus:border-ran-primary focus:outline-none focus:ring-2 focus:ring-ran-primary/30"
               />
             </div>
+
+            {submitError && (
+              <div className="mt-4 w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <p>לא הצלחנו לשלוח את הפרטים כרגע. אפשר לנסות שוב, או לפנות ישירות בוואטסאפ.</p>
+                <a
+                  href={`https://wa.me/972503610061?text=${encodeURIComponent(
+                    `היי, אני ${name} ומעוניין/ת בייעוץ חינם. טלפון ליצירת קשר: ${phone}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1.5 font-semibold underline underline-offset-2"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  פתח וואטסאפ
+                </a>
+              </div>
+            )}
+
             <Button
               type="submit"
               size="lg"
-              className="mt-6 w-full rounded-full bg-gradient-to-l from-ran-primary to-ran-accent px-8 text-white shadow-[0_12px_32px_-8px_rgba(61,107,251,0.5)] hover:opacity-90"
+              disabled={submitting}
+              className="mt-6 w-full rounded-full bg-gradient-to-l from-ran-primary to-ran-accent px-8 text-white shadow-[0_12px_32px_-8px_rgba(61,107,251,0.5)] hover:opacity-90 disabled:opacity-60"
             >
-              שלח לי הצעה
+              {submitting ? "שולח..." : "שלח לי הצעה"}
             </Button>
             <button
               type="button"
@@ -304,7 +329,7 @@ export function ConsultationCard() {
               תודה, {name || "חבר/ה"}! 🎉
             </h3>
             <p className="mt-3 max-w-xs text-ran-text-on-light-muted">
-              פתחנו לך שיחת וואטסאפ עם הפרטים שמילאת. ניצור איתך קשר תוך יום עסקים.
+              הפרטים שלך נשלחו אלינו בהצלחה! ניצור איתך קשר תוך יום עסקים.
             </p>
             <Button
               variant="outline"
