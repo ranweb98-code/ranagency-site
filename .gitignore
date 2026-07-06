@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Local temp files
 temp/
+
+# MCP server config (contains API keys)
+.mcp.json
