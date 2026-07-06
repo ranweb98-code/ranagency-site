@@ -2,10 +2,15 @@
 
 import { useEffect, useRef } from "react"
 
+import { useMediaQuery } from "@/hooks/use-media-query"
+
 // Magnetic dot cursor with lerp-follow + ring expansion on interactive
 // elements, adapted from https://codepen.io/aleksa-rakocevic/pen/JoKKjwd (MIT).
 // Desktop-only: needs a fine pointer, and bows out entirely for
 // prefers-reduced-motion since the whole point is a physics-y follow animation.
+// The component renders nothing at all on touch devices (rather than just
+// skipping the animation loop) — otherwise the dot still mounts at its CSS
+// default position and just sits there, looking like a stuck cursor.
 // Hover targets are detected via event delegation (mouseover/mouseout +
 // closest("a, button...")) instead of querying elements once on mount, so it
 // keeps working for content that mounts later (mobile menu, modals, etc).
@@ -13,11 +18,12 @@ const HOVER_SELECTOR = "a, button, [role='button'], input, textarea, select, sum
 
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null)
+  const canHover = useMediaQuery("(hover: hover) and (pointer: fine)")
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
+  const enabled = canHover && !prefersReducedMotion
 
   useEffect(() => {
-    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (!canHover || prefersReducedMotion) return
+    if (!enabled) return
 
     const dot = dotRef.current
     if (!dot) return
@@ -65,7 +71,9 @@ export function CustomCursor() {
       document.removeEventListener("mouseout", onMouseOut)
       document.documentElement.classList.remove("custom-cursor-active")
     }
-  }, [])
+  }, [enabled])
+
+  if (!enabled) return null
 
   return <div ref={dotRef} className="custom-cursor" aria-hidden />
 }

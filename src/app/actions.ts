@@ -43,7 +43,7 @@ export async function sendLeadEmail(lead: LeadPayload) {
     .join("")
 
   try {
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: "RanAgency <onboarding@resend.dev>",
       to: LEAD_EMAIL,
       subject: `🎯 ליד חדש מהאתר: ${name}`,
@@ -75,6 +75,18 @@ export async function sendLeadEmail(lead: LeadPayload) {
       </div>
       `,
     })
+
+    if (error) {
+      // The Resend SDK resolves (doesn't throw) on API-level errors — e.g.
+      // the sandbox "onboarding@resend.dev" sender can only send to the
+      // email address the Resend account itself was signed up with until a
+      // custom domain is verified. Surfacing this was missing before, so a
+      // rejected send silently looked like a success.
+      console.error("Resend API error:", error)
+      return { ok: false as const }
+    }
+
+    console.log("Lead email sent:", data?.id)
     return { ok: true as const }
   } catch (error) {
     console.error("Failed to send lead email", error)
