@@ -2,10 +2,13 @@
 
 import { motion, useInView, useScroll, useSpring, useTransform, type MotionValue } from "motion/react"
 import { ChevronsUp, Clock, Rocket, ShieldCheck, TrendingUp, type LucideIcon } from "lucide-react"
-import { useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import useEmblaCarousel from "embla-carousel-react"
+import Autoplay from "embla-carousel-autoplay"
 
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal"
 import { SectionContainer } from "@/components/site/section-container"
+import { cn } from "@/lib/utils"
 
 const START_VALUE = 1200
 const END_VALUE = 98000
@@ -128,9 +131,9 @@ export function GrowthTimelineSection() {
     // pinned panel below (an ancestor with overflow other than visible
     // constrains the sticky containing block). Inner elements clip themselves.
     <section className="relative bg-white">
-      {/* Shorter pin than before — the previous 200/280vh scroll distance
-          made this section feel like it trapped the page scroll. */}
-      <div ref={pinRef} className="relative h-[130vh] md:h-[160vh]">
+      {/* Back to the original, slower pace — the shortened 130/160vh pin
+          made the whole animation feel rushed. */}
+      <div ref={pinRef} className="relative h-[200vh] md:h-[280vh]">
         {/* Shorter sticky panel on mobile — the compact column is much
             shorter than a full viewport, and centering it in a full 100dvh
             panel left a huge dead-space gap below it before the next
@@ -140,18 +143,39 @@ export function GrowthTimelineSection() {
             and clipping it showed as a hard line instead of a soft fade —
             same white background on both sides, so letting it bleed
             slightly past the box is invisible. */}
-        <div className="sticky top-0 flex h-[68dvh] items-center pt-8 md:h-[100dvh] md:pt-20">
+        {/* Taller again on mobile now that the benefits carousel lives in
+            here too — see below for why it moved. */}
+        <div className="sticky top-0 flex h-[92dvh] items-center pt-6 md:h-[100dvh] md:pt-20">
           <SectionContainer className="w-full">
             <div dir="ltr" className="grid items-center gap-12 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-20">
               {/* animated timeline visual — identical composition at every size, just scaled */}
               <div className="flex justify-center md:justify-start">
-                <div className="flex flex-col items-center gap-6 md:hidden">
-                  <div dir="rtl" className="max-w-[280px] text-center">
-                    <Reveal>
+                {/* Mobile: the benefits carousel now lives inside the sticky
+                    panel, right under the counter, instead of appearing as
+                    separate content once the pin released. It used to sit
+                    below the pin in normal flow, revealed only at release —
+                    which meant it was invisible the whole time you were
+                    watching the counter, then suddenly appeared/shifted
+                    into place the moment the pin let go. Living here means
+                    it's simply always there, never moving on its own. */}
+                <div dir="rtl" className="flex w-full max-w-xs flex-col items-center gap-4 md:hidden">
+                  <Reveal className="w-full">
+                    <div className="text-center">
                       <BenefitsIntro compact />
-                    </Reveal>
-                  </div>
-                  <TimelineWidget variant="compact" months={months} progress={glowProgress} activeIndex={activeIndex} amount={amount} />
+                    </div>
+                    <div className="mt-5">
+                      <TimelineWidget
+                        variant="compact"
+                        months={months}
+                        progress={glowProgress}
+                        activeIndex={activeIndex}
+                        amount={amount}
+                      />
+                    </div>
+                    <div className="mt-5">
+                      <BenefitsCarousel />
+                    </div>
+                  </Reveal>
                 </div>
                 <div className="hidden md:block">
                   <TimelineWidget variant="full" months={months} progress={glowProgress} activeIndex={activeIndex} amount={amount} />
@@ -168,13 +192,6 @@ export function GrowthTimelineSection() {
           </SectionContainer>
         </div>
       </div>
-
-      {/* value proposition — mobile, revealed normally once the pin releases */}
-      <SectionContainer className="pb-24 pt-2 md:hidden">
-        <Reveal>
-          <BenefitsDetails />
-        </Reveal>
-      </SectionContainer>
     </section>
   )
 }
@@ -206,6 +223,76 @@ function BenefitsIntro({ compact = false }: { compact?: boolean }) {
       >
         בונים אוטומציות שמגדילות את העסק שלכם, בזמן שאתם מתמקדים במה שחשוב
       </h2>
+    </div>
+  )
+}
+
+// Compact swipeable version of the same 4 benefits, for the mobile sticky
+// panel — one card at a time keeps it short enough to fit alongside the
+// counter instead of needing the full stacked list.
+function BenefitsCarousel() {
+  const autoplay = useRef(Autoplay({ delay: 2000, stopOnInteraction: false }))
+  // direction: "rtl" is not optional here — the page itself is RTL, and
+  // without telling Embla that, its internal scroll-position math assumes
+  // LTR while the actual flex row renders RTL. Confirmed by inspecting a
+  // broken instance directly: every slide's transform landed hundreds of
+  // pixels outside the visible window, consistently, not just jittery —
+  // exactly the signature of this exact mismatch (matches how the
+  // sibling use-cases carousel is configured, which doesn't have this bug).
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, align: "center", direction: "rtl" },
+    [autoplay.current]
+  )
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return
+    setSelectedIndex(emblaApi.selectedScrollSnap())
+  }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApi) return
+    onSelect()
+    emblaApi.on("select", onSelect)
+    emblaApi.on("reInit", onSelect)
+
+  }, [emblaApi, onSelect])
+
+  return (
+    <div className="w-full">
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex">
+          {BENEFITS.map((benefit) => {
+            const Icon = benefit.icon
+            return (
+              <div key={benefit.title} className="min-w-0 shrink-0 grow-0 basis-full px-2">
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <p className="font-bold text-ran-text-on-light">{benefit.title}</p>
+                  <p className="text-sm leading-relaxed text-ran-text-on-light-muted">{benefit.description}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-1.5">
+        {BENEFITS.map((benefit, index) => (
+          <button
+            key={benefit.title}
+            type="button"
+            onClick={() => emblaApi?.scrollTo(index)}
+            aria-label={`עבור להיתרון ${index + 1}`}
+            aria-current={index === selectedIndex}
+            className={cn(
+              "h-1.5 rounded-full transition-all",
+              index === selectedIndex ? "w-5 bg-ran-primary" : "w-1.5 bg-ran-glass-border-light"
+            )}
+          />
+        ))}
+      </div>
     </div>
   )
 }
