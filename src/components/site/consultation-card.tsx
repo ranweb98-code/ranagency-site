@@ -114,7 +114,7 @@ export function ConsultationCard() {
   return (
     <div
       id="contact"
-      className="cta-animated-gradient relative flex h-full min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-[32px] border border-ran-glass-border-light px-8 py-16 text-center shadow-[0_16px_48px_-12px_rgba(61,107,251,0.25)] sm:px-12"
+      className="cta-animated-gradient relative flex h-full min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-[32px] border border-white/50 px-8 py-16 text-center shadow-[0_16px_48px_-12px_rgba(61,107,251,0.25)] sm:px-12"
     >
       {step !== "start" && step !== "done" && (
         <button

@@ -271,9 +271,16 @@ function HubDiagram({
       </svg>
 
       <div
-        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-ran-surface-dark shadow-[0_0_60px_-8px_var(--color-ran-primary)] ${s.hubClass}`}
+        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_0_60px_-8px_var(--color-ran-primary)] ${s.hubClass}`}
       >
-        <img src="/images/logo-mark.png" alt="RanAgency" className="h-full w-full object-cover" />
+        <video
+          src="/videos/logo-signature.webm"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="h-full w-full object-contain"
+        />
       </div>
 
       {SERVICES.map((service, index) => {

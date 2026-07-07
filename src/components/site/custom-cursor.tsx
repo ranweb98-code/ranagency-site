@@ -19,8 +19,9 @@ const HOVER_SELECTOR = "a, button, [role='button'], input, textarea, select, sum
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null)
   const canHover = useMediaQuery("(hover: hover) and (pointer: fine)")
+  const isDesktopViewport = useMediaQuery("(min-width: 768px)")
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
-  const enabled = canHover && !prefersReducedMotion
+  const enabled = canHover && isDesktopViewport && !prefersReducedMotion
 
   useEffect(() => {
     if (!enabled) return
