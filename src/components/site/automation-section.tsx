@@ -307,7 +307,7 @@ function HubDiagram({
             loop
             muted
             playsInline
-            className="h-full w-full object-contain mix-blend-multiply"
+            className="h-full w-full object-contain brightness-110"
           />
         </motion.div>
       </div>

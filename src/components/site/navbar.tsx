@@ -60,7 +60,7 @@ export function Navbar() {
           animate={{ paddingBlock: isScrolled ? 10 : 14 }}
         >
           <div className="flex w-full items-center justify-between gap-4 pl-3 pr-5 md:pl-4 md:pr-7">
-            <a href="#" className="flex items-center rounded-2xl bg-white/95 px-3 py-1.5 shadow-sm">
+            <a href="#" className="flex items-center rounded-2xl bg-white px-3 py-1.5 shadow-sm">
               <video
                 src="/videos/logo-signature.webm"
                 autoPlay
@@ -68,11 +68,14 @@ export function Navbar() {
                 muted
                 playsInline
                 // WebM alpha isn't honored by <video> in any browser — it
-                // always renders opaque, and the baked-in white matte never
-                // quite matches this pill's white, leaving a faint seam.
-                // Multiply blending makes near-white video pixels dissolve
-                // into whatever's behind them instead.
-                className="h-6 w-auto mix-blend-multiply md:h-7"
+                // always renders opaque, and the baked-in matte is a light
+                // lavender-gray (~#F9F8FB), not true white, so it never
+                // quite vanished into this pill even with a solid white
+                // backdrop (blending white-on-white is a no-op — multiply
+                // doesn't help here, since it only darkens, and the pill is
+                // already the lightest thing behind it). Brightness clips
+                // that near-white matte up to true white instead.
+                className="h-6 w-auto brightness-110 md:h-7"
               />
             </a>
 
