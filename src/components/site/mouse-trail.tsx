@@ -104,9 +104,27 @@ export function MouseTrail() {
       })
       raf = requestAnimationFrame(tick)
     }
-    raf = requestAnimationFrame(tick)
+
+    // This SVG stays mounted (and, without this, animating — 70 paths x 4
+    // setAttribute calls, every frame, forever) for the entire session even
+    // once scrolled far past it. Pausing the rAF loop off-screen is what
+    // actually fixed scroll janking further down the page — the trail was
+    // fighting every other section for main-thread time the whole way down.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if (!raf) raf = requestAnimationFrame(tick)
+        } else if (raf) {
+          cancelAnimationFrame(raf)
+          raf = 0
+        }
+      },
+      { rootMargin: "200px" }
+    )
+    observer.observe(svg)
 
     return () => {
+      observer.disconnect()
       cancelAnimationFrame(raf)
       window.removeEventListener("pointermove", onPointerMove)
       window.clearTimeout(idleTimer)

@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useScroll, useSpring, useTransform, type MotionValue } from "motion/react"
+import { motion, useInView, useScroll, useSpring, useTransform, type MotionValue } from "motion/react"
 import { ChevronsUp, Clock, Rocket, ShieldCheck, TrendingUp, type LucideIcon } from "lucide-react"
 import { useMemo, useRef } from "react"
 
@@ -290,11 +290,17 @@ function TimelineWidget({
 }
 
 function MoneyBadge({ size, coreScale }: { size: number; coreScale: MotionValue<number> }) {
+  const ref = useRef<HTMLDivElement>(null)
+  // This section stays mounted for the rest of the session once scrolled
+  // past, so an unconditional `repeat: Infinity` here keeps animating
+  // forever in the background — freeze it off-screen instead.
+  const inView = useInView(ref, { margin: "200px" })
   return (
     <motion.div
+      ref={ref}
       className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent font-bold text-white shadow-[0_0_18px_-3px_var(--color-ran-primary)]"
       style={{ width: size, height: size, fontSize: size * 0.5, scale: coreScale }}
-      animate={{ rotate: [0, -6, 0, 6, 0] }}
+      animate={inView ? { rotate: [0, -6, 0, 6, 0] } : undefined}
       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
     >
       ₪
@@ -410,12 +416,15 @@ function Indicator({
   mid: number
   core: number
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { margin: "200px" })
+
   return (
-    <div className="relative flex shrink-0 items-center justify-center" style={{ width: outer, height: outer }}>
+    <div ref={ref} className="relative flex shrink-0 items-center justify-center" style={{ width: outer, height: outer }}>
       <motion.div
         className="absolute rounded-full bg-ran-primary/25 blur-3xl"
         style={{ width: outer, height: outer, scale: glowScale }}
-        animate={{ opacity: [0.5, 0.85, 0.5] }}
+        animate={inView ? { opacity: [0.5, 0.85, 0.5] } : undefined}
         transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div className="absolute rounded-full bg-ran-primary/10 blur-xl" style={{ width: mid, height: mid }} />
