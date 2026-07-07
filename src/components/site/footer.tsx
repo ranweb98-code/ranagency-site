@@ -23,14 +23,16 @@ export function Footer() {
 
       <SectionContainer className="relative flex flex-col gap-10 sm:flex-row sm:justify-between">
         <div className="max-w-sm space-y-3">
-          <div className="inline-flex items-center rounded-2xl bg-white px-3 py-1.5 shadow-sm">
+          {/* bg-[#f8f7fa] matches the logo video's own baked-in matte —
+              see the comment on the navbar's copy of this video. */}
+          <div className="inline-flex items-center rounded-2xl bg-[#f8f7fa] px-3 py-1.5 shadow-sm">
             <video
               src="/videos/logo-signature.webm"
               autoPlay
               loop
               muted
               playsInline
-              className="h-6 w-auto brightness-110 md:h-7"
+              className="h-6 w-auto md:h-7"
             />
           </div>
           <p className="text-sm text-ran-text-on-dark-muted">

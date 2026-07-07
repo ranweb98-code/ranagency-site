@@ -294,12 +294,14 @@ function HubDiagram({
         })}
       </svg>
 
+      {/* bg-[#f8f7fa] matches the logo video's own baked-in matte — see
+          the comment on the navbar's copy of this video. */}
       <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${s.hubClass}`}>
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={isInView ? { scale: 1, opacity: 1 } : {}}
           transition={{ duration: 0.6, ease: "backOut" }}
-          className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_0_60px_-8px_var(--color-ran-primary)]"
+          className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#f8f7fa] p-2 shadow-[0_0_60px_-8px_var(--color-ran-primary)]"
         >
           <video
             src="/videos/logo-signature.webm"
@@ -307,7 +309,7 @@ function HubDiagram({
             loop
             muted
             playsInline
-            className="h-full w-full object-contain brightness-110"
+            className="h-full w-full object-contain"
           />
         </motion.div>
       </div>

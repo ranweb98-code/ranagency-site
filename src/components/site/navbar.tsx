@@ -60,22 +60,23 @@ export function Navbar() {
           animate={{ paddingBlock: isScrolled ? 10 : 14 }}
         >
           <div className="flex w-full items-center justify-between gap-4 pl-3 pr-5 md:pl-4 md:pr-7">
-            <a href="#" className="flex items-center rounded-2xl bg-white px-3 py-1.5 shadow-sm">
+            {/* bg-[#f8f7fa] is a deliberate exact match, not a stray value:
+                the logo video has no alpha (no browser honors WebM alpha in
+                <video>), and its baked-in matte measures ~rgb(248,247,250)
+                across every frame — not true white. A filter/blend-mode
+                trick to force it to pure white kept breaking under the
+                navbar's backdrop-filter + scroll-driven opacity, so this
+                pill's own background is set to that same flat color
+                instead — two solid, static colors that are simply equal,
+                nothing computed at render time to drift. */}
+            <a href="#" className="flex items-center rounded-2xl bg-[#f8f7fa] px-3 py-1.5 shadow-sm">
               <video
                 src="/videos/logo-signature.webm"
                 autoPlay
                 loop
                 muted
                 playsInline
-                // WebM alpha isn't honored by <video> in any browser — it
-                // always renders opaque, and the baked-in matte is a light
-                // lavender-gray (~#F9F8FB), not true white, so it never
-                // quite vanished into this pill even with a solid white
-                // backdrop (blending white-on-white is a no-op — multiply
-                // doesn't help here, since it only darkens, and the pill is
-                // already the lightest thing behind it). Brightness clips
-                // that near-white matte up to true white instead.
-                className="h-6 w-auto brightness-110 md:h-7"
+                className="h-6 w-auto md:h-7"
               />
             </a>
 
