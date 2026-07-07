@@ -355,3 +355,65 @@
     animation: none;
   }
 }
+
+/* 3D rotating testimonial ring — see src/components/site/testimonials-section.tsx.
+   Adapted from https://codepen.io/Ran-Elgabsi/pen/QwdQwee — a cleaner build
+   than the earlier version: the tile spacing uses the exact trig identity
+   (radius = halfWidth / tan(halfAngleBetweenTiles)) instead of an eyeballed
+   constant, so tiles always tile edge-to-edge with no gap or overlap
+   regardless of count, and the "grid-area: 1/1" stacking trick sizes the
+   ring to the tile itself instead of needing an explicit position:relative
+   box. Edge tiles fade via a mask instead of hard-clipping. Hover/focus
+   pause is a deliberate addition on top of the reference — these cards
+   carry text worth reading, unlike the reference's photo cards. */
+.testimonial-stage {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding-block: 2.5rem 3.5rem;
+  perspective: 56em;
+  mask-image: linear-gradient(90deg, transparent, black 15% 85%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 15% 85%, transparent);
+}
+
+.testimonial-ring {
+  display: grid;
+  place-self: center;
+  transform-style: preserve-3d;
+  animation: testimonial-ring-spin calc(var(--count) * 8s) linear infinite;
+}
+
+.testimonial-stage:hover .testimonial-ring,
+.testimonial-stage:focus-within .testimonial-ring {
+  animation-play-state: paused;
+}
+
+@keyframes testimonial-ring-spin {
+  to {
+    rotate: y 1turn;
+  }
+}
+
+.testimonial-tile {
+  --w: 230px;
+  --ba: 1turn / var(--count);
+  grid-area: 1 / 1;
+  width: var(--w);
+  height: 300px;
+  backface-visibility: hidden;
+  transform: rotateY(calc(var(--i) * var(--ba)))
+    translateZ(calc(-1 * (0.5 * var(--w) + 0.75em) / tan(0.5 * var(--ba))));
+}
+
+@media (min-width: 768px) {
+  .testimonial-tile {
+    --w: 260px;
+    height: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-ring {
+    animation: none;
+  }
+}

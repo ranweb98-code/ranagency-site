@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { AnimatePresence, motion, useScroll, useTransform, type MotionValue } from "motion/react"
+import { AnimatePresence, motion, useInView } from "motion/react"
 import {
   Bot,
   Camera,
@@ -116,11 +116,9 @@ type DiagramVariant = keyof typeof DIAGRAM_SIZE
 export function AutomationSection() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start 0.8", "end 0.4"],
-  })
-  const drawIn = useTransform(scrollYProgress, [0, 1], [0, 1])
+  // Plays once, like the reference GSAP timeline — not scroll-scrubbed, so
+  // the lines don't half-draw/undraw as you scroll past at different speeds.
+  const isInView = useInView(sectionRef, { once: true, amount: 0.3 })
 
   return (
     <section id="automation" className="relative overflow-hidden bg-white pb-16 pt-28 md:pb-20 md:pt-36">
@@ -134,13 +132,13 @@ export function AutomationSection() {
                 variant="mobile"
                 activeIndex={activeIndex}
                 setActiveIndex={setActiveIndex}
-                drawIn={drawIn}
+                isInView={isInView}
               />
               <HubDiagram
                 variant="desktop"
                 activeIndex={activeIndex}
                 setActiveIndex={setActiveIndex}
-                drawIn={drawIn}
+                isInView={isInView}
               />
             </div>
 
@@ -190,16 +188,30 @@ export function AutomationSection() {
   )
 }
 
+// Center-out stagger, matching the reference timeline's `stagger: { from:
+// "center" }` — the two middle connectors draw first, then each pair
+// further out follows, instead of a plain left-to-right sequence.
+function centerOutDelay(index: number, total: number, step: number) {
+  const center = (total - 1) / 2
+  return Math.abs(index - center) * step
+}
+
+const LINE_DRAW_DELAY = 0.15
+const LINE_DRAW_STEP = 0.09
+const LINE_DRAW_DURATION = 0.9
+const NODE_POP_BASE_DELAY = 0.5
+const NODE_POP_STEP = 0.07
+
 function HubDiagram({
   variant,
   activeIndex,
   setActiveIndex,
-  drawIn,
+  isInView,
 }: {
   variant: DiagramVariant
   activeIndex: number | null
   setActiveIndex: (updater: (current: number | null) => number | null) => void
-  drawIn: MotionValue<number>
+  isInView: boolean
 }) {
   const s = DIAGRAM_SIZE[variant]
 
@@ -243,6 +255,7 @@ function HubDiagram({
           const pos = polarPosition(index, SERVICES.length)
           const d = curvedPath(pos, index)
           const isActive = activeIndex === index
+          const lineDelay = LINE_DRAW_DELAY + centerOutDelay(index, SERVICES.length, LINE_DRAW_STEP)
           return (
             <g key={service.title}>
               <motion.path
@@ -251,8 +264,12 @@ function HubDiagram({
                 stroke={`url(#automation-line-${variant})`}
                 strokeWidth={isActive ? 0.6 : 0.28}
                 strokeLinecap="round"
-                opacity={isActive ? 0.9 : 0.4}
-                style={{ pathLength: drawIn }}
+                initial={{ pathLength: 0 }}
+                animate={isInView ? { pathLength: 1, opacity: isActive ? 0.9 : 0.4 } : { pathLength: 0 }}
+                transition={{
+                  pathLength: { duration: LINE_DRAW_DURATION, delay: lineDelay, ease: [0.65, 0, 0.35, 1] },
+                  opacity: { duration: 0.3 },
+                }}
               />
               <motion.path
                 d={d}
@@ -261,26 +278,38 @@ function HubDiagram({
                 strokeWidth={0.7}
                 strokeDasharray="2 10"
                 strokeLinecap="round"
-                opacity={isActive ? 0.9 : 0.4}
-                animate={{ strokeDashoffset: [0, -24] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}
+                initial={{ opacity: 0 }}
+                animate={
+                  isInView
+                    ? { opacity: isActive ? 0.9 : 0.4, strokeDashoffset: [0, -24] }
+                    : { opacity: 0 }
+                }
+                transition={{
+                  opacity: { duration: 0.3, delay: lineDelay + LINE_DRAW_DURATION },
+                  strokeDashoffset: { duration: 1.6, repeat: Infinity, ease: "linear" },
+                }}
               />
             </g>
           )
         })}
       </svg>
 
-      <div
-        className={`absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_0_60px_-8px_var(--color-ran-primary)] ${s.hubClass}`}
-      >
-        <video
-          src="/videos/logo-signature.webm"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="h-full w-full object-contain"
-        />
+      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${s.hubClass}`}>
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={isInView ? { scale: 1, opacity: 1 } : {}}
+          transition={{ duration: 0.6, ease: "backOut" }}
+          className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-[0_0_60px_-8px_var(--color-ran-primary)]"
+        >
+          <video
+            src="/videos/logo-signature.webm"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="h-full w-full object-contain"
+          />
+        </motion.div>
       </div>
 
       {SERVICES.map((service, index) => {
@@ -295,22 +324,38 @@ function HubDiagram({
             onMouseLeave={() => setActiveIndex((current) => (current === index ? null : current))}
             onFocus={() => setActiveIndex(() => index)}
             onClick={() => setActiveIndex((current) => (current === index ? null : index))}
-            className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 focus:outline-none"
+            className="absolute -translate-x-1/2 -translate-y-1/2 focus:outline-none"
             style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
           >
-            <motion.span
-              animate={{ scale: isActive ? 1.12 : 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className={`flex items-center justify-center rounded-2xl border border-ran-glass-border-light bg-white text-ran-primary ${s.iconClass}`}
-              style={{
-                boxShadow: isActive
-                  ? "0 12px 32px -10px rgba(61,107,251,0.45)"
-                  : "0 8px 24px -14px rgba(20,20,26,0.2)",
-              }}
+            {/* `relative`, sized to just the icon — the label below is
+                positioned absolutely so it doesn't grow this box. Centering
+                the button on this box (not on icon+label together) is what
+                makes the connector line land exactly on the icon instead of
+                the midpoint between icon and label. */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0, rotate: index % 2 === 0 ? -24 : 24 }}
+              animate={isInView ? { scale: 1, opacity: 1, rotate: 0 } : {}}
+              transition={{ duration: 0.55, delay: NODE_POP_BASE_DELAY + index * NODE_POP_STEP, ease: "backOut" }}
+              className="relative"
             >
-              <Icon className={s.iconInnerClass} />
-            </motion.span>
-            <span className={`font-semibold text-ran-text-on-light ${s.labelClass}`}>{service.title}</span>
+              <motion.span
+                animate={{ scale: isActive ? 1.12 : 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className={`flex items-center justify-center rounded-2xl border border-ran-glass-border-light bg-white text-ran-primary ${s.iconClass}`}
+                style={{
+                  boxShadow: isActive
+                    ? "0 12px 32px -10px rgba(61,107,251,0.45)"
+                    : "0 8px 24px -14px rgba(20,20,26,0.2)",
+                }}
+              >
+                <Icon className={s.iconInnerClass} />
+              </motion.span>
+              <span
+                className={`absolute left-1/2 top-full mt-2 -translate-x-1/2 text-center font-semibold text-ran-text-on-light ${s.labelClass}`}
+              >
+                {service.title}
+              </span>
+            </motion.div>
           </button>
         )
       })}

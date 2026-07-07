@@ -1,6 +1,7 @@
-import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal"
+import type { CSSProperties } from "react"
+
+import { Reveal } from "@/components/motion/reveal"
 import { SectionContainer } from "@/components/site/section-container"
-import { TiltCard } from "@/components/ui/tilt-card"
 
 interface Testimonial {
   quote: string
@@ -36,7 +37,7 @@ const TESTIMONIALS: Testimonial[] = [
 
 export function TestimonialsSection() {
   return (
-    <section id="testimonials" className="bg-ran-surface-light py-24">
+    <section id="testimonials" className="overflow-hidden bg-ran-surface-light py-24">
       <SectionContainer>
         <Reveal className="mb-14 space-y-3 text-center">
           <p className="text-sm font-semibold tracking-wide text-ran-primary">לקוחות מספרים</p>
@@ -47,31 +48,30 @@ export function TestimonialsSection() {
             מה שהלקוחות שלנו אומרים
           </h2>
         </Reveal>
+      </SectionContainer>
 
-        <RevealGroup className="grid gap-6 sm:grid-cols-2">
-          {TESTIMONIALS.map((testimonial) => (
-            <RevealItem key={testimonial.name}>
-              <TiltCard className="rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_2px_20px_-8px_rgba(20,20,26,0.1)]">
-                <blockquote
-                  className="leading-relaxed text-ran-text-on-light"
-                  style={{ fontSize: "var(--text-body-lg)" }}
-                >
+      <div className="testimonial-stage" style={{ "--count": TESTIMONIALS.length } as CSSProperties}>
+        <div className="testimonial-ring">
+          {TESTIMONIALS.map((testimonial, index) => (
+            <div key={testimonial.name} className="testimonial-tile" style={{ "--i": index } as CSSProperties}>
+              <div className="flex h-full w-full flex-col justify-between rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_16px_40px_-16px_rgba(20,20,26,0.25)]">
+                <blockquote className="line-clamp-6 text-sm leading-relaxed text-ran-text-on-light">
                   “{testimonial.quote}”
                 </blockquote>
-                <figcaption className="mt-5 flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-sm font-bold text-white">
+                <figcaption className="mt-4 flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-sm font-bold text-white">
                     {testimonial.name.charAt(0)}
                   </span>
                   <span>
                     <p className="text-sm font-bold text-ran-text-on-light">{testimonial.name}</p>
-                    <p className="text-sm text-ran-text-on-light-muted">{testimonial.role}</p>
+                    <p className="text-xs text-ran-text-on-light-muted">{testimonial.role}</p>
                   </span>
                 </figcaption>
-              </TiltCard>
-            </RevealItem>
+              </div>
+            </div>
           ))}
-        </RevealGroup>
-      </SectionContainer>
+        </div>
+      </div>
     </section>
   )
 }
