@@ -30,7 +30,7 @@ export function Footer() {
               loop
               muted
               playsInline
-              className="h-6 w-auto md:h-7"
+              className="h-6 w-auto mix-blend-multiply md:h-7"
             />
           </div>
           <p className="text-sm text-ran-text-on-dark-muted">

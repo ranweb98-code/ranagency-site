@@ -67,7 +67,12 @@ export function Navbar() {
                 loop
                 muted
                 playsInline
-                className="h-6 w-auto md:h-7"
+                // WebM alpha isn't honored by <video> in any browser — it
+                // always renders opaque, and the baked-in white matte never
+                // quite matches this pill's white, leaving a faint seam.
+                // Multiply blending makes near-white video pixels dissolve
+                // into whatever's behind them instead.
+                className="h-6 w-auto mix-blend-multiply md:h-7"
               />
             </a>
 
