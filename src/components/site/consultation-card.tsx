@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
-import { AnimatePresence, motion } from "motion/react"
+import { useRef, useState, type FormEvent } from "react"
+import { AnimatePresence, motion, useInView } from "motion/react"
 import { Check, Mail, MessageCircle, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { sendLeadEmail } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { MagneticButton } from "@/components/ui/magnetic-button"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface Question {
   question: string
@@ -31,6 +32,72 @@ const QUESTIONS: Question[] = [
   },
 ]
 
+// Aurora background behind the card — five blurred, colored circles drifting
+// via transform (x/y/scale) only, so the browser composites them instead of
+// repainting a gradient every frame. Replaces an earlier version that
+// animated a 5-layer `radial-gradient` through typed CSS custom properties:
+// that recomputed the full gradient on this ~440px-tall card every frame,
+// forever (this component never unmounts once scrolled past), which is what
+// caused the scroll freeze. Position/size/timing here approximate the
+// original blob paths — see git history for the exact keyframe values.
+const BLOBS = [
+  {
+    color: "#6f93ff",
+    left: "10%",
+    top: "10%",
+    size: 260,
+    opacity: 0.55,
+    duration: 5,
+    x: [0, 40, 15, -25, 0],
+    y: [0, 15, 50, 20, 0],
+    scale: [1, 1.15, 0.9, 1.05, 1],
+  },
+  {
+    color: "#eef2ff",
+    left: "90%",
+    top: "10%",
+    size: 240,
+    opacity: 0.8,
+    duration: 6,
+    x: [0, -35, -10, 0],
+    y: [0, 30, 55, 0],
+    scale: [1, 0.9, 1.2, 1],
+  },
+  {
+    color: "#3d6bfb",
+    left: "10%",
+    top: "90%",
+    size: 260,
+    opacity: 0.5,
+    duration: 5.5,
+    x: [0, 30, 10, 0],
+    y: [0, -30, -50, 0],
+    scale: [1, 1.1, 0.85, 1],
+  },
+  {
+    color: "#d8ddfb",
+    left: "90%",
+    top: "90%",
+    size: 240,
+    opacity: 0.8,
+    duration: 6.5,
+    x: [0, -30, 5, 0],
+    y: [0, -25, -45, 0],
+    scale: [1, 0.9, 1.15, 1],
+  },
+  {
+    color: "#8b5cf6",
+    left: "50%",
+    top: "50%",
+    size: 300,
+    opacity: 0.45,
+    duration: 4,
+    x: [0, 20, -20, -10, 0],
+    y: [0, -20, 20, 10, 0],
+    scale: [1, 1.2, 0.85, 1.1, 1],
+  },
+]
+
 const STEP_TRANSITION = { duration: 0.3, ease: [0.16, 1, 0.3, 1] as const }
 const STEP_MOTION = {
   initial: { opacity: 0, y: 12 },
@@ -42,6 +109,11 @@ const STEP_MOTION = {
 type Step = "start" | number | "contact" | "done"
 
 export function ConsultationCard() {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(cardRef, { margin: "200px" })
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
+  const animateBlobs = isInView && !prefersReducedMotion
+
   const [step, setStep] = useState<Step>("start")
   const [answers, setAnswers] = useState<string[]>([])
   const [selected, setSelected] = useState<string[]>([])
@@ -113,9 +185,27 @@ export function ConsultationCard() {
 
   return (
     <div
+      ref={cardRef}
       id="contact"
-      className="cta-animated-gradient relative flex h-full min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-[32px] border border-white/50 px-8 py-16 text-center shadow-[0_16px_48px_-12px_rgba(61,107,251,0.25)] sm:px-12"
+      className="relative flex h-full min-h-[440px] flex-col items-center justify-center overflow-hidden rounded-[32px] border border-white/50 bg-[#f7f8fb] px-8 py-16 text-center shadow-[0_16px_48px_-12px_rgba(61,107,251,0.25)] sm:px-12"
     >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {BLOBS.map((blob) => (
+          <div
+            key={blob.color}
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+            style={{ left: blob.left, top: blob.top, width: blob.size, height: blob.size }}
+          >
+            <motion.div
+              className="h-full w-full rounded-full blur-3xl"
+              style={{ backgroundColor: blob.color, opacity: blob.opacity }}
+              animate={animateBlobs ? { x: blob.x, y: blob.y, scale: blob.scale } : undefined}
+              transition={{ duration: blob.duration, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+        ))}
+      </div>
+
       {step !== "start" && step !== "done" && (
         <button
           type="button"
@@ -127,7 +217,13 @@ export function ConsultationCard() {
         </button>
       )}
 
-      <AnimatePresence mode="wait">
+      {/* relative z-10: without an explicit position, this content is a
+          static-flow element, and CSS always paints positioned elements
+          (like the blob wrapper above, `position: absolute`) above static
+          ones regardless of DOM order — the blobs were rendering on top of
+          this text, not behind it, which is what washed the text out. */}
+      <div className="relative z-10 flex w-full flex-col items-center">
+        <AnimatePresence mode="wait">
         {step === "start" && (
           <motion.div key="start" {...STEP_MOTION} className="flex flex-col items-center">
             <h2
@@ -340,7 +436,8 @@ export function ConsultationCard() {
             </Button>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

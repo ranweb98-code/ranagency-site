@@ -221,64 +221,6 @@
   }
 }
 
-/* Animated aurora gradient for the CTA card — five radial blobs drifting via
-   typed custom properties (needed so the browser can smoothly interpolate
-   between keyframes instead of snapping). Adapted from a reference pen,
-   recolored to the site's blue → violet brand instead of the original gold. */
-@property --cta-x1 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
-@property --cta-y1 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
-@property --cta-x2 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
-@property --cta-y2 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
-@property --cta-x3 { syntax: "<percentage>"; inherits: false; initial-value: 10%; }
-@property --cta-y3 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
-@property --cta-x4 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
-@property --cta-y4 { syntax: "<percentage>"; inherits: false; initial-value: 90%; }
-@property --cta-x5 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
-@property --cta-y5 { syntax: "<percentage>"; inherits: false; initial-value: 50%; }
-@property --cta-s1 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
-@property --cta-s2 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
-@property --cta-s3 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
-@property --cta-s4 { syntax: "<percentage>"; inherits: false; initial-value: 55%; }
-@property --cta-s5 { syntax: "<percentage>"; inherits: false; initial-value: 65%; }
-
-.cta-animated-gradient {
-  background-color: #f7f8fb;
-  background-image:
-    radial-gradient(circle at var(--cta-x1) var(--cta-y1), #6f93ff 0px, transparent var(--cta-s1)),
-    radial-gradient(circle at var(--cta-x2) var(--cta-y2), #eef2ff 0px, transparent var(--cta-s2)),
-    radial-gradient(circle at var(--cta-x3) var(--cta-y3), #3d6bfb 0px, transparent var(--cta-s3)),
-    radial-gradient(circle at var(--cta-x4) var(--cta-y4), #d8ddfb 0px, transparent var(--cta-s4)),
-    radial-gradient(circle at var(--cta-x5) var(--cta-y5), #8b5cf6 0px, transparent var(--cta-s5));
-  animation:
-    cta-blob1 5s ease-in-out infinite,
-    cta-blob2 6s ease-in-out infinite,
-    cta-blob3 5.5s ease-in-out infinite,
-    cta-blob4 6.5s ease-in-out infinite,
-    cta-blob5 4s ease-in-out infinite,
-    cta-size1 3.5s ease-in-out infinite,
-    cta-size2 4.2s ease-in-out infinite,
-    cta-size3 3.8s ease-in-out infinite,
-    cta-size4 4.6s ease-in-out infinite,
-    cta-size5 3s ease-in-out infinite;
-}
-
-@keyframes cta-blob1 { 0%, 100% { --cta-x1: 5%; --cta-y1: 5%; } 25% { --cta-x1: 45%; --cta-y1: 20%; } 50% { --cta-x1: 30%; --cta-y1: 55%; } 75% { --cta-x1: 0%; --cta-y1: 30%; } }
-@keyframes cta-blob2 { 0%, 100% { --cta-x2: 95%; --cta-y2: 5%; } 33% { --cta-x2: 55%; --cta-y2: 35%; } 66% { --cta-x2: 80%; --cta-y2: 65%; } }
-@keyframes cta-blob3 { 0%, 100% { --cta-x3: 5%; --cta-y3: 95%; } 40% { --cta-x3: 45%; --cta-y3: 65%; } 70% { --cta-x3: 25%; --cta-y3: 100%; } }
-@keyframes cta-blob4 { 0%, 100% { --cta-x4: 95%; --cta-y4: 95%; } 30% { --cta-x4: 60%; --cta-y4: 70%; } 60% { --cta-x4: 100%; --cta-y4: 50%; } }
-@keyframes cta-blob5 { 0%, 100% { --cta-x5: 50%; --cta-y5: 50%; } 25% { --cta-x5: 70%; --cta-y5: 30%; } 50% { --cta-x5: 40%; --cta-y5: 70%; } 75% { --cta-x5: 30%; --cta-y5: 40%; } }
-@keyframes cta-size1 { 0%, 100% { --cta-s1: 45%; } 50% { --cta-s1: 80%; } }
-@keyframes cta-size2 { 0%, 100% { --cta-s2: 45%; } 50% { --cta-s2: 85%; } }
-@keyframes cta-size3 { 0%, 100% { --cta-s3: 45%; } 50% { --cta-s3: 78%; } }
-@keyframes cta-size4 { 0%, 100% { --cta-s4: 45%; } 50% { --cta-s4: 82%; } }
-@keyframes cta-size5 { 0%, 100% { --cta-s5: 50%; } 50% { --cta-s5: 85%; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .cta-animated-gradient {
-    animation: none;
-  }
-}
-
 /* Magnetic dot cursor — see src/components/site/custom-cursor.tsx */
 .custom-cursor {
   position: fixed;
