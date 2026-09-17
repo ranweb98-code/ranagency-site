@@ -21,8 +21,7 @@ export function TypewriterWord({
 }) {
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
   // Deterministic first render (always words[0], fully typed) — identical on
-  // server and client, so there's no hydration mismatch. Same convention as
-  // the "Deterministic pseudo-random" comment in agents-section.tsx.
+  // server and client, so there's no hydration mismatch.
   const [wordIndex, setWordIndex] = useState(0)
   const [text, setText] = useState(words[0] ?? "")
   const [phase, setPhase] = useState<Phase>("holding")
