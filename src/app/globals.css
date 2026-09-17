@@ -7,24 +7,35 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-ran-blue: #667eea;
-  --color-ran-violet: #764ba2;
-  --color-ran-hero-bg: #0a0a0c;
 
-  /* premium redesign palette — evolves the brand, doesn't replace it */
-  --color-ran-primary: #3d6bfb;
-  --color-ran-primary-light: #6f93ff;
-  --color-ran-accent: #8b5cf6;
-  --color-ran-surface-light: #f7f8fb;
-  --color-ran-surface-light-raised: #ffffff;
-  --color-ran-surface-dark: #0a0a0c;
-  --color-ran-surface-dark-raised: #161619;
-  --color-ran-text-on-light: #14141a;
-  --color-ran-text-on-light-muted: #5b5f6d;
-  --color-ran-text-on-dark: #f5f6fa;
-  --color-ran-text-on-dark-muted: rgba(245, 246, 250, 0.64);
-  --color-ran-glass-border-dark: rgba(255, 255, 255, 0.08);
-  --color-ran-glass-border-light: rgba(20, 20, 26, 0.08);
+  /* NAPUTZ' palette — monochrome. The wordmark is black serif on white, and
+     the site follows it: near-black ink, white surfaces, one gray for muted
+     text. There is no chromatic accent on purpose — hierarchy comes from
+     weight, size and spacing instead of hue.
+
+     Token names are inherited from earlier brands (`ran-*`, `*-on-light`);
+     renaming them across ~12 components was judged riskier churn than this
+     note. `*-on-dark` genuinely means "on a dark surface" — the footer and
+     the marquee band — and stays fixed light.
+
+     Every value resolves through an indirection var so the palette can be
+     retuned from the single `:root` block further down this file. `@theme
+     inline` is what makes that work: it inlines `var(--x)` into each utility
+     rather than freezing the literal value. */
+  --color-ran-primary: var(--accent);
+  --color-ran-primary-light: var(--accent-light);
+  --color-ran-accent: var(--accent-warm);
+  --color-ran-surface-light: var(--surface-base);
+  --color-ran-surface-subtle: var(--surface-subtle);
+  --color-ran-surface-light-raised: var(--surface-raised);
+  --color-ran-surface-dark: var(--surface-contrast);
+  --color-ran-surface-dark-raised: var(--surface-contrast-raised);
+  --color-ran-text-on-light: var(--text-strong);
+  --color-ran-text-on-light-muted: var(--text-muted);
+  --color-ran-text-on-dark: #f7f7f6;
+  --color-ran-text-on-dark-muted: rgba(247, 247, 246, 0.62);
+  --color-ran-glass-border-dark: rgba(255, 255, 255, 0.14);
+  --color-ran-glass-border-light: var(--border-subtle);
 
   --text-display: clamp(2.75rem, 2.1rem + 2.5vw, 5rem);
   --text-h2: clamp(2rem, 1.6rem + 1.6vw, 3rem);
@@ -221,66 +232,6 @@
   }
 }
 
-/* Magnetic dot cursor — see src/components/site/custom-cursor.tsx */
-.custom-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  width: 16px;
-  height: 16px;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, var(--color-ran-primary), var(--color-ran-accent));
-  pointer-events: none;
-  /* A white halo (instead of mix-blend-mode: difference) keeps the brand
-     colors true everywhere — difference inverted them into an off-brand
-     olive tone over light sections. */
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.85),
-    0 4px 14px -2px color-mix(in srgb, var(--color-ran-primary) 65%, transparent);
-  transform: translate(-50%, -50%);
-  transition:
-    width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    background 0.3s,
-    box-shadow 0.3s;
-  will-change: transform;
-}
-
-.custom-cursor.cursor-magnet {
-  width: 52px;
-  height: 52px;
-  background: color-mix(in srgb, var(--color-ran-primary) 14%, transparent);
-  border: 1.5px solid var(--color-ran-primary);
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.6),
-    0 8px 28px -8px color-mix(in srgb, var(--color-ran-primary) 60%, transparent);
-}
-
-.custom-cursor.cursor-magnet::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: var(--color-ran-primary);
-}
-
-/* Hide the native cursor sitewide while the JS-driven dot is active — but
-   keep it on text inputs so it's still obvious you can type. */
-.custom-cursor-active,
-.custom-cursor-active * {
-  cursor: none !important;
-}
-
-.custom-cursor-active input,
-.custom-cursor-active textarea,
-.custom-cursor-active select {
-  cursor: auto !important;
-}
-
 /* Infinite marquee tape — see src/components/site/marquee-tape.tsx */
 @keyframes marquee-tape-scroll {
   to {
@@ -356,6 +307,191 @@
 
 @media (prefers-reduced-motion: reduce) {
   .testimonial-ring {
+    animation: none;
+  }
+}
+
+/* ── Palette ──────────────────────────────────────────────────────────────
+   Monochrome, taken from the NAPUTZ' wordmark: black serif ink on white.
+   The `ran-*` tokens above all resolve through these, so this block is the
+   one place to retune the site.
+
+   There is deliberately no chromatic accent. `--accent` is the same near-
+   black as the body text, which means anything that used colour purely for
+   emphasis (eyebrow labels, "step N" markers) has to earn its hierarchy from
+   weight, size, letter-spacing or a rule instead. */
+:root {
+  --surface-base: #ffffff;
+  --surface-subtle: #f5f5f4;
+  --surface-raised: #ffffff;
+  --surface-contrast: #111111;
+  --surface-contrast-raised: #1c1c1c;
+  --text-strong: #111111;
+  --text-muted: #6f6f6f;
+  --border-subtle: rgba(17, 17, 17, 0.12);
+  --accent: #111111;
+  --accent-light: #3d3d3d;
+  --accent-warm: #111111;
+}
+
+/* Paint the page surface itself, so sections that don't set their own
+   background (and the overscroll area) match. */
+body {
+  background-color: var(--surface-base);
+  color: var(--text-strong);
+}
+
+/* Floating glass pill toolbar — see src/components/site/navbar.tsx. Always
+   floats clear of the viewport edge, centered, never full-width.
+   (backdrop-filter is applied inline in navbar.tsx rather than here: Tailwind
+   v4's Lightning CSS build collapses a standard `backdrop-filter` declaration
+   sitting next to its own `-webkit-` fallback in the same ruleset down to only
+   the prefixed one, silently dropping the unprefixed property. Confirmed by
+   inspecting the served bundle.) */
+:root {
+  --nav-bg-scrolled: rgba(255, 255, 255, 0.85);
+  --nav-border: rgba(17, 17, 17, 0.10);
+}
+
+/* The pill's own "glass" volume: a light top edge and a faint bottom shadow
+   inside the border, on top of the frosted background — the same highlight/
+   caustic pairing that makes glass read as glass, tuned down from the
+   saturated reference for a white monochrome page. */
+.nav-pill {
+  position: relative;
+  background: var(--nav-bg-scrolled);
+  border: 1px solid var(--nav-border);
+  box-shadow:
+    0 24px 48px -24px rgba(17, 17, 17, 0.22),
+    0 8px 20px -12px rgba(17, 17, 17, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px rgba(17, 17, 17, 0.05);
+}
+
+/* Soft highlight that tracks the cursor — set via --glare-x/--glare-y in
+   navbar.tsx's onPointerMove. Only brightens (no blend-mode): on a near-white
+   glass pill, `mix-blend-mode: overlay` with a white glare is a no-op since
+   overlay can't push white past white, confirmed by testing the reference's
+   own technique directly on our light bg before dropping it. */
+.nav-pill-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(220px circle at var(--glare-x, 50%) var(--glare-y, 0%), rgba(255, 255, 255, 0.85), transparent 70%);
+  transition: opacity 0.35s ease;
+}
+
+.nav-pill:hover .nav-pill-glare {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill-glare {
+    display: none;
+  }
+}
+
+/* Same mouse-tracking shine, sized down for a single solid-black CTA button
+   rather than the whole glass pill — a plain translucent white spot reads
+   fine directly on black, no overlay-on-white invisibility problem to work
+   around here. Stays a flat, uniform black at rest — no opacity/brightness
+   hover shift on the button itself, only this localised highlight moves.
+   Radius is deliberately small relative to the pill's own 220px: a button is
+   only ~40px tall, so the pill's radius would flood the whole button at
+   every cursor position and never read as "moving" — this one stays small
+   enough that the spot visibly travels as the cursor crosses the button. */
+.cta-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(70px circle at var(--glare-x, 50%) var(--glare-y, 0%), rgba(255, 255, 255, 0.45), transparent 70%);
+  transition: opacity 0.35s ease;
+}
+
+.cta-glow:hover::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-glow::after {
+    display: none;
+  }
+}
+
+/* CRM dashboard "live data" strip — see crm-dashboard-section.tsx. Same
+   moving-dashes language as the agent flow diagrams' connector lines, as a
+   flat CSS strip rather than an SVG path since this one has no fixed
+   endpoints to draw between, just a continuous "data is flowing" signal
+   under the window chrome. */
+@keyframes crm-flow-scroll {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: -32px 0%;
+  }
+}
+
+.crm-flow-line {
+  animation: crm-flow-scroll 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-flow-line {
+    animation: none;
+  }
+}
+
+/* Legal-document prose (privacy policy, terms) — Tailwind's preflight
+   strips default list markers/margins, so plain <ul><li> renders with no
+   bullets at all without this. Padding is -right, not -left: this is RTL
+   content, and list markers belong on the same side text starts from. */
+.prose-legal ul {
+  list-style: disc;
+  padding-right: 1.4em;
+}
+
+.prose-legal li + li {
+  margin-top: 0.4em;
+}
+
+.prose-legal strong {
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Typewriter cursor — see src/components/ui/typewriter-word.tsx. */
+@keyframes typewriter-cursor-blink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* A solid accent-colored bar, not a hairline — reads as a deliberate design
+   element at display type sizes rather than a stray text caret. */
+.typewriter-cursor {
+  display: inline-block;
+  width: 0.09em;
+  min-width: 4px;
+  height: 0.82em;
+  margin-inline-start: 0.08em;
+  vertical-align: -0.06em;
+  border-radius: 2px;
+  background: var(--text-strong);
+  animation: typewriter-cursor-blink 1s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
     animation: none;
   }
 }

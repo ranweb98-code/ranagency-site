@@ -21,26 +21,26 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     icon: Clock,
-    title: "הבוט שלך אף פעם לא ישן",
+    title: "הסוכנים שלך אף פעם לא ישנים",
     description: "גם בלילה, גם בשבת, גם בחג — הלקוחות שלך יקבלו מענה מיידי בכל זמן",
   },
   {
     icon: TrendingUp,
     title: "חיסכון של עשרות שעות בחודש",
     description:
-      "במקום לענות על אותן שאלות שוב ושוב, הבוט יעשה את זה בשבילך — ותתפנה להתמקד בגדילה",
+      "במקום לענות על אותן שאלות שוב ושוב, הסוכנים יעשו את זה בשבילך — ותתפנה להתמקד בגדילה",
   },
   {
     icon: UserCheck,
-    title: "אף לקוח לא הולך לאיבוד",
+    title: "כל פנייה נענית, שום ליד לא נעלם",
     description:
-      "כל פנייה נענית מיד, כל ליד נאסף, וכל הזדמנות מנוצלת — גם כשאתה לא זמין",
+      "כל פנייה נענית מיד, כל ליד מסווג ונאסף, וכל הזדמנות מנוצלת — גם כשאתה לא זמין",
   },
   {
     icon: Languages,
     title: "מבין עברית טבעית",
     description:
-      "הבוטים שלנו משתמשים בטכנולוגיית AI מתקדמת שמבינה עברית בצורה טבעית ומדויקת",
+      "הסוכנים שלנו משתמשים בטכנולוגיית AI מתקדמת שמבינה עברית בצורה טבעית ומדויקת",
   },
   {
     icon: BarChart3,
@@ -52,7 +52,7 @@ const FEATURES: Feature[] = [
     icon: Palette,
     title: "נראה מצוין, מרגיש מקצועי",
     description:
-      "כל הבוטים והאתרים שלנו מעוצבים בצורה מודרנית ומקצועית שתשדר אמינות ויוקרה",
+      "כל הסוכנים והדשבורד שלנו מעוצבים בצורה מודרנית ומקצועית שתשדר אמינות ויוקרה",
   },
 ]
 
@@ -68,12 +68,12 @@ export function FeaturesSection() {
     <section className="overflow-hidden bg-ran-surface-light py-24">
       <SectionContainer>
         <Reveal className="mb-14 space-y-3 text-center">
-          <p className="text-sm font-semibold tracking-wide text-ran-primary">היתרונות שלנו</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">היתרונות שלנו</p>
           <h2
-            className="font-bold text-ran-text-on-light"
+            className="font-extrabold text-ran-text-on-light"
             style={{ fontSize: "var(--text-h2)", letterSpacing: "-0.015em" }}
           >
-            למה עסקים בוחרים ב-RanAgency
+            למה עסקים בוחרים בנפוץ&apos;
           </h2>
         </Reveal>
 
@@ -112,8 +112,8 @@ export function FeaturesSection() {
 function FeatureCard({ feature }: { feature: Feature }) {
   const Icon = feature.icon
   return (
-    <div className="feature-marquee-card flex h-56 flex-col rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_2px_20px_-8px_rgba(20,20,26,0.12)]">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+    <div className="feature-marquee-card flex h-56 flex-col rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_2px_20px_-8px_rgba(17,17,17,0.12)]">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
         <Icon className="h-5 w-5" />
       </span>
       <h3 className="mt-4 font-bold text-ran-text-on-light" style={{ fontSize: "var(--text-h3)" }}>

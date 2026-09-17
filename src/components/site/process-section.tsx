@@ -28,9 +28,9 @@ const STEPS: Step[] = [
   },
   {
     icon: Hammer,
-    title: "מקימים את המערכת",
+    title: "מקימים את הסוכנים",
     description:
-      "בונים את הבוט או האתר, מחברים מערכות, מוסיפים תוכן ובודקים שהכל עובד מושלם",
+      "בונים את סוכני הוואטסאפ, האינסטגרם והקול, מחברים לדשבורד CRM אחד ובודקים שהכל עובד מושלם",
   },
   {
     icon: Rocket,
@@ -63,9 +63,9 @@ export function ProcessSection() {
     <section id="process" className="bg-ran-surface-light py-24">
       <SectionContainer>
         <Reveal className="mb-16 space-y-3 text-center">
-          <p className="text-sm font-semibold tracking-wide text-ran-primary">תהליך העבודה</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">תהליך העבודה</p>
           <h2
-            className="font-bold text-ran-text-on-light"
+            className="font-extrabold text-ran-text-on-light"
             style={{ fontSize: "var(--text-h2)", letterSpacing: "-0.015em" }}
           >
             מהשיחה הראשונה ועד ההשקה
@@ -76,7 +76,7 @@ export function ProcessSection() {
         <div ref={trackRef} className="relative hidden sm:block">
           <div className="absolute inset-x-[10%] top-7 h-[2px] bg-ran-glass-border-light" />
           <motion.div
-            className="absolute inset-x-[10%] top-7 h-[2px] origin-right bg-gradient-to-l from-ran-primary to-ran-accent"
+            className="absolute inset-x-[10%] top-7 h-[2px] origin-right bg-ran-text-on-light"
             style={{ scaleX: lineScale }}
           />
 
@@ -85,8 +85,8 @@ export function ProcessSection() {
               const Icon = step.icon
               return (
                 <RevealItem key={step.title} className="relative text-center">
-                  <div className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ran-surface-light-raised shadow-[0_2px_16px_-6px_rgba(20,20,26,0.2)]">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+                  <div className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ran-surface-light-raised shadow-[0_2px_16px_-6px_rgba(17,17,17,0.2)]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
                       <Icon className="h-5 w-5" />
                     </span>
                   </div>
@@ -113,7 +113,7 @@ export function ProcessSection() {
         <div ref={mobileTrackRef} className="relative sm:hidden">
           <div className="absolute inset-y-6 right-6 w-[2px] bg-ran-glass-border-light" />
           <motion.div
-            className="absolute inset-y-6 right-6 w-[2px] origin-top bg-gradient-to-b from-ran-primary to-ran-accent"
+            className="absolute inset-y-6 right-6 w-[2px] origin-top bg-ran-text-on-light"
             style={{ scaleY: mobileLineScale }}
           />
 
@@ -122,8 +122,8 @@ export function ProcessSection() {
               const Icon = step.icon
               return (
                 <RevealItem key={step.title} className="relative flex items-start gap-4">
-                  <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ran-surface-light-raised shadow-[0_2px_16px_-6px_rgba(20,20,26,0.2)]">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+                  <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ran-surface-light-raised shadow-[0_2px_16px_-6px_rgba(17,17,17,0.2)]">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
                       <Icon className="h-4 w-4" />
                     </span>
                   </div>

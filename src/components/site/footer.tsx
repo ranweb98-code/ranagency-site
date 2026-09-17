@@ -1,10 +1,17 @@
+import Link from "next/link"
+
+import { Logo } from "@/components/site/logo"
 import { SectionContainer } from "@/components/site/section-container"
 
+// Rooted at "/" rather than a bare "#…": the footer also renders on
+// standalone pages like /privacy, where a bare hash just jumps around the
+// current (wrong) page instead of going back to the homepage section.
 const PAGE_LINKS = [
-  { href: "#automation", label: "שירותים" },
-  { href: "#process", label: "תהליך העבודה" },
-  { href: "#testimonials", label: "לקוחות" },
-  { href: "#faq", label: "שאלות נפוצות" },
+  { href: "/#agents", label: "הסוכנים" },
+  { href: "/#dashboard", label: "הדשבורד" },
+  { href: "/#process", label: "תהליך העבודה" },
+  { href: "/#testimonials", label: "לקוחות" },
+  { href: "/#faq", label: "שאלות נפוצות" },
 ]
 
 const SOCIAL_LINKS = [
@@ -16,27 +23,11 @@ const SOCIAL_LINKS = [
 export function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-ran-glass-border-dark bg-ran-surface-dark py-14 text-ran-text-on-dark">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_60%_100%_at_50%_0%,rgba(61,107,251,0.28),transparent_70%)]"
-      />
-
       <SectionContainer className="relative flex flex-col gap-10 sm:flex-row sm:justify-between">
-        <div className="max-w-sm space-y-3">
-          {/* bg-[#f8f7fa] matches the logo video's own baked-in matte —
-              see the comment on the navbar's copy of this video. */}
-          <div className="inline-flex items-center rounded-2xl bg-[#f8f7fa] px-3 py-1.5 shadow-sm">
-            <video
-              src="/videos/logo-signature.webm"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="h-6 w-auto md:h-7"
-            />
-          </div>
+        <div className="max-w-sm space-y-4">
+          <Logo height={26} onDark />
           <p className="text-sm text-ran-text-on-dark-muted">
-            אוטומציות AI, בוטים חכמים ובניית אתרים לעסקים קטנים ובינוניים בישראל
+            הסוכנים של נפוץ&apos; — סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים, מסווגים לידים וקובעים תורים במקומכם
           </p>
         </div>
 
@@ -46,9 +37,9 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-ran-text-on-dark-muted">
               {PAGE_LINKS.map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="hover:text-ran-text-on-dark">
+                  <Link href={link.href} className="hover:text-ran-text-on-dark">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -75,14 +66,17 @@ export function Footer() {
       </SectionContainer>
 
       <SectionContainer className="relative mt-10 flex flex-col-reverse gap-4 border-t border-ran-glass-border-dark pt-6 text-xs text-ran-text-on-dark-muted sm:flex-row sm:items-center sm:justify-between">
-        <p>© 2026 RanAgency. כל הזכויות שמורות.</p>
+        <p>© 2026 נפוץ&apos;. כל הזכויות שמורות.</p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-ran-text-on-dark">
+          <Link href="/privacy" className="hover:text-ran-text-on-dark">
             מדיניות פרטיות
-          </a>
-          <a href="#" className="hover:text-ran-text-on-dark">
+          </Link>
+          <Link href="/terms" className="hover:text-ran-text-on-dark">
             תנאי שימוש
-          </a>
+          </Link>
+          <Link href="/accessibility" className="hover:text-ran-text-on-dark">
+            הצהרת נגישות
+          </Link>
         </div>
       </SectionContainer>
     </footer>

@@ -5,11 +5,11 @@
 // Rotated a couple degrees and overshot horizontally (like the original's
 // tape-wrapper) so the tilt never exposes a gap at the section edges.
 const TAPE_ITEMS = [
-  "בוטים חכמים לוואטסאפ, אינסטגרם ופייסבוק",
-  "אוטומציות AI לעסק שלך",
-  "אתרים מודרניים שממירים",
+  "סוכן וואטסאפ, סוכן אינסטגרם וסוכן קולי",
+  "כל ליד מסווג כחם או קר אוטומטית",
+  "דשבורד CRM אחד לכל הערוצים",
   "זמינות 24/7, בלי לפספס אף לקוח",
-  "ליווי אישי מהתכנון ועד ההשקה",
+  "קביעת תורים אוטומטית בכל ערוץ",
   "אפס קוד, אפס כאב ראש",
   "תוצאות מדידות מהיום הראשון",
   "יותר לידים, פחות עבודה ידנית",
@@ -23,10 +23,10 @@ function TapeContent() {
       {TAPE_ITEMS.map((item, i) => (
         <span
           key={i}
-          className="mx-4 flex items-center gap-4 whitespace-nowrap font-sans text-2xl font-black text-white md:text-3xl"
+          className="mx-4 flex items-center gap-4 whitespace-nowrap font-sans text-xl font-bold tracking-tight text-ran-text-on-dark md:text-2xl"
         >
           {item}
-          <span className="text-white/50">✦</span>
+          <span className="text-ran-text-on-dark-muted">·</span>
         </span>
       ))}
     </div>
@@ -39,11 +39,11 @@ export function MarqueeTape() {
     // RTL ancestor with an LTR "too-wide" block caused the overflowing
     // half to land outside the viewport entirely, i.e. the track scrolled
     // through a stretch where nothing was actually on screen.
-    <div dir="ltr" className="overflow-hidden py-10 md:py-14">
+    <div dir="ltr" className="overflow-hidden">
       <div
         role="marquee"
         aria-label={TAPE_ITEMS.join(" — ")}
-        className="-mx-[10%] w-[120%] -rotate-2 bg-gradient-to-l from-ran-primary/80 to-ran-accent/80 py-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.35)]"
+        className="bg-ran-surface-dark py-4"
       >
         <div className="marquee-tape-track flex w-max">
           <TapeContent />

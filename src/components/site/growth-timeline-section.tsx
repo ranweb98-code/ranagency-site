@@ -1,8 +1,9 @@
 "use client"
 
-import { motion, useInView, useScroll, useSpring, useTransform, type MotionValue } from "motion/react"
-import { ChevronsUp, Clock, Rocket, ShieldCheck, TrendingUp, type LucideIcon } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useId, useMemo, useRef } from "react"
+import { motion, useInView, useScroll, useTransform, type MotionValue } from "motion/react"
+import { Clock, Rocket, ShieldCheck, TrendingUp, type LucideIcon } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import useEmblaCarousel from "embla-carousel-react"
 import Autoplay from "embla-carousel-autoplay"
 
@@ -13,43 +14,6 @@ import { cn } from "@/lib/utils"
 const START_VALUE = 1200
 const END_VALUE = 98000
 const MONTH_COUNT = 13
-
-const SIZE = {
-  compact: {
-    track: 290,
-    row: 48,
-    colWidth: 140,
-    colPadding: "pr-7",
-    dateFont: "text-[11px]",
-    outer: 150,
-    mid: 92,
-    core: 44,
-    gap: "gap-2",
-    tickWidth: "w-1",
-    svgWidth: "w-6",
-    moneyBadge: 30,
-    moneyLabelFont: "text-[11px]",
-    numberFont: "clamp(1.3rem, 0.9rem + 3vw, 2.2rem)",
-  },
-  full: {
-    track: 300,
-    row: 50,
-    colWidth: 148,
-    colPadding: "pr-9",
-    dateFont: "text-sm",
-    outer: 180,
-    mid: 112,
-    core: 54,
-    gap: "gap-3 lg:gap-4",
-    tickWidth: "w-3",
-    svgWidth: "w-10",
-    moneyBadge: 34,
-    moneyLabelFont: "text-xs",
-    numberFont: "clamp(1.75rem, 1.1rem + 2vw, 3rem)",
-  },
-} as const
-
-type SizeVariant = keyof typeof SIZE
 
 interface Benefit {
   icon: LucideIcon
@@ -112,16 +76,12 @@ export function GrowthTimelineSection() {
     target: pinRef,
     offset: ["start start", "end end"],
   })
-  // Any spring smoothing here lags the raw scroll position by definition —
-  // fine for decorative motion, but the sticky pin's release is driven by
-  // the real (unsprung) scroll position, so a smoothed value can still be
-  // short of "done" when the pin lets go, no matter how tightly the spring
-  // is tuned (confirmed: even a ~150ms-settle spring visibly undershot on a
-  // fast flick). So the number/month that must land exactly on completion
-  // read straight off raw scrollYProgress; only the decorative glow/core
-  // pulse (where a frame or two of lag is invisible) gets the spring.
-  const glowProgress = useSpring(scrollYProgress, { stiffness: 800, damping: 50, mass: 1 })
-
+  // The number/month read straight off raw scrollYProgress rather than a
+  // smoothed value: a spring here would still be visibly short of "done"
+  // when the pin releases on a fast flick (confirmed — even a ~150ms-settle
+  // spring undershot). The chart's decorative pulse is the only thing with
+  // any lag tolerance, and it doesn't need scroll-derived smoothing at all
+  // now — see the note on GrowthChart's own independent ping loop.
   const months = useMonthLabels(MONTH_COUNT)
   const activeIndex = useTransform(scrollYProgress, (p) => clamp01(p) * (MONTH_COUNT - 1))
   const amount = useTransform(scrollYProgress, formatAmount)
@@ -130,47 +90,25 @@ export function GrowthTimelineSection() {
     // NOTE: no `overflow-hidden` here — it breaks `position: sticky` on the
     // pinned panel below (an ancestor with overflow other than visible
     // constrains the sticky containing block). Inner elements clip themselves.
-    <section className="relative bg-white">
-      {/* Back to the original, slower pace — the shortened 130/160vh pin
-          made the whole animation feel rushed. */}
+    <section className="relative bg-ran-surface-light">
       <div ref={pinRef} className="relative h-[200vh] md:h-[280vh]">
-        {/* Shorter sticky panel on mobile — the compact column is much
-            shorter than a full viewport, and centering it in a full 100dvh
-            panel left a huge dead-space gap below it before the next
-            section's text appeared. No `overflow-hidden` here (same reason
-            as the pinRef note below): the Indicator's blur-3xl glow is
-            large enough to reach this panel's edge once it's this short,
-            and clipping it showed as a hard line instead of a soft fade —
-            same white background on both sides, so letting it bleed
-            slightly past the box is invisible. */}
-        {/* Taller again on mobile now that the benefits carousel lives in
-            here too — see below for why it moved. */}
         <div className="sticky top-0 flex h-[92dvh] items-center pt-6 md:h-[100dvh] md:pt-20">
           <SectionContainer className="w-full">
             <div dir="ltr" className="grid items-center gap-12 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-20">
-              {/* animated timeline visual — identical composition at every size, just scaled */}
+              {/* animated chart — identical composition at every size, Tailwind clamp() handles scale */}
               <div className="flex justify-center md:justify-start">
-                {/* Mobile: the benefits carousel now lives inside the sticky
-                    panel, right under the counter, instead of appearing as
-                    separate content once the pin released. It used to sit
-                    below the pin in normal flow, revealed only at release —
-                    which meant it was invisible the whole time you were
-                    watching the counter, then suddenly appeared/shifted
-                    into place the moment the pin let go. Living here means
-                    it's simply always there, never moving on its own. */}
+                {/* Mobile: benefits carousel lives inside the sticky panel,
+                    right under the chart, instead of appearing as separate
+                    content once the pin released (which meant it was invisible
+                    the whole time you were watching the counter, then
+                    suddenly appeared the moment the pin let go). */}
                 <div dir="rtl" className="flex w-full max-w-xs flex-col items-center gap-4 md:hidden">
                   <Reveal className="w-full">
                     <div className="text-center">
                       <BenefitsIntro compact />
                     </div>
                     <div className="mt-5">
-                      <TimelineWidget
-                        variant="compact"
-                        months={months}
-                        progress={glowProgress}
-                        activeIndex={activeIndex}
-                        amount={amount}
-                      />
+                      <GrowthChart progress={scrollYProgress} activeIndex={activeIndex} amount={amount} months={months} />
                     </div>
                     <div className="mt-5">
                       <BenefitsCarousel />
@@ -178,7 +116,7 @@ export function GrowthTimelineSection() {
                   </Reveal>
                 </div>
                 <div className="hidden md:block">
-                  <TimelineWidget variant="full" months={months} progress={glowProgress} activeIndex={activeIndex} amount={amount} />
+                  <GrowthChart progress={scrollYProgress} activeIndex={activeIndex} amount={amount} months={months} />
                 </div>
               </div>
 
@@ -210,11 +148,11 @@ function BenefitsPanel() {
 function BenefitsIntro({ compact = false }: { compact?: boolean }) {
   return (
     <div>
-      <p className={`font-semibold tracking-wide text-ran-primary ${compact ? "text-xs" : "text-sm"}`}>
+      <p className={cn("font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted", compact ? "text-[10px]" : "text-xs")}>
         מה קורה כשאתם עובדים איתנו
       </p>
       <h2
-        className="mt-2 font-bold text-ran-text-on-light md:mt-3"
+        className="mt-2 font-extrabold text-ran-text-on-light md:mt-3"
         style={{
           fontSize: compact ? "clamp(1.15rem, 0.95rem + 2.4vw, 1.5rem)" : "clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem)",
           letterSpacing: "-0.015em",
@@ -267,7 +205,7 @@ function BenefitsCarousel() {
             return (
               <div key={benefit.title} className="min-w-0 shrink-0 grow-0 basis-full px-2">
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
                     <Icon className="h-4 w-4" />
                   </span>
                   <p className="font-bold text-ran-text-on-light">{benefit.title}</p>
@@ -288,7 +226,7 @@ function BenefitsCarousel() {
             aria-current={index === selectedIndex}
             className={cn(
               "h-1.5 rounded-full transition-all",
-              index === selectedIndex ? "w-5 bg-ran-primary" : "w-1.5 bg-ran-glass-border-light"
+              index === selectedIndex ? "w-5 bg-ran-text-on-light" : "w-1.5 bg-ran-glass-border-light"
             )}
           />
         ))}
@@ -308,7 +246,7 @@ function BenefitsDetails() {
           const Icon = benefit.icon
           return (
             <RevealItem key={benefit.title} className="flex gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-white">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
                 <Icon className="h-5 w-5" />
               </span>
               <div>
@@ -323,204 +261,136 @@ function BenefitsDetails() {
   )
 }
 
-function TimelineWidget({
-  variant,
-  months,
+// ── Growth chart ────────────────────────────────────────────────────────
+// Replaces the old vertical ticking-month list + triple-concentric-circle
+// badge with one thing: a line chart that draws itself in as you scroll,
+// with a live marker riding its leading edge. Same idea as before (scroll
+// progress = money saved), different, more literal visual — the shape of
+// the line does the "growth" storytelling instead of a separate icon badge.
+//
+// The curve is one hand-authored cubic bezier, not real per-month data (the
+// old ticking list wasn't either — it was decorative). Because it's a single
+// bezier, the marker's position can be computed with the textbook cubic
+// point formula instead of a DOM `getPointAtLength()` read every frame —
+// keeps the whole thing on pure Motion values with no React re-renders per
+// scroll tick, matching how the rest of this file already treats scroll perf
+// as something to protect deliberately, not incidentally.
+const CHART_W = 400
+const CHART_H = 150
+const CURVE_P0 = { x: 6, y: 130 }
+const CURVE_P1 = { x: 150, y: 116 }
+const CURVE_P2 = { x: 270, y: 34 }
+const CURVE_P3 = { x: 394, y: 12 }
+const CURVE_D = `M${CURVE_P0.x},${CURVE_P0.y} C${CURVE_P1.x},${CURVE_P1.y} ${CURVE_P2.x},${CURVE_P2.y} ${CURVE_P3.x},${CURVE_P3.y}`
+const CURVE_AREA_D = `${CURVE_D} L${CURVE_P3.x},${CHART_H} L${CURVE_P0.x},${CHART_H} Z`
+const CHART_ACCENT = "#16a34a" // growth = green, the same read as a positive number anywhere else
+
+function cubicPoint(t: number) {
+  const u = 1 - t
+  const b0 = u * u * u
+  const b1 = 3 * u * u * t
+  const b2 = 3 * u * t * t
+  const b3 = t * t * t
+  return {
+    x: b0 * CURVE_P0.x + b1 * CURVE_P1.x + b2 * CURVE_P2.x + b3 * CURVE_P3.x,
+    y: b0 * CURVE_P0.y + b1 * CURVE_P1.y + b2 * CURVE_P2.y + b3 * CURVE_P3.y,
+  }
+}
+
+function GrowthChart({
   progress,
   activeIndex,
   amount,
+  months,
 }: {
-  variant: SizeVariant
-  months: string[]
   progress: MotionValue<number>
   activeIndex: MotionValue<number>
   amount: MotionValue<string>
-}) {
-  const s = SIZE[variant]
-  const trackY = useTransform(activeIndex, (i) => s.track / 2 - s.row / 2 - i * s.row)
-  const glowScale = useTransform(progress, [0, 1], [0.9, 1.3])
-  const coreScale = useTransform(progress, [0, 1], [0.94, 1.12])
-
-  return (
-    <div className={`flex items-center ${s.gap}`}>
-      <TimelineColumn
-        months={months}
-        trackY={trackY}
-        activeIndex={activeIndex}
-        track={s.track}
-        row={s.row}
-        colWidth={s.colWidth}
-        colPaddingClass={s.colPadding}
-        dateFontClass={s.dateFont}
-        svgWidthClass={s.svgWidth}
-        tickWidthClass={s.tickWidth}
-      />
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex flex-col items-center gap-1.5">
-          <span className={`whitespace-nowrap font-semibold tracking-wide text-ran-primary/80 ${s.moneyLabelFont}`}>
-            הכסף שלך
-          </span>
-          <div className="flex items-center gap-1.5">
-            <MoneyBadge size={s.moneyBadge} coreScale={coreScale} />
-            <motion.p
-              className="whitespace-nowrap font-extrabold tabular-nums text-ran-primary"
-              style={{ fontSize: s.numberFont, textShadow: "0 0 40px rgba(61,107,251,0.28)" }}
-            >
-              {amount}
-            </motion.p>
-          </div>
-        </div>
-        <Indicator glowScale={glowScale} coreScale={coreScale} outer={s.outer} mid={s.mid} core={s.core} />
-      </div>
-    </div>
-  )
-}
-
-function MoneyBadge({ size, coreScale }: { size: number; coreScale: MotionValue<number> }) {
-  const ref = useRef<HTMLDivElement>(null)
-  // This section stays mounted for the rest of the session once scrolled
-  // past, so an unconditional `repeat: Infinity` here keeps animating
-  // forever in the background — freeze it off-screen instead.
-  const inView = useInView(ref, { margin: "200px" })
-  return (
-    <motion.div
-      ref={ref}
-      className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent font-bold text-white shadow-[0_0_18px_-3px_var(--color-ran-primary)]"
-      style={{ width: size, height: size, fontSize: size * 0.5, scale: coreScale }}
-      animate={inView ? { rotate: [0, -6, 0, 6, 0] } : undefined}
-      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-    >
-      ₪
-    </motion.div>
-  )
-}
-
-function TimelineColumn({
-  months,
-  trackY,
-  activeIndex,
-  track,
-  row,
-  colWidth,
-  colPaddingClass,
-  dateFontClass,
-  svgWidthClass,
-  tickWidthClass,
-}: {
   months: string[]
-  trackY: MotionValue<number>
-  activeIndex: MotionValue<number>
-  track: number
-  row: number
-  colWidth: number
-  colPaddingClass: string
-  dateFontClass: string
-  svgWidthClass: string
-  tickWidthClass: string
 }) {
+  const clipId = useId()
+  const wrapRef = useRef<HTMLDivElement>(null)
+  // This section stays mounted for the rest of the session once scrolled
+  // past, so an unconditional `repeat: Infinity` ping below would keep
+  // animating forever in the background — freeze it off-screen instead,
+  // same discipline this file already applied to the old badge.
+  const inView = useInView(wrapRef, { margin: "200px" })
+
+  const clamped = useTransform(progress, clamp01)
+  const dotX = useTransform(clamped, (t) => cubicPoint(t).x)
+  const dotY = useTransform(clamped, (t) => cubicPoint(t).y)
+  const fillWidth = useTransform(clamped, (t) => t * CHART_W)
+  const currentMonth = useTransform(activeIndex, (i) => {
+    const idx = Math.round(Math.min(months.length - 1, Math.max(0, i)))
+    return months[idx] ?? months[0]
+  })
+
   return (
     <div
-      className="relative overflow-hidden"
-      style={{
-        height: track,
-        width: colWidth,
-        maskImage: "linear-gradient(to bottom, transparent, black 20%, black 80%, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent, black 20%, black 80%, transparent)",
-      }}
+      ref={wrapRef}
+      className="w-full max-w-md rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_24px_60px_-24px_rgba(17,17,17,0.18)] md:p-8"
     >
-      <svg
-        className={`pointer-events-none absolute right-0 top-0 h-full ${svgWidthClass} text-ran-primary/40`}
-        viewBox="0 0 40 300"
-        preserveAspectRatio="none"
-        fill="none"
-      >
-        <path
-          d="M16 0 L16 108 C16 128 30 136 30 150 C30 164 16 172 16 192 L16 300"
-          stroke="currentColor"
-          strokeWidth="1.5"
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">
+          החיסכון שלך
+        </p>
+        <motion.p className="text-xs font-medium tabular-nums text-ran-text-on-light-muted">
+          {currentMonth}
+        </motion.p>
+      </div>
+
+      <div className="mt-2 flex items-baseline gap-1.5">
+        <span className="text-lg font-bold text-ran-text-on-light-muted">₪</span>
+        <motion.p
+          className="whitespace-nowrap font-extrabold tabular-nums text-ran-text-on-light"
+          style={{ fontSize: "clamp(2rem, 1.3rem + 3.2vw, 3.25rem)" }}
+        >
+          {amount}
+        </motion.p>
+      </div>
+
+      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="mt-5 h-auto w-full overflow-visible">
+        <defs>
+          <clipPath id={clipId}>
+            <motion.rect x={0} y={0} height={CHART_H} style={{ width: fillWidth }} />
+          </clipPath>
+        </defs>
+
+        {/* filled area, revealed left-to-right by the same clip that reveals the line */}
+        <path d={CURVE_AREA_D} fill={CHART_ACCENT} opacity={0.06} clipPath={`url(#${clipId})`} />
+
+        {/* full-length neutral rail, so the un-drawn portion of the curve is still legible as "where this is going" */}
+        <path d={CURVE_D} fill="none" stroke="var(--border-subtle)" strokeWidth={2} strokeLinecap="round" />
+
+        {/* the drawn-in portion, tracking scroll progress exactly like process-section's rail fill */}
+        <motion.path
+          d={CURVE_D}
+          fill="none"
+          stroke={CHART_ACCENT}
+          strokeWidth={2}
+          strokeLinecap="round"
+          style={{ pathLength: clamped }}
+        />
+
+        {/* live marker riding the leading edge */}
+        <motion.circle
+          cx={dotX}
+          cy={dotY}
+          r={9}
+          fill={CHART_ACCENT}
+          initial={{ opacity: 0.3 }}
+          animate={inView ? { r: [9, 17], opacity: [0.3, 0] } : undefined}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut" }}
+        />
+        <motion.circle
+          cx={dotX}
+          cy={dotY}
+          r={4.5}
+          fill={CHART_ACCENT}
+          stroke="var(--surface-raised)"
+          strokeWidth={2}
         />
       </svg>
-      <motion.div className="absolute inset-x-0 top-0" style={{ y: trackY }}>
-        {months.map((label, index) => (
-          <TimelineRow
-            key={label + index}
-            label={label}
-            index={index}
-            activeIndex={activeIndex}
-            row={row}
-            colPaddingClass={colPaddingClass}
-            dateFontClass={dateFontClass}
-            tickWidthClass={tickWidthClass}
-          />
-        ))}
-      </motion.div>
-    </div>
-  )
-}
-
-function TimelineRow({
-  label,
-  index,
-  activeIndex,
-  row,
-  colPaddingClass,
-  dateFontClass,
-  tickWidthClass,
-}: {
-  label: string
-  index: number
-  activeIndex: MotionValue<number>
-  row: number
-  colPaddingClass: string
-  dateFontClass: string
-  tickWidthClass: string
-}) {
-  const distance = useTransform(activeIndex, (i) => Math.abs(i - index))
-  const opacity = useTransform(distance, [0, 1, 2.5], [1, 0.5, 0.15])
-  const textColor = useTransform(distance, [0, 1.2], ["#3d6bfb", "#5b5f6d"])
-  const fontWeight = useTransform(distance, [0, 1], [700, 500])
-
-  return (
-    <motion.div className={`flex items-center justify-end gap-2 ${colPaddingClass}`} style={{ height: row, opacity }}>
-      <motion.span className={`${dateFontClass} tabular-nums whitespace-nowrap`} style={{ color: textColor, fontWeight }}>
-        {label}
-      </motion.span>
-      <span className={`h-px ${tickWidthClass} bg-ran-glass-border-light`} />
-    </motion.div>
-  )
-}
-
-function Indicator({
-  glowScale,
-  coreScale,
-  outer,
-  mid,
-  core,
-}: {
-  glowScale: MotionValue<number>
-  coreScale: MotionValue<number>
-  outer: number
-  mid: number
-  core: number
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { margin: "200px" })
-
-  return (
-    <div ref={ref} className="relative flex shrink-0 items-center justify-center" style={{ width: outer, height: outer }}>
-      <motion.div
-        className="absolute rounded-full bg-ran-primary/25 blur-3xl"
-        style={{ width: outer, height: outer, scale: glowScale }}
-        animate={inView ? { opacity: [0.5, 0.85, 0.5] } : undefined}
-        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div className="absolute rounded-full bg-ran-primary/10 blur-xl" style={{ width: mid, height: mid }} />
-      <motion.div
-        className="absolute flex items-center justify-center rounded-full border border-ran-primary/20 bg-white shadow-[0_0_30px_-6px_var(--color-ran-primary)]"
-        style={{ width: core, height: core, scale: coreScale }}
-      >
-        <ChevronsUp className="h-1/2 w-1/2 text-ran-primary" strokeWidth={2.5} />
-      </motion.div>
     </div>
   )
 }

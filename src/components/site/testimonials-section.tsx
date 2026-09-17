@@ -24,7 +24,7 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "האתר החדש והבוט לאינסטגרם הביאו לנו עלייה של 200% בפניות איכותיות. ממליץ בחום!",
+      "סוכן האינסטגרם ענה ללקוחות שלנו תוך שניות במקום שעות. תוך חודש ראינו עלייה של 200% בפניות איכותיות. ממליץ בחום!",
     name: "קובה אליהו",
     role: "בעלי חנות אונליין",
   },
@@ -40,9 +40,9 @@ export function TestimonialsSection() {
     <section id="testimonials" className="overflow-hidden bg-ran-surface-light py-24">
       <SectionContainer>
         <Reveal className="mb-14 space-y-3 text-center">
-          <p className="text-sm font-semibold tracking-wide text-ran-primary">לקוחות מספרים</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">לקוחות מספרים</p>
           <h2
-            className="font-bold text-ran-text-on-light"
+            className="font-extrabold text-ran-text-on-light"
             style={{ fontSize: "var(--text-h2)", letterSpacing: "-0.015em" }}
           >
             מה שהלקוחות שלנו אומרים
@@ -54,12 +54,12 @@ export function TestimonialsSection() {
         <div className="testimonial-ring">
           {TESTIMONIALS.map((testimonial, index) => (
             <div key={testimonial.name} className="testimonial-tile" style={{ "--i": index } as CSSProperties}>
-              <div className="flex h-full w-full flex-col justify-between rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_16px_40px_-16px_rgba(20,20,26,0.25)]">
+              <div className="flex h-full w-full flex-col justify-between rounded-3xl border border-ran-glass-border-light bg-ran-surface-light-raised p-6 shadow-[0_16px_40px_-16px_rgba(17,17,17,0.25)]">
                 <blockquote className="line-clamp-6 text-sm leading-relaxed text-ran-text-on-light">
                   “{testimonial.quote}”
                 </blockquote>
                 <figcaption className="mt-4 flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ran-primary to-ran-accent text-sm font-bold text-white">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-subtle text-sm font-bold text-ran-text-on-light">
                     {testimonial.name.charAt(0)}
                   </span>
                   <span>

@@ -1,5 +1,7 @@
 import { Navbar } from "@/components/site/navbar";
-import { AutomationSection } from "@/components/site/automation-section";
+import { HeroSection } from "@/components/site/hero-section";
+import { AgentsSection } from "@/components/site/agents-section";
+import { CrmDashboardSection } from "@/components/site/crm-dashboard-section";
 import { MarqueeTape } from "@/components/site/marquee-tape";
 import { FeaturesSection } from "@/components/site/features-section";
 import { ProcessSection } from "@/components/site/process-section";
@@ -8,13 +10,14 @@ import { GrowthTimelineSection } from "@/components/site/growth-timeline-section
 import { TestimonialsSection } from "@/components/site/testimonials-section";
 import { CtaFaqSection } from "@/components/site/cta-faq-section";
 import { Footer } from "@/components/site/footer";
-import { WhatsappFloatButton } from "@/components/site/whatsapp-float-button";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col">
+    <main id="main-content" className="flex min-h-screen flex-col">
       <Navbar />
-      <AutomationSection />
+      <HeroSection />
+      <AgentsSection />
+      <CrmDashboardSection />
       <MarqueeTape />
       <FeaturesSection />
       <ProcessSection />
@@ -23,7 +26,6 @@ export default function Home() {
       <TestimonialsSection />
       <CtaFaqSection />
       <Footer />
-      <WhatsappFloatButton />
     </main>
   );
 }
