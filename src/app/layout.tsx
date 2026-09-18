@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Anton, Geist_Mono, Rubik } from "next/font/google";
+import { CurtainLoader } from "@/components/motion/curtain-loader";
 import { LenisProvider } from "@/components/motion/lenis-provider";
 import "./globals.css";
 
@@ -25,6 +26,16 @@ export const metadata: Metadata = {
     "סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים ללקוחות, מסווגים לידים חמים וקרים וקובעים תורים אוטומטית — הכל בדשבורד CRM אחד",
 };
 
+/* Marks a tab that has already seen the intro curtain, so it plays once per
+   session instead of on every navigation. Deliberately a raw parser-blocking
+   <script> and not `next/script`: its strategies govern when an external file
+   is fetched, and even `beforeInteractive` does not promise to run before the
+   body paints — which is the entire job here. Inline and synchronous, this
+   lands before the curtain markup below is even parsed, so the returning
+   visitor never sees a frame of white. Keep the key in sync with
+   SESSION_KEY in src/components/motion/curtain-loader.tsx. */
+const CURTAIN_SESSION_SCRIPT = `try{if(sessionStorage.getItem("napuch:curtain-seen")==="1"){document.documentElement.dataset.curtain="skip"}}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +48,7 @@ export default function RootLayout({
       className={`${rubik.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: CURTAIN_SESSION_SCRIPT }} />
         {/* Keyboard/screen-reader users otherwise have to tab through the
             entire floating nav pill on every single page before reaching
             real content — this jumps straight to #main-content. Hidden
@@ -48,7 +60,10 @@ export default function RootLayout({
         >
           דלג לתוכן הראשי
         </a>
-        <LenisProvider>{children}</LenisProvider>
+        <LenisProvider>
+          <CurtainLoader />
+          {children}
+        </LenisProvider>
       </body>
     </html>
   );

@@ -495,3 +495,67 @@ body {
     animation: none;
   }
 }
+
+/* ── Intro curtain ────────────────────────────────────────────────────────
+   Two white panels that cover the viewport on load and lift out of frame one
+   after the other, revealing the page underneath — see
+   src/components/motion/curtain-loader.tsx for why the motion is CSS and not
+   `motion/react`.
+
+   The lead panel is the first child, which `dir="rtl"` on <html> places on the
+   right, so the reveal runs right-to-left like everything else on the site. */
+@keyframes curtain-panel-lift {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.curtain-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  /* Never intercept a click. The panels are gone from the viewport within
+     1.3s either way, and refusing pointer events means no failure mode can
+     seal the page off behind them. */
+  pointer-events: none;
+}
+
+.curtain-panel {
+  flex: 1;
+  background: var(--surface-base);
+  will-change: transform;
+  /* `both` holds the covering position through the delay and the lifted one
+     after it, so there is no flash at either end. */
+  animation: curtain-panel-lift 0.85s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+
+/* Half a viewport rarely divides into a whole number of pixels, and the
+   rounding leaves a hairline of page showing down the seam. One pixel of
+   overlap costs nothing — both panels are the same white. */
+.curtain-panel-lead {
+  margin-inline-end: -1px;
+  animation-delay: 0.3s;
+}
+
+.curtain-panel-trail {
+  animation-delay: 0.42s;
+}
+
+/* Set by the inline script in layout.tsx before this markup is parsed, so a
+   repeat visit in the same tab never paints the curtain at all. */
+html[data-curtain="skip"] .curtain-loader {
+  display: none;
+}
+
+/* Lenis is stopped alongside this — the class covers the plain-scroll path
+   (reduced motion, or before Lenis has mounted). */
+.curtain-active {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curtain-loader {
+    display: none;
+  }
+}
