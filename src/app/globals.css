@@ -497,54 +497,102 @@ body {
 }
 
 /* ── Intro curtain ────────────────────────────────────────────────────────
-   Two white panels that cover the viewport on load and lift out of frame one
-   after the other, revealing the page underneath — see
-   src/components/motion/curtain-loader.tsx for why the motion is CSS and not
-   `motion/react`.
+   A black sheet with a rippling liquid edge sweeps in from the right, covers
+   the viewport, then keeps going and leaves the page revealed behind it.
 
-   The lead panel is the first child, which `dir="rtl"` on <html> places on the
-   right, so the reveal runs right-to-left like everything else on the site. */
-@keyframes curtain-panel-lift {
-  to {
-    transform: translateY(-100%);
+   Ported from the "Liquid curtain page preloader" CodePen by richardevcom
+   (https://codepen.io/richardevcom/pen/zYrqzmx, MIT). The two SVG edges, the
+   7.5s wave loop and the 0.75s cubic-bezier(.17,.67,.83,.67) sweep are taken
+   from it verbatim, including the 5px each edge overlaps the sheet by so no
+   seam shows between them.
+
+   What changed is how it is driven. The original swaps .slide-in/.slide-out
+   classes from JS and animates `width` between a right-anchored and a
+   left-anchored position. Here it is one uninterrupted translateX on a
+   single sheet, which starts at first paint rather than waiting for React to
+   hydrate (see curtain-loader.tsx for why that matters), stays on the
+   compositor instead of forcing layout every frame, and loses the anchor
+   swap that jumped the sheet sideways between the two halves. On screen it
+   reads the same: a liquid edge crossing right to left with black behind it.
+
+   ::before faces left, so it leads the sweep in; ::after trails on the right
+   and is the edge you watch leave. */
+@keyframes liquid-curtain-sweep {
+  0% {
+    transform: translateX(calc(100% + 180px));
+    animation-timing-function: cubic-bezier(0.17, 0.67, 0.83, 0.67);
+  }
+  /* 0.75s in: covering. Held to 1.1s, then the same easing carries it off. */
+  40.5% {
+    transform: translateX(0);
+    animation-timing-function: linear;
+  }
+  59.5% {
+    transform: translateX(0);
+    animation-timing-function: cubic-bezier(0.17, 0.67, 0.83, 0.67);
+  }
+  100% {
+    transform: translateX(calc(-100% - 180px));
   }
 }
 
-.curtain-loader {
+/* Scrolls the tiled edge past itself by exactly one tile, so the ripple
+   loops seamlessly. */
+@keyframes liquid-curtain-wave {
+  to {
+    background-position: 0 -1080px;
+  }
+}
+
+.liquid-curtain {
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: flex;
-  /* Never intercept a click. The panels are gone from the viewport within
-     1.3s either way, and refusing pointer events means no failure mode can
-     seal the page off behind them. */
+  /* Clips both edges while the sheet waits off-screen on either side. */
+  overflow: hidden;
+  /* Never intercept a click. The sheet is off-screen within 2s either way,
+     and refusing pointer events means no failure mode can seal the page
+     off behind it. */
   pointer-events: none;
 }
 
-.curtain-panel {
-  flex: 1;
-  background: var(--surface-base);
+.liquid-curtain-sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000000;
   will-change: transform;
-  /* `both` holds the covering position through the delay and the lifted one
-     after it, so there is no flash at either end. */
-  animation: curtain-panel-lift 0.85s cubic-bezier(0.76, 0, 0.24, 1) both;
+  animation: liquid-curtain-sweep 1.85s both;
 }
 
-/* Half a viewport rarely divides into a whole number of pixels, and the
-   rounding leaves a hairline of page showing down the seam. One pixel of
-   overlap costs nothing — both panels are the same white. */
-.curtain-panel-lead {
-  margin-inline-end: -1px;
-  animation-delay: 0.3s;
+.liquid-curtain-sheet::before,
+.liquid-curtain-sheet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-repeat: repeat-y;
+  background-position: 0 0;
+  animation: liquid-curtain-wave 7.5s linear infinite;
 }
 
-.curtain-panel-trail {
-  animation-delay: 0.42s;
+.liquid-curtain-sheet::before {
+  left: -160px;
+  width: 165px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='164.66' height='1080' viewBox='0 0 164.66 1080'%3E%3Ctitle%3EAsset 1%3C/title%3E%3Cpath d='M33.62,1080h131V0h-131A163.35,163.35,0,0,0,20.21,15.76C5.15,36-4,62.18,1.69,86.79,16.36,150.53,114.12,166.52,128.2,230.4c7.94,36-15.13,73.25-8.15,109.45,4.87,25.28,23.59,45.64,32.09,69.94,14,40-1.72,84.84-25.73,119.79s-56,63.86-80.15,98.7-40.32,79.4-26.9,119.63C32.42,787,71.43,816.42,73.84,857.6c1.85,31.71-18.87,65.19-4.74,93.65,14.4,29,66.63,35.73,66.63,68.12C135.73,1045.52,57.55,1053.26,33.62,1080Z' style='fill:%23000000'/%3E%3C/svg%3E");
+}
+
+.liquid-curtain-sheet::after {
+  right: -166px;
+  width: 171px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170.82' height='1080' viewBox='0 0 170.82 1080'%3E%3Ctitle%3EAsset 2%3C/title%3E%3Cpath d='M82.5,951.25c-14.13-28.46,6.59-61.94,4.74-93.65C84.83,816.42,45.82,787,32.76,747.91c-13.42-40.23,2.73-84.8,26.91-119.63s56.13-63.74,80.14-98.7,39.74-79.76,25.73-119.79c-8.5-24.3-27.22-44.66-32.09-69.94-7-36.2,16.1-73.44,8.16-109.45C127.52,166.52,29.76,150.53,15.1,86.79,9.44,62.18,18.56,36,33.61,15.76A163.35,163.35,0,0,1,47,0H0V1080H47c23.93-26.74,102.11-34.48,102.11-60.63C149.13,987,96.9,980.26,82.5,951.25Z' style='fill:%23000000'/%3E%3C/svg%3E");
 }
 
 /* Set by the inline script in layout.tsx before this markup is parsed, so a
    repeat visit in the same tab never paints the curtain at all. */
-html[data-curtain="skip"] .curtain-loader {
+html[data-curtain="skip"] .liquid-curtain {
   display: none;
 }
 
@@ -555,7 +603,7 @@ html[data-curtain="skip"] .curtain-loader {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .curtain-loader {
+  .liquid-curtain {
     display: none;
   }
 }

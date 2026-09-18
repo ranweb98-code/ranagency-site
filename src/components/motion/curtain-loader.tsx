@@ -3,22 +3,23 @@
 import { useEffect, useState } from "react"
 import { useLenis } from "lenis/react"
 
-/* Mirrors the keyframes in globals.css: the trailing panel starts at 0.42s
-   and runs for 0.85s. The extra buffer keeps the element in the DOM until
-   the last frame has painted, so it is never yanked mid-lift. */
-const CURTAIN_TOTAL_MS = 1350
+/* Mirrors the keyframes in globals.css: 0.75s sweeping in, held to 1.1s,
+   0.75s sweeping out. The extra buffer keeps the element in the DOM until
+   the last frame has painted, so it is never yanked mid-sweep. */
+const CURTAIN_TOTAL_MS = 1950
 
 /* Shared with the inline script in src/app/layout.tsx — change both. */
 const SESSION_KEY = "napuch:curtain-seen"
 
 /**
- * The white intro curtain: two panels covering the viewport that lift out of
- * frame and reveal the page underneath.
+ * The intro curtain: a black sheet with a rippling liquid edge that sweeps
+ * across the viewport from right to left and carries on off the far side,
+ * leaving the page revealed behind it.
  *
- * The motion itself lives in CSS (see `.curtain-panel` in globals.css), not
+ * The motion itself lives in CSS (see `.liquid-curtain` in globals.css), not
  * in `motion/react`. This is the first thing every visitor sees, and a
- * JS-driven overlay can only lift once React has hydrated — a slow bundle, a
- * dropped chunk or a runtime error would leave the site sealed behind a white
+ * JS-driven overlay only moves once React has hydrated — a slow bundle, a
+ * dropped chunk or a runtime error would leave the site sealed behind a black
  * screen. Keyframes start at first paint and finish either way; React is left
  * with the parts that genuinely need it.
  */
@@ -53,9 +54,9 @@ export function CurtainLoader() {
        a long way before hydration gets here. Asking the running animation how
        far along it is — rather than counting from this moment — is what keeps
        the scroll lock from being clamped on after the curtain has already
-       lifted, and survives this effect re-running when `useLenis` resolves. */
+       swept off, and survives this effect re-running when `useLenis` resolves. */
     const elapsed = document
-      .querySelector(".curtain-panel-trail")
+      .querySelector(".liquid-curtain-sheet")
       ?.getAnimations()[0]?.currentTime
     const remaining = Math.max(
       0,
@@ -79,9 +80,8 @@ export function CurtainLoader() {
   if (isLifted) return null
 
   return (
-    <div className="curtain-loader" aria-hidden="true">
-      <div className="curtain-panel curtain-panel-lead" />
-      <div className="curtain-panel curtain-panel-trail" />
+    <div className="liquid-curtain" aria-hidden="true">
+      <div className="liquid-curtain-sheet" />
     </div>
   )
 }
