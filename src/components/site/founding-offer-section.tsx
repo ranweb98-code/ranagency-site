@@ -1,5 +1,6 @@
 import { Check } from "lucide-react"
 
+import { ChannelChoice } from "@/components/site/channel-choice"
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal"
 import { SectionContainer } from "@/components/site/section-container"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,9 @@ interface Plan {
   setupList: string
   includes: string[]
   featured?: boolean
+  /* The single-channel package runs on either channel, so the card offers the
+     choice instead of naming one and leaving the other buyer guessing. */
+  choosable?: boolean
 }
 
 const PLANS: Plan[] = [
@@ -29,8 +33,9 @@ const PLANS: Plan[] = [
     channels: "סוכן וואטסאפ",
     monthly: "540",
     monthlyList: "690",
-    setup: "3,400",
-    setupList: "4,900",
+    setup: "2,900",
+    setupList: "3,900",
+    choosable: true,
     includes: [
       "מענה תוך שניות, 24/7",
       "עברית טבעית, לא תשובות רובוטיות",
@@ -43,8 +48,8 @@ const PLANS: Plan[] = [
     channels: "וואטסאפ + אינסטגרם",
     monthly: "890",
     monthlyList: "1,190",
-    setup: "5,900",
-    setupList: "8,900",
+    setup: "4,900",
+    setupList: "6,900",
     featured: true,
     includes: [
       "כל מה שבחבילת ערוץ אחד",
@@ -59,8 +64,8 @@ const PLANS: Plan[] = [
     channels: "+ סוכן טלפוני",
     monthly: "1,490",
     monthlyList: "1,990",
-    setup: "9,900",
-    setupList: "13,900",
+    setup: "6,900",
+    setupList: "9,900",
     includes: [
       "כל מה שבחבילת שני הערוצים",
       "סוכן קולי שעונה לשיחות נכנסות",
@@ -127,7 +132,11 @@ export function FoundingOfferSection() {
                     : "border-ran-glass-border-light bg-ran-surface-light-raised"
                 )}
               >
-                <div className="flex items-start justify-between gap-3">
+                {/* The channel toggle stands taller than the one-line subtitle
+                    the other two cards carry, which drops this card's price
+                    block below theirs. Holding the header to the taller of the
+                    two keeps all three price rows on one line. */}
+                <div className="flex min-h-[66px] items-start justify-between gap-3">
                   <div>
                     <h3
                       className={cn(
@@ -137,16 +146,20 @@ export function FoundingOfferSection() {
                     >
                       {plan.name}
                     </h3>
-                    <p
-                      className={cn(
-                        "mt-1 text-sm",
-                        plan.featured
-                          ? "text-ran-text-on-dark-muted"
-                          : "text-ran-text-on-light-muted"
-                      )}
-                    >
-                      {plan.channels}
-                    </p>
+                    {plan.choosable ? (
+                      <ChannelChoice />
+                    ) : (
+                      <p
+                        className={cn(
+                          "mt-1 text-sm",
+                          plan.featured
+                            ? "text-ran-text-on-dark-muted"
+                            : "text-ran-text-on-light-muted"
+                        )}
+                      >
+                        {plan.channels}
+                      </p>
+                    )}
                   </div>
 
                   {plan.featured ? (
@@ -276,7 +289,7 @@ export function FoundingOfferSection() {
           </MagneticButton>
 
           <p className="text-center text-xs text-ran-text-on-light-muted">
-            כל המחירים לפני מע״מ · מחיר המייסדים נעול ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
+            כל המחירים לפני מע״מ · מחיר המייסדים מותנה בהתחייבות ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
           </p>
         </Reveal>
       </SectionContainer>
