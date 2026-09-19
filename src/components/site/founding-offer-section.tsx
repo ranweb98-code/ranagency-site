@@ -1,127 +1,283 @@
-import { Reveal } from "@/components/motion/reveal"
+import { Check } from "lucide-react"
+
+import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal"
 import { SectionContainer } from "@/components/site/section-container"
 import { Button } from "@/components/ui/button"
 import { MagneticButton } from "@/components/ui/magnetic-button"
+import { cn } from "@/lib/utils"
 
 /* The one number to change when a seat goes. It is a claim about real
-   availability, not decoration — a counter that never moves, or moves on its
-   own, is worse than no counter at all. */
+   availability, not decoration — a counter that never moves, or one that
+   moves on its own, is worse than no counter at all. */
 const SPOTS_TAKEN = 6
 const SPOTS_TOTAL = 10
 
+interface Plan {
+  name: string
+  channels: string
+  monthly: string
+  monthlyList: string
+  setup: string
+  setupList: string
+  includes: string[]
+  featured?: boolean
+}
+
+const PLANS: Plan[] = [
+  {
+    name: "ערוץ אחד",
+    channels: "סוכן וואטסאפ",
+    monthly: "540",
+    monthlyList: "690",
+    setup: "3,400",
+    setupList: "4,900",
+    includes: [
+      "מענה תוך שניות, 24/7",
+      "עברית טבעית, לא תשובות רובוטיות",
+      "איסוף פרטי לידים אוטומטי",
+      "העברה אליכם כששאלה חורגת",
+    ],
+  },
+  {
+    name: "שני ערוצים + CRM",
+    channels: "וואטסאפ + אינסטגרם",
+    monthly: "890",
+    monthlyList: "1,190",
+    setup: "5,900",
+    setupList: "8,900",
+    featured: true,
+    includes: [
+      "כל מה שבחבילת ערוץ אחד",
+      "סוכן אינסטגרם להודעות פרטיות",
+      "דשבורד CRM אחד לכל הערוצים",
+      "סיווג ליד חם/קר וסיכום שיחה",
+      "קביעת תורים אוטומטית ביומן",
+    ],
+  },
+  {
+    name: "שלושה ערוצים",
+    channels: "+ סוכן טלפוני",
+    monthly: "1,490",
+    monthlyList: "1,990",
+    setup: "9,900",
+    setupList: "13,900",
+    includes: [
+      "כל מה שבחבילת שני הערוצים",
+      "סוכן קולי שעונה לשיחות נכנסות",
+      "500 דקות שיחה בחודש כלולות",
+      "מעבר למכסה — ₪0.90 לדקה",
+    ],
+  },
+]
+
 export function FoundingOfferSection() {
   const spotsLeft = SPOTS_TOTAL - SPOTS_TAKEN
+  const filledPercent = (SPOTS_TAKEN / SPOTS_TOTAL) * 100
 
   return (
-    <section
-      id="founding"
-      className="relative overflow-hidden bg-ran-surface-dark py-24 text-ran-text-on-dark"
-    >
-      <SectionContainer className="flex flex-col items-center text-center">
-        <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-dark-muted">
+    <section id="founding" className="bg-ran-surface-light py-20 md:py-24">
+      <SectionContainer>
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">
             מחיר מייסדים
           </p>
-        </Reveal>
-
-        <Reveal delay={0.05}>
           <h2
-            className="mt-5 font-extrabold text-ran-text-on-dark"
+            className="mt-4 font-extrabold text-ran-text-on-light"
             style={{ fontSize: "var(--text-h2)", letterSpacing: "-0.025em" }}
           >
-            נותרו {spotsLeft} מקומות
+            נותרו {spotsLeft} מקומות מתוך {SPOTS_TOTAL}
           </h2>
-        </Reveal>
-
-        <Reveal delay={0.1}>
           <p
-            className="mt-4 max-w-2xl text-ran-text-on-dark-muted"
+            className="mt-4 text-ran-text-on-light-muted"
             style={{ fontSize: "var(--text-body-lg)", lineHeight: 1.6 }}
           >
-            עשרת העסקים הראשונים שעולים לאוויר נכנסים במחיר מייסדים, נעול לשנה שלמה.
-            בתמורה נבקש מכם משוב כן ורשות לספר את הסיפור שלכם.
+            העסקים הראשונים שעולים לאוויר נכנסים במחיר מייסדים, נעול ל-12 חודשים.
           </p>
         </Reveal>
 
-        <Reveal delay={0.15} className="mt-12 w-full max-w-2xl">
+        {/* ── the meter ───────────────────────────────────────────── */}
+        <Reveal delay={0.1} className="mx-auto mt-10 max-w-3xl">
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="text-sm font-bold text-ran-text-on-light">
+              {SPOTS_TAKEN} מתוך {SPOTS_TOTAL} מקומות נתפסו
+            </span>
+            <span className="text-sm font-semibold text-ran-text-on-light-muted">
+              נותרו {spotsLeft}
+            </span>
+          </div>
+
           <div
-            className="founding-meter"
+            className="founding-track"
             role="img"
             aria-label={`${SPOTS_TAKEN} מתוך ${SPOTS_TOTAL} מקומות נתפסו`}
           >
-            {Array.from({ length: SPOTS_TOTAL }, (_, index) => {
-              const taken = index < SPOTS_TAKEN
-              const isEdge = index === SPOTS_TAKEN - 1
-
-              return (
-                <span
-                  key={index}
-                  className={[
-                    "founding-spot",
-                    taken ? "founding-spot-taken" : "",
-                    isEdge ? "founding-spot-edge" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
-              )
-            })}
+            <div className="founding-fill" style={{ width: `${filledPercent}%` }} />
           </div>
-
-          <p className="mt-4 text-sm font-semibold text-ran-text-on-dark-muted">
-            {SPOTS_TAKEN} מתוך {SPOTS_TOTAL} מקומות נתפסו
-          </p>
         </Reveal>
 
-        <Reveal delay={0.2} className="mt-12 w-full max-w-xl">
-          <div className="rounded-3xl border border-ran-glass-border-dark bg-ran-surface-dark-raised p-8 text-right md:p-10">
-            <p className="text-sm font-semibold text-ran-text-on-dark-muted">
-              סוכן וואטסאפ + סוכן אינסטגרם + דשבורד CRM
-            </p>
+        {/* ── the price list ──────────────────────────────────────── */}
+        <RevealGroup className="mt-14 grid gap-5 md:grid-cols-3" stagger={0.1}>
+          {PLANS.map((plan) => (
+            <RevealItem key={plan.name} className="h-full">
+              <div
+                className={cn(
+                  "flex h-full flex-col rounded-3xl border p-6 text-right",
+                  plan.featured
+                    ? "border-ran-text-on-light bg-ran-surface-dark text-ran-text-on-dark"
+                    : "border-ran-glass-border-light bg-ran-surface-light-raised"
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3
+                      className={cn(
+                        "text-lg font-bold",
+                        plan.featured ? "text-ran-text-on-dark" : "text-ran-text-on-light"
+                      )}
+                    >
+                      {plan.name}
+                    </h3>
+                    <p
+                      className={cn(
+                        "mt-1 text-sm",
+                        plan.featured
+                          ? "text-ran-text-on-dark-muted"
+                          : "text-ran-text-on-light-muted"
+                      )}
+                    >
+                      {plan.channels}
+                    </p>
+                  </div>
 
-            <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-extrabold leading-none text-ran-text-on-dark">
-                    ₪890
-                  </span>
-                  <span className="text-sm text-ran-text-on-dark-muted">לחודש</span>
+                  {plan.featured ? (
+                    <span className="shrink-0 rounded-full bg-ran-text-on-dark px-3 py-1 text-xs font-bold text-ran-surface-dark">
+                      הנבחרת
+                    </span>
+                  ) : null}
                 </div>
-                <p className="mt-2 text-sm text-ran-text-on-dark-muted">
-                  במקום <s>₪1,190</s>
-                </p>
-              </div>
 
-              <div className="text-right">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold leading-none text-ran-text-on-dark">
-                    ₪5,900
-                  </span>
-                  <span className="text-sm text-ran-text-on-dark-muted">הקמה</span>
-                </div>
-                <p className="mt-2 text-sm text-ran-text-on-dark-muted">
-                  במקום <s>₪8,900</s>
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8 border-t border-ran-glass-border-dark pt-7">
-              <MagneticButton>
-                <Button
-                  size="lg"
-                  className="w-full rounded-full bg-ran-text-on-dark px-9 text-ran-surface-dark hover:bg-white"
-                  render={<a href="#contact" />}
-                  nativeButton={false}
+                <div
+                  className={cn(
+                    "mt-6 border-t pt-5",
+                    plan.featured ? "border-ran-glass-border-dark" : "border-ran-glass-border-light"
+                  )}
                 >
-                  לתפוס מקום
-                </Button>
-              </MagneticButton>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={cn(
+                        "text-4xl font-extrabold leading-none",
+                        plan.featured ? "text-ran-text-on-dark" : "text-ran-text-on-light"
+                      )}
+                    >
+                      {plan.monthly}₪
+                    </span>
+                    <span
+                      className={cn(
+                        "text-sm",
+                        plan.featured
+                          ? "text-ran-text-on-dark-muted"
+                          : "text-ran-text-on-light-muted"
+                      )}
+                    >
+                      לחודש
+                    </span>
+                  </div>
 
-              <p className="mt-4 text-center text-xs text-ran-text-on-dark-muted">
-                המחיר נעול ל-12 חודשים · המחירים אינם כוללים מע״מ
-              </p>
-            </div>
-          </div>
+                  <p
+                    className={cn(
+                      "mt-2 text-sm",
+                      plan.featured
+                        ? "text-ran-text-on-dark-muted"
+                        : "text-ran-text-on-light-muted"
+                    )}
+                  >
+                    במקום <s>{plan.monthlyList}₪</s>
+                  </p>
+
+                  {/* Setup gets its own labelled row. Run together with the
+                      monthly price on one line, the two "was" figures sit
+                      next to two current ones and bidi reordering leaves the
+                      reader guessing which struck number belongs to which. */}
+                  <div className="mt-4 flex items-baseline justify-between gap-3 text-sm">
+                    <span
+                      className={
+                        plan.featured
+                          ? "text-ran-text-on-dark-muted"
+                          : "text-ran-text-on-light-muted"
+                      }
+                    >
+                      הקמה חד-פעמית
+                    </span>
+                    <span>
+                      <span
+                        className={cn(
+                          "font-bold",
+                          plan.featured ? "text-ran-text-on-dark" : "text-ran-text-on-light"
+                        )}
+                      >
+                        {plan.setup}₪
+                      </span>{" "}
+                      <s
+                        className={
+                          plan.featured
+                            ? "text-ran-text-on-dark-muted"
+                            : "text-ran-text-on-light-muted"
+                        }
+                      >
+                        {plan.setupList}₪
+                      </s>
+                    </span>
+                  </div>
+                </div>
+
+                <ul
+                  className={cn(
+                    "mt-6 space-y-2.5 border-t pt-5",
+                    plan.featured ? "border-ran-glass-border-dark" : "border-ran-glass-border-light"
+                  )}
+                >
+                  {plan.includes.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5">
+                      <Check
+                        className={cn(
+                          "mt-0.5 size-4 shrink-0",
+                          plan.featured ? "text-ran-text-on-dark" : "text-ran-text-on-light"
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span
+                        className={cn(
+                          "text-sm",
+                          plan.featured
+                            ? "text-ran-text-on-dark-muted"
+                            : "text-ran-text-on-light-muted"
+                        )}
+                      >
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </RevealItem>
+          ))}
+        </RevealGroup>
+
+        <Reveal delay={0.1} className="mt-10 flex flex-col items-center gap-4">
+          <MagneticButton>
+            <Button
+              size="lg"
+              className="cta-glow rounded-full bg-ran-text-on-light px-9 text-white"
+              render={<a href="#contact" />}
+              nativeButton={false}
+            >
+              לתפוס מקום
+            </Button>
+          </MagneticButton>
+
+          <p className="text-center text-xs text-ran-text-on-light-muted">
+            כל המחירים לפני מע״מ · מחיר המייסדים נעול ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
+          </p>
         </Reveal>
       </SectionContainer>
     </section>
