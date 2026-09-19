@@ -1,6 +1,9 @@
-import { Check } from "lucide-react"
+"use client"
 
-import { ChannelChoice } from "@/components/site/channel-choice"
+import { Check } from "lucide-react"
+import { useState } from "react"
+
+import { ChannelChoice, type ChannelId } from "@/components/site/channel-choice"
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal"
 import { SectionContainer } from "@/components/site/section-container"
 import { Button } from "@/components/ui/button"
@@ -27,21 +30,48 @@ interface Plan {
   choosable?: boolean
 }
 
-const PLANS: Plan[] = [
-  {
-    name: "ערוץ אחד",
+/* WhatsApp carries costs Instagram does not, so the toggle moves the price
+   rather than only the label. Replying inside the 24-hour window is free on
+   both — what WhatsApp adds is the provider's monthly platform fee and the
+   per-message charge on proactive templates, which is exactly what the
+   day-before appointment reminder is. Roughly ₪90 a month of real cost, and
+   the gap below is set against it. */
+const SINGLE_CHANNEL: Record<ChannelId, Omit<Plan, "name" | "featured" | "choosable">> = {
+  whatsapp: {
     channels: "סוכן וואטסאפ",
     monthly: "540",
     monthlyList: "690",
     setup: "2,900",
     setupList: "3,900",
-    choosable: true,
     includes: [
       "מענה תוך שניות, 24/7",
       "עברית טבעית, לא תשובות רובוטיות",
       "איסוף פרטי לידים אוטומטי",
+      "תזכורת תור יזומה יום לפני",
       "העברה אליכם כששאלה חורגת",
     ],
+  },
+  instagram: {
+    channels: "סוכן אינסטגרם",
+    monthly: "440",
+    monthlyList: "590",
+    setup: "2,400",
+    setupList: "3,400",
+    includes: [
+      "מענה תוך שניות, 24/7",
+      "עברית טבעית, לא תשובות רובוטיות",
+      "איסוף פרטי לידים אוטומטי",
+      "מענה להודעות פרטיות ולתגובות",
+      "העברה אליכם כששאלה חורגת",
+    ],
+  },
+}
+
+const PLANS: Plan[] = [
+  {
+    name: "ערוץ אחד",
+    choosable: true,
+    ...SINGLE_CHANNEL.whatsapp,
   },
   {
     name: "שני ערוצים + CRM",
@@ -76,6 +106,7 @@ const PLANS: Plan[] = [
 ]
 
 export function FoundingOfferSection() {
+  const [channel, setChannel] = useState<ChannelId>("whatsapp")
   const spotsLeft = SPOTS_TOTAL - SPOTS_TAKEN
   const filledPercent = (SPOTS_TAKEN / SPOTS_TOTAL) * 100
 
@@ -122,8 +153,15 @@ export function FoundingOfferSection() {
 
         {/* ── the price list ──────────────────────────────────────── */}
         <RevealGroup className="mt-14 grid gap-5 md:grid-cols-3" stagger={0.1}>
-          {PLANS.map((plan) => (
-            <RevealItem key={plan.name} className="h-full">
+          {PLANS.map((basePlan) => {
+            /* The choosable card takes its prices and its list from whichever
+               channel is selected; the other two are fixed. */
+            const plan = basePlan.choosable
+              ? { ...basePlan, ...SINGLE_CHANNEL[channel] }
+              : basePlan
+
+            return (
+            <RevealItem key={basePlan.name} className="h-full">
               <div
                 className={cn(
                   "flex h-full flex-col rounded-3xl border p-6 text-right",
@@ -147,7 +185,7 @@ export function FoundingOfferSection() {
                       {plan.name}
                     </h3>
                     {plan.choosable ? (
-                      <ChannelChoice />
+                      <ChannelChoice value={channel} onChange={setChannel} />
                     ) : (
                       <p
                         className={cn(
@@ -273,7 +311,8 @@ export function FoundingOfferSection() {
                 </ul>
               </div>
             </RevealItem>
-          ))}
+            )
+          })}
         </RevealGroup>
 
         <Reveal delay={0.1} className="mt-10 flex flex-col items-center gap-4">
