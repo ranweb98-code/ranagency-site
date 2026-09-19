@@ -8,6 +8,7 @@ import { ProcessSection } from "@/components/site/process-section";
 import { UseCasesSection } from "@/components/site/use-cases-section";
 import { GrowthTimelineSection } from "@/components/site/growth-timeline-section";
 import { TestimonialsSection } from "@/components/site/testimonials-section";
+import { FoundingOfferSection } from "@/components/site/founding-offer-section";
 import { CtaFaqSection } from "@/components/site/cta-faq-section";
 import { Footer } from "@/components/site/footer";
 
@@ -24,6 +25,7 @@ export default function Home() {
       <UseCasesSection />
       <GrowthTimelineSection />
       <TestimonialsSection />
+      <FoundingOfferSection />
       <CtaFaqSection />
       <Footer />
     </main>

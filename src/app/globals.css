@@ -607,3 +607,78 @@ html[data-curtain="skip"] .liquid-curtain {
     display: none;
   }
 }
+
+/* ── Founding-offer meter ─────────────────────────────────────────────────
+   Ten segments, one per seat — see src/components/site/founding-offer-section.tsx.
+   The taken ones are filled light and carry a current that never stops: a 45°
+   stripe tile scrolled by exactly its own width, so the loop has no seam and
+   reads as flow rather than as a repeating animation. It runs toward the empty
+   seats, which is leftward on an RTL page.
+
+   Colours are the on-dark pair from the palette (#f7f7f6 ink, 14% white
+   border) written out here because `@theme inline` folds those tokens into
+   utilities rather than emitting them as custom properties. */
+@keyframes founding-current {
+  to {
+    background-position: -16px 0;
+  }
+}
+
+/* One pulse per seat taken, marking where the meter has reached. */
+@keyframes founding-edge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(247, 247, 246, 0.4);
+  }
+  55% {
+    box-shadow: 0 0 0 6px rgba(247, 247, 246, 0);
+  }
+}
+
+.founding-meter {
+  display: flex;
+  gap: 7px;
+}
+
+.founding-spot {
+  flex: 1;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.founding-spot-taken {
+  border-color: transparent;
+  background-color: #f7f7f6;
+  /* The classic four-stop 45° tile: shifting it by one full 16px tile lands
+     the pattern exactly back on itself. Kept faint — the segment has to still
+     read as white against the black section; any heavier and the meter greys
+     out and stops carrying across the room. A tile smaller than the segment
+     is short also keeps every segment on the same phase, so none of them
+     looks darker than its neighbour. */
+  background-image: linear-gradient(
+    45deg,
+    rgba(17, 17, 17, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(17, 17, 17, 0.1) 50%,
+    rgba(17, 17, 17, 0.1) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+  animation: founding-current 0.95s linear infinite;
+}
+
+.founding-spot-edge {
+  animation:
+    founding-current 0.95s linear infinite,
+    founding-edge-pulse 2.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .founding-spot-taken,
+  .founding-spot-edge {
+    animation: none;
+  }
+}
