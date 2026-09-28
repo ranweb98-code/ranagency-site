@@ -147,8 +147,8 @@ const SECTIONS: Section[] = [
         </ul>
         <p>
           כדי לממש כל אחת מהזכויות הללו, פשוט צרו קשר איתנו בכתובת{" "}
-          <a href="mailto:hello@ranagency.co.il" className="font-semibold underline underline-offset-2">
-            hello@ranagency.co.il
+          <a href="mailto:hello@napuch.co.il" className="font-semibold underline underline-offset-2">
+            hello@napuch.co.il
           </a>{" "}
           או בוואטסאפ, ונטפל בבקשה תוך זמן סביר. אם את/ה סבור/ה שזכותך לפרטיות נפגעה, ניתן גם
           לפנות ישירות לרשות להגנת הפרטיות.
@@ -171,8 +171,8 @@ const SECTIONS: Section[] = [
     body: (
       <p>
         לכל שאלה בנוגע למדיניות זו או לאופן שבו אנו מטפלים בפרטים שלך, ניתן לפנות אלינו בכתובת{" "}
-        <a href="mailto:hello@ranagency.co.il" className="font-semibold underline underline-offset-2">
-          hello@ranagency.co.il
+        <a href="mailto:hello@napuch.co.il" className="font-semibold underline underline-offset-2">
+          hello@napuch.co.il
         </a>{" "}
         או דרך{" "}
         <a

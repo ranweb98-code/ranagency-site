@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useLenis } from "lenis/react"
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react"
 
 import { Logo } from "@/components/site/logo"
@@ -27,6 +29,22 @@ export function Navbar() {
   const { scrollY } = useScroll()
   const lastY = useRef(0)
   const pillRef = useRef<HTMLDivElement>(null)
+  const pathname = usePathname()
+  const lenis = useLenis()
+
+  // On the homepage, <Link href="/"> is a no-op — you are already there, so
+  // the click does nothing and the logo looks broken. Take the scroll back
+  // to the top by hand instead. Through Lenis when it is running, since a
+  // native scrollTo fights its smooth-scroll loop; window.scrollTo is the
+  // fallback for the reduced-motion case, where LenisProvider renders no
+  // Lenis instance at all.
+  const handleLogoClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (pathname !== "/") return
+    event.preventDefault()
+    setIsOpen(false)
+    if (lenis) lenis.scrollTo(0)
+    else window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = lastY.current
@@ -75,6 +93,7 @@ export function Navbar() {
           <div className="flex items-center gap-1">
             <Link
               href="/"
+              onClick={handleLogoClick}
               aria-label="נפוץ' — לראש הדף"
               className="flex items-center rounded-full px-3 py-2"
             >

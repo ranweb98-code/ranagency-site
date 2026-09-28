@@ -14,10 +14,14 @@ const PAGE_LINKS = [
   { href: "/#faq", label: "שאלות נפוצות" },
 ]
 
+// No Facebook entry: there is no page to point at yet, and a link to the
+// bare facebook.com homepage is worse than no link at all.
 const SOCIAL_LINKS = [
   { href: "https://wa.me/972503610061", label: "וואטסאפ" },
-  { href: "https://instagram.com", label: "אינסטגרם" },
-  { href: "https://facebook.com", label: "פייסבוק" },
+  {
+    href: "https://www.instagram.com/napuchai?stkn=MXhhNnRrM3U4aXFlMA%3D%3D&utm_source=qr",
+    label: "אינסטגרם",
+  },
 ]
 
 export function Footer() {
@@ -66,7 +70,10 @@ export function Footer() {
       </SectionContainer>
 
       <SectionContainer className="relative mt-10 flex flex-col-reverse gap-4 border-t border-ran-glass-border-dark pt-6 text-xs text-ran-text-on-dark-muted sm:flex-row sm:items-center sm:justify-between">
-        <p>© 2026 נפוץ&apos;. כל הזכויות שמורות.</p>
+        <div className="space-y-1">
+          <p>© 2026 נפוץ&apos;. כל הזכויות שמורות.</p>
+          <p>רן יוסף חיים אלגבסי · עוסק פטור 217369388</p>
+        </div>
         <div className="flex gap-4">
           <Link href="/privacy" className="hover:text-ran-text-on-dark">
             מדיניות פרטיות

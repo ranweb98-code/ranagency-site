@@ -131,8 +131,8 @@ const SECTIONS: Section[] = [
     body: (
       <p>
         לכל שאלה בנוגע לתנאי שימוש אלה, ניתן לפנות אלינו בכתובת{" "}
-        <a href="mailto:hello@ranagency.co.il" className="font-semibold underline underline-offset-2">
-          hello@ranagency.co.il
+        <a href="mailto:hello@napuch.co.il" className="font-semibold underline underline-offset-2">
+          hello@napuch.co.il
         </a>{" "}
         או דרך{" "}
         <a

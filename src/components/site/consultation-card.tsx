@@ -188,7 +188,7 @@ export function ConsultationCard() {
               <Button
                 variant="outline"
                 className="gap-2 rounded-full border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light hover:bg-ran-surface-light-raised"
-                render={<a href="mailto:hello@ranagency.co.il" />}
+                render={<a href="mailto:hello@napuch.co.il" />}
                 nativeButton={false}
               >
                 <Mail className="h-4 w-4" />

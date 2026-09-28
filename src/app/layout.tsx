@@ -20,10 +20,34 @@ const anton = Anton({
   weight: "400",
 });
 
+const SITE_URL = "https://napuch.co.il";
+const SITE_TITLE = "נפוץ' — סוכני AI לוואטסאפ, אינסטגרם וטלפון";
+const SITE_DESCRIPTION =
+  "סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים ללקוחות, מסווגים לידים חמים וקרים וקובעים תורים אוטומטית — הכל בדשבורד CRM אחד";
+
+// The share card itself is src/app/opengraph-image.jpg (and its twitter
+// twin), picked up by Next's file convention — which is also what fills in
+// the image dimensions and type. metadataBase is what turns that into the
+// absolute URL every scraper requires; without it Next falls back to the
+// deployment's own vercel.app host, so a link shared from the custom domain
+// would advertise an image on a different one.
 export const metadata: Metadata = {
-  title: "נפוץ' — סוכני AI לוואטסאפ, אינסטגרם וטלפון",
-  description:
-    "סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים ללקוחות, מסווגים לידים חמים וקרים וקובעים תורים אוטומטית — הכל בדשבורד CRM אחד",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "נפוץ'",
+    locale: "he_IL",
+    url: SITE_URL,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 /* Marks a tab that has already seen the intro curtain, so it plays once per

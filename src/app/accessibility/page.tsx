@@ -63,8 +63,8 @@ const SECTIONS: Section[] = [
     body: (
       <p>
         נתקלת בבעיית נגישות באתר, או שיש לך הצעה לשיפור? נשמח שתפנה/י אלינו בכתובת{" "}
-        <a href="mailto:hello@ranagency.co.il" className="font-semibold underline underline-offset-2">
-          hello@ranagency.co.il
+        <a href="mailto:hello@napuch.co.il" className="font-semibold underline underline-offset-2">
+          hello@napuch.co.il
         </a>{" "}
         או דרך{" "}
         <a
