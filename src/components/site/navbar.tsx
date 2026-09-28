@@ -81,7 +81,7 @@ export function Navbar() {
         <div
           ref={pillRef}
           onPointerMove={handlePointerMove}
-          className="nav-pill flex h-[60px] items-center justify-between gap-3 rounded-full px-3 md:px-4"
+          className="nav-pill relative flex h-[60px] items-center justify-between gap-3 rounded-full px-3 md:px-4"
           style={{
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
@@ -160,7 +160,7 @@ export function Navbar() {
                 WebkitBackdropFilter: "blur(20px) saturate(180%)",
                 transformOrigin: "top center",
               }}
-              className="nav-pill absolute inset-x-0 top-[calc(100%+10px)] flex flex-col gap-1 rounded-[28px] p-3 md:hidden"
+              className="nav-pill absolute inset-x-0 top-[calc(100%+18px)] flex flex-col gap-1 rounded-[28px] p-3 md:hidden"
             >
               {NAV_LINKS.map((link) => (
                 <Link

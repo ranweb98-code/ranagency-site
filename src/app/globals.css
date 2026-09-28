@@ -357,8 +357,13 @@ body {
    inside the border, on top of the frosted background — the same highlight/
    caustic pairing that makes glass read as glass, tuned down from the
    saturated reference for a white monochrome page. */
+/* No `position` here on purpose. This class dresses two different elements —
+   the pill and the mobile sheet that hangs off it — and the sheet needs to be
+   absolute. An unlayered rule like this one outranks Tailwind's layered
+   `absolute` utility, so setting position here silently pinned the sheet into
+   normal flow and killed its `top` offset. The pill carries `relative` as a
+   utility instead, for its own .nav-pill-glare child. */
 .nav-pill {
-  position: relative;
   background: var(--nav-bg-scrolled);
   border: 1px solid var(--nav-border);
   box-shadow:
