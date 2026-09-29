@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Remotion ad project has its own package and toolchain.
+    "video/**",
   ]),
 ]);
 
