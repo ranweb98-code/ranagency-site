@@ -1,7 +1,9 @@
+import type React from "react"
 import { AbsoluteFill, Sequence, useCurrentFrame } from "remotion"
 import { Grain } from "./components/Grain"
 import { LockScreenStory } from "./components/LockScreenStory"
 import { SafeZones } from "./components/SafeZones"
+import { CUES, SoundTrack } from "./SoundTrack"
 import { FONT_STACK } from "./fonts"
 import { Agents } from "./scenes/Agents"
 import { BrandLine } from "./scenes/BrandLine"
@@ -12,16 +14,28 @@ import { NIGHT } from "./theme"
 
 export type AdProps = { safeZones: boolean }
 
-function Night() {
-  return <LockScreenStory f={useCurrentFrame()} />
+function Night({ headlines }: { headlines: boolean }) {
+  return <LockScreenStory f={useCurrentFrame()} headlines={headlines} />
 }
 
-/** The 30s master, beat for beat as in video/STORYBOARD.md. */
-export function Ad30({ safeZones }: AdProps) {
+/** Page chrome shared by every cut: RTL, the brand's fonts, the review overlay. */
+export function AdFrame({ safeZones, children }: AdProps & { children: React.ReactNode }) {
   return (
     <AbsoluteFill style={{ direction: "rtl", fontFamily: FONT_STACK, background: NIGHT }}>
+      {children}
+      {safeZones && <SafeZones />}
+    </AbsoluteFill>
+  )
+}
+
+/** The master's picture, beat for beat as in video/STORYBOARD.md.
+ *  `hookHeadline` off hides the opening line, for a cut that leaves the
+ *  night before the line has finished rising. */
+export function MasterPicture({ hookHeadline = true }: { hookHeadline?: boolean }) {
+  return (
+    <>
       <Sequence from={0} durationInFrames={210} name="1–2 · הוק וההפסד">
-        <Night />
+        <Night headlines={hookHeadline} />
       </Sequence>
       <Sequence from={210} durationInFrames={60} name="3 · אחורה">
         <Rewind />
@@ -39,7 +53,16 @@ export function Ad30({ safeZones }: AdProps) {
         <Close />
       </Sequence>
       <Grain id="film-grain" opacity={0.06} />
-      {safeZones && <SafeZones />}
-    </AbsoluteFill>
+    </>
+  )
+}
+
+/** The 30s master. */
+export function Ad30({ safeZones }: AdProps) {
+  return (
+    <AdFrame safeZones={safeZones}>
+      <MasterPicture />
+      <SoundTrack cues={CUES} />
+    </AdFrame>
   )
 }
