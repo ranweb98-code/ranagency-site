@@ -296,6 +296,14 @@ def build_desk():
     # The white curtain crossing the night: one long, airy sweep.
     single(kit, "sweep", mix(whoosh(r, 0.8, 300, 7000, 0.8, 1.0), 0.3 * whoosh(r, 0.8, 150, 1200, 0.7, 1.0)), -5)
 
+    # Under the CRM: a bright, quiet room, so the white screens are never dead air.
+    d = 10.0
+    bed = filt(noise(r, d), "bp", (2500, 9000)) * 0.35 + filt(noise(r, d), "lp", 220) * 0.65
+    bed *= 1 + 0.12 * np.sin(2 * math.pi * 0.21 * t(d))
+    bed[: n_of(0.3)] *= np.linspace(0, 1, n_of(0.3))
+    bed[-n_of(0.4):] *= np.linspace(1, 0, n_of(0.4))
+    single(kit, "crmbed", bed, -28)
+
     # The summary typing itself: small, dry keys.
     def type_key(rng, k):
         c = filt(noise(rng, 0.025), "bp", (2500 + rng.uniform(-400, 800), 8000)) * env(n_of(0.025), 0.0002, 0.002 + rng.uniform(0, 0.0015))
