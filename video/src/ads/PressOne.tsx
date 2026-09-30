@@ -34,11 +34,12 @@ const MSG = { c1: 252, typing1: 284, a1: 318, c2: 380, typing2: 402, a2: 430, ch
 const COMPARE = 546
 const WIPE_OLD = 574
 const SAY = [600, 630]
-const END = 750
-export const PRESS_ONE_FRAMES = 900
+const END = 690
+export const PRESS_ONE_FRAMES = 840
 
 const MENU = ["שלום, הגעתם לשירות.", "לבירורים הקישו 1", "למחירים הקישו 2", "לנציג הישארו על הקו"]
-const FIRST = [8, 30, 50, 68] // the first pass, typed at 1.6 characters a frame
+// The first line is already typing on frame 0, so the ad never opens on black.
+const FIRST = [-8, 20, 40, 58] // the first pass, typed at 1.6 characters a frame
 const FIRST_CPS = 1.6
 
 type LogLine = { text: string; start: number; cps: number; error?: boolean }
@@ -56,7 +57,10 @@ const { sfx, cues } = cueSheet("ivr")
 sfx(0, "hum", 0.7, GLITCH)
 FIRST.forEach((at, i) => {
   const chars = MENU[i].length
-  for (let c = 0; c < chars; c += 3) sfx(at + Math.round(c / FIRST_CPS), "key", 0.55)
+  for (let c = 0; c < chars; c += 3) {
+    const key = at + Math.round(c / FIRST_CPS)
+    if (key >= 0) sfx(key, "key", 0.55)
+  }
   if (i > 0) sfx(at + Math.ceil(chars / FIRST_CPS) + 2, "dtmf", 0.5)
 })
 sfx(HEADLINE + SLAM_LAND, "thump", 0.8)
@@ -67,6 +71,10 @@ for (const l of LOOPS) {
 sfx(GLITCH, "crunch", 0.8)
 sfx(BLACKOUT, "glint", 0.5)
 sfx(CHAT, "swish", 0.45)
+sfx(CHAT, "air", 0.8, END - CHAT)
+for (const [from, to] of [[MSG.typing1, MSG.a1], [MSG.typing2, MSG.a2]]) {
+  for (let at = from + 3; at < to - 4; at += 5) sfx(at, "tap", 0.5)
+}
 sfx(MSG.c1, "wood", 0.75)
 sfx(MSG.a1, "wood", 0.75)
 sfx(MSG.c2, "wood", 0.75)

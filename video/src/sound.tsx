@@ -18,8 +18,9 @@ export function cueSheet<K extends Kit>(kit: K) {
   const sfx = (at: number, sound: keyof Kits[K] & string, volume: number, dur?: number) => {
     const count = (kits[kit] as Record<string, number>)[sound]
     const n = used.get(sound) ?? 0
+    if (n >= count) throw new Error(`sfx/${kit}/${sound}: all ${count} variants are used; add more in build-sfx-kits.py`)
     used.set(sound, n + 1)
-    cues.push({ at, src: `sfx/${kit}/${sound}-${(n % count) + 1}.wav`, volume, dur })
+    cues.push({ at, src: `sfx/${kit}/${sound}-${n + 1}.wav`, volume, dur })
   }
   /** Any other file under public/, e.g. a voice line. */
   const file = (at: number, src: string, volume: number) => cues.push({ at, src, volume })

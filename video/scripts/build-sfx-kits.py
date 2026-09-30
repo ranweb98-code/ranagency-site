@@ -268,10 +268,10 @@ def build_desk():
             rattle = filt(noise(rng, d), "bp", (900, 2600)) * (0.5 + 0.5 * np.sin(2 * math.pi * f * t(d))) * 0.25
             place(out, filt(b, "lp", 1400) + rattle, at)
         return room(out, 0.2, 0.2, seed=5 + k)
-    variants(kit, "sms", 2, buzz, -6)
+    variants(kit, "sms", 5, buzz, -6)
 
     # Whips between the montage calls: air past the ear, each a new shape.
-    variants(kit, "whip", 4, lambda rng, k: whoosh(rng, 0.34 + 0.05 * k, 350 + 150 * k, 5200 - 400 * k, 1.0), -6)
+    variants(kit, "whip", 6, lambda rng, k: whoosh(rng, 0.3 + 0.04 * k, 350 + 120 * k, 5600 - 350 * k, 1.0), -6)
 
     # Headline slams: a low hit, each tuned apart.
     slams = [(88, 44), (104, 50), (78, 40)]
@@ -347,11 +347,11 @@ def build_ivr():
     # "בחירה שגויה": an error buzzer that climbs as the loop speeds up.
     def err(rng, k):
         f = 180 * 2 ** (k * 2 / 12)
-        d = 0.32 - 0.04 * k
+        d = 0.32 - 0.03 * k
         x = tone(f, d, 10, attack=0.003, shape="square") + 0.6 * tone(f * 1.5, d, 10, attack=0.003, shape="saw")
         x *= np.clip((d - t(d)) / 0.01, 0, 1)
         return filt(x, "bp", (250, 3400))
-    variants(kit, "error", 4, err, -7)
+    variants(kit, "error", 7, err, -7)
 
     # The headline landing in the menu's world: a low, bit-crushed thump.
     def thump(rng, k):
@@ -371,6 +371,21 @@ def build_ivr():
     # A major pentatonic from D5 (the customer low, the agent answering higher).
     notes = [587.3, 740.0, 659.3, 880.0, 987.8, 1174.7, 784.0, 1318.5]
     variants(kit, "wood", len(notes), lambda rng, k: room(marimba(notes[k] * (1 + rng.uniform(-0.002, 0.002))), 0.4, 0.2, seed=k), -5)
+
+    # The white world's air: a soft, bright room under the conversation.
+    d = 12.0
+    air = filt(noise(r, d), "bp", (2500, 9000)) * 0.4 + filt(noise(r, d), "lp", 300) * 0.6
+    air *= 1 + 0.15 * np.sin(2 * math.pi * 0.23 * t(d))
+    air[: n_of(0.5)] *= np.linspace(0, 1, n_of(0.5))
+    air[-n_of(0.8):] *= np.linspace(1, 0, n_of(0.8))
+    single(kit, "air", air, -30)
+
+    # "Typing…": soft taps on glass, each one different.
+    def tap(rng, k):
+        dd = 0.04
+        c = filt(noise(rng, dd), "bp", (1200 + rng.uniform(-200, 400), 4200)) * env(n_of(dd), 0.0004, 0.006 + rng.uniform(0, 0.004))
+        return mix(c, tone(rng.uniform(420, 620), 0.03, 0.008, attack=0.0005) * 0.35)
+    variants(kit, "tap", 16, tap, -16)
 
     # The chip landing: a bright wooden pop with a glint.
     chip = mix(marimba(1568, 0.7), 0.3 * tone(3136, 0.5, 0.12, attack=0.002), 0.2 * tone(4699, 0.4, 0.08, attack=0.002))
@@ -447,6 +462,23 @@ def build_flood():
     place(chain, bell * 1.1, d + 0.05)
     single(kit, "domino", room(chain, 0.8, 0.3, seed=52), -3)
 
+    # The white page's air, under everything but the black.
+    def air(rng, k):
+        d = 16.0
+        x = filt(noise(rng, d), "bp", (3000, 10000)) * 0.35 + filt(noise(rng, d), "lp", 250) * 0.65
+        x *= 1 + 0.12 * np.sin(2 * math.pi * (0.17 + 0.05 * k) * t(d))
+        x[: n_of(0.05)] *= np.linspace(0, 1, n_of(0.05))
+        x[-n_of(1.0):] *= np.linspace(1, 0, n_of(1.0))
+        return x
+    variants(kit, "air", 2, air, -30)
+
+    # "Typing…" in each channel: soft taps, none the same.
+    def tap(rng, k):
+        dd = 0.04
+        c = filt(noise(rng, dd), "bp", (1500 + rng.uniform(-300, 500), 5000)) * env(n_of(dd), 0.0004, 0.005 + rng.uniform(0, 0.004))
+        return mix(c, tone(rng.uniform(500, 760), 0.03, 0.007, attack=0.0005) * 0.3)
+    variants(kit, "tap", 16, tap, -16)
+
     # Whips between the channels.
     variants(kit, "whip", 4, lambda rng, k: whoosh(rng, 0.3 + 0.04 * k, 400 + 180 * k, 6000 - 300 * k, 1.2), -6)
 
@@ -489,6 +521,14 @@ def build_factory():
     close[-n_of(0.4):] *= np.linspace(1, 0, n_of(0.4))
     single(kit, "belt", close, -17)
 
+    # The factory floor under the dashboard: a big room, air handling.
+    d = 6.0
+    floor = filt(noise(r, d), "lp", 400) * 0.7 + filt(noise(r, d), "bp", (1500, 5000)) * 0.08
+    floor += 0.08 * np.sin(2 * math.pi * 60 * t(d))
+    floor[: n_of(0.4)] *= np.linspace(0, 1, n_of(0.4))
+    floor[-n_of(0.6):] *= np.linspace(1, 0, n_of(0.6))
+    single(kit, "floor", room(floor, 1.2, 0.5, tone_hz=1500, seed=66), -26)
+
     # A card shot out of a pipe: a pneumatic whoop.
     def whoop(rng, k):
         dd = 0.32
@@ -523,7 +563,7 @@ def build_factory():
     variants(kit, "stamp", 5, stamp, -2)
 
     # The sorting gate: a hard mechanical clack.
-    variants(kit, "gate", 10, lambda rng, k: room(mix(
+    variants(kit, "gate", 12, lambda rng, k: room(mix(
         filt(noise(rng, 0.03), "bp", (1500 + 120 * k, 5000)) * env(n_of(0.03), 0.0003, 0.005) * 1.6,
         tone(280 + 30 * k, 0.1, 0.02, attack=0.0005, shape="square") * 0.4,
         np.concatenate([np.zeros(n_of(0.05)), filt(noise(rng, 0.03), "bp", (1200, 4000)) * env(n_of(0.03), 0.0003, 0.004)]) * 0.8,

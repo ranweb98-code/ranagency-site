@@ -34,8 +34,8 @@ const SORT = 412
 const SORT_TITLES = [416, 446]
 const LAUNCH = [476, 504, 532, 560]
 const DASH = 604
-const END = 756
-export const HOT_OR_COLD_FRAMES = 900
+const END = 718
+export const HOT_OR_COLD_FRAMES = 862
 
 type Lead = { name: string; channel: Channel; text: string; hot: boolean; slot?: [day: number, time: string] }
 const LEADS: Lead[] = [
@@ -70,6 +70,7 @@ LAUNCH_ORDER.forEach((k, i) => {
   else sfx(LAUNCH[i] + 6, "tray", 0.7)
 })
 sfx(DASH - 6, "winddown", 0.7)
+sfx(DASH, "floor", 0.9, END - DASH)
 for (let r = 0; r < 4; r++) sfx(DASH + 30 + r * 12, "gate", 0.45)
 sfx(END + STAMP_LAND, "final", 1)
 

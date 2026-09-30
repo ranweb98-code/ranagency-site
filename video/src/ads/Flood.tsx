@@ -17,7 +17,7 @@ import { CHANNEL, HAIRLINE, INK, MUTED, SURFACE, WHITE, clamp01, ease, type Chan
 const GREEN = CHANNEL.whatsapp.color
 
 // ── timeline ───────────────────────────────────────────────────────────────
-const FIRST = 4
+const FIRST = 0
 const GENS = [60, 84, 108, 132, 156] // each doubling (and more) of the questions
 const HEADLINE = 166
 const BLACK = 210
@@ -58,7 +58,8 @@ const BUBBLES: Q[] = (() => {
   cells[0] = { x: 0, y: 0, d: 0 }
   return cells.slice(0, COUNTS[COUNTS.length - 1]).map((cell, i) => {
     const gen = COUNTS.findIndex((n) => i < n)
-    const start = gen === 0 ? FIRST : GENS[gen - 1]
+    // The first bubble is already mid-pop on frame 0: no blank opening frame.
+    const start = gen === 0 ? FIRST - 3 : GENS[gen - 1]
     const size = gen === 0 ? 1 : COUNTS[gen] - COUNTS[gen - 1]
     const k = gen === 0 ? 0 : i - COUNTS[gen - 1]
     return {
@@ -100,15 +101,18 @@ const HERO = BUBBLES.findIndex((b, i) => i > 3 && b.text === "כמה עולה ט
 // ── sound ──────────────────────────────────────────────────────────────────
 const { sfx, cues } = cueSheet("flood")
 sfx(FIRST, "pop", 0.8)
+sfx(0, "air", 0.8, BLACK) // cut with the swarm at the black
 sfx(GENS[0], "pop", 0.8)
 sfx(GENS[0] + 2, "swarm", 0.85, BLACK - GENS[0] - 2) // cut dead at the black
 GENS.slice(1).forEach((at) => sfx(at, "double", 0.7))
 sfx(HEADLINE + SLAM_LAND, "slam", 0.8)
 sfx(WAVE, "domino", 0.8)
+sfx(WAVE, "air", 0.8, END - WAVE)
 CHANNELS.forEach((_, k) => {
   const at = CHANNELS_AT + k * CH_EVERY
   if (k > 0) sfx(at - 6, "whip", 0.6)
   sfx(at + 8, "pop", 0.6)
+  for (let tap = at + 24; tap < at + 42; tap += 5) sfx(tap, "tap", 0.5)
   sfx(at + 44, "answer", 0.7)
 })
 sfx(CHANNELS_AT + SLAM_LAND, "slam", 0.7)
