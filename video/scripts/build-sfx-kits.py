@@ -292,6 +292,34 @@ def build_desk():
         place(shimmer, tone(1568 * 2 ** (semis / 12), 1.6, 0.5, attack=0.005) * 0.25, 0.1 + i * 0.06)
     single(kit, "trill", room(mix(trill * 0.7, shimmer), 1.1, 0.5, seed=7), -4)
 
+    # The CRM after the call: clean digital sounds, the office left behind.
+    # The white curtain crossing the night: one long, airy sweep.
+    single(kit, "sweep", mix(whoosh(r, 0.8, 300, 7000, 0.8, 1.0), 0.3 * whoosh(r, 0.8, 150, 1200, 0.7, 1.0)), -5)
+
+    # The summary typing itself: small, dry keys.
+    def type_key(rng, k):
+        c = filt(noise(rng, 0.025), "bp", (2500 + rng.uniform(-400, 800), 8000)) * env(n_of(0.025), 0.0002, 0.002 + rng.uniform(0, 0.0015))
+        return mix(c * 1.4, tone(rng.uniform(1100, 1700), 0.015, 0.003, attack=0.0003) * 0.3)
+    variants(kit, "type", 24, type_key, -14)
+
+    # Tags popping onto the card.
+    variants(kit, "pop", 4, lambda rng, k: mix(
+        tone(900 * 2 ** (k * 3 / 12), 0.09, 0.02, attack=0.0006, glide_to=1500 * 2 ** (k * 3 / 12)),
+        filt(noise(rng, 0.012), "bp", (2000, 8000)) * env(n_of(0.012), 0.0002, 0.002) * 0.3,
+    ), -9)
+
+    # The card landing in its column.
+    variants(kit, "drop", 2, lambda rng, k: room(mix(
+        tone(150 - 20 * k, 0.3, 0.06, attack=0.001, glide_to=90),
+        filt(noise(rng, 0.03), "bp", (1200, 4000)) * env(n_of(0.03), 0.0004, 0.005) * 0.8,
+    ), 0.3, 0.2, seed=40 + k), -4)
+
+    # Each automation ticking done, each log row arriving: soft rising blips.
+    def blip(rng, k):
+        f0 = 988 * 2 ** ([0, 2, 4, 7, 9, 12, 14][k % 7] / 12) * (2 if k >= 7 else 1)
+        return room(mix(tone(f0, 0.35, 0.07, attack=0.0015), 0.25 * tone(f0 * 2, 0.2, 0.03, attack=0.001)), 0.3, 0.2, seed=60 + k)
+    variants(kit, "blip", 14, blip, -9)
+
     # Flashes: a short camera-flash zap over each ring.
     variants(kit, "zap", 3, lambda rng, k: mix(
         filt(noise(rng, 0.12), "hp", 3000) * env(n_of(0.12), 0.0005, 0.03) * 0.6,
@@ -477,7 +505,7 @@ def build_flood():
         dd = 0.04
         c = filt(noise(rng, dd), "bp", (1500 + rng.uniform(-300, 500), 5000)) * env(n_of(dd), 0.0004, 0.005 + rng.uniform(0, 0.004))
         return mix(c, tone(rng.uniform(500, 760), 0.03, 0.007, attack=0.0005) * 0.3)
-    variants(kit, "tap", 16, tap, -16)
+    variants(kit, "tap", 24, tap, -16)
 
     # Whips between the channels.
     variants(kit, "whip", 4, lambda rng, k: whoosh(rng, 0.3 + 0.04 * k, 400 + 180 * k, 6000 - 300 * k, 1.2), -6)
@@ -598,8 +626,38 @@ def build_factory():
     variants(kit, "flash", 4, lambda rng, k: filt(noise(rng, 0.15), "hp", 4000 + 500 * k) * env(n_of(0.15), 0.0005, 0.03), -14)
 
 
+# ── brand: the one sound every follow-up ad ends on ───────────────────────
+
+def build_brand():
+    """The sonic logo, timed to the brand end card (EndCard entry "brand"):
+    a soft low impact on the flash, a note as the monogram forms (0.2s), a
+    fifth above as the wordmark arrives (0.53s), and a chord that rings out.
+    Unlike every other sound here it is meant to be heard identically each
+    time: it is the brand's signature."""
+    kit = "brand"
+    r = np.random.default_rng(101)
+    out = np.zeros(n_of(3.6))
+    swell = filt(noise(r, 0.5), "bp", (400, 5000)) * np.sin(np.pi * np.clip(t(0.5) / 0.5, 0, 1)) ** 2 * 0.12
+    place(out, swell, 0)
+    place(out, hit(r, 82, 41, dur=1.4, tau=0.34, grit=0.12) * 0.9, 0)
+
+    def chime(f0, dur=2.6, tau=0.9):
+        return mix(
+            tone(f0, dur, tau, attack=0.003),
+            0.35 * tone(f0 * 2.0, dur * 0.7, tau * 0.45, attack=0.003),
+            0.18 * tone(f0 * 3.01, dur * 0.4, tau * 0.18, attack=0.002),
+            0.12 * tone(f0 * 4.2, 0.25, 0.03, attack=0.001),  # the mallet
+        )
+
+    place(out, chime(880.0) * 0.55, 0.2)
+    place(out, chime(1318.5) * 0.5, 0.53)
+    for i, f0 in enumerate([659.3, 880.0, 1108.7, 1318.5, 1760.0]):
+        place(out, tone(f0, 2.8, 1.1, attack=0.02) * 0.12, 0.8 + i * 0.035)
+    single(kit, "sting", room(out, 1.3, 0.45, tone_hz=6000, seed=102), -2)
+
+
 def main():
-    for build in (build_desk, build_ivr, build_flood, build_factory):
+    for build in (build_desk, build_ivr, build_flood, build_factory, build_brand):
         print(build.__name__)
         build()
     MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")

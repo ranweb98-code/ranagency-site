@@ -7,7 +7,7 @@ import { SafeZones } from "../components/SafeZones"
 import { CHANNEL_ICON } from "../components/icons"
 import { FONT_STACK, MONO_STACK } from "../fonts"
 import { Flash, Glitch, SLAM_LAND, Scanlines, Slam, punch, rand, shake } from "../fx"
-import { Track, cueSheet } from "../sound"
+import { BRAND_STING, Track, cueSheet } from "../sound"
 import { CHANNEL, HAIRLINE, INK, MUTED, SURFACE, WHITE, clamp01, ease } from "../theme"
 
 /** "הקישו 1" — robot vs real Hebrew. A phone menu types itself on an old
@@ -53,7 +53,7 @@ const LOG: LogLine[] = [
 ]
 
 // ── sound ──────────────────────────────────────────────────────────────────
-const { sfx, cues } = cueSheet("ivr")
+const { sfx, file, cues } = cueSheet("ivr")
 sfx(0, "hum", 0.7, GLITCH)
 FIRST.forEach((at, i) => {
   const chars = MENU[i].length
@@ -86,7 +86,7 @@ sfx(WIPE_OLD + 2, "swish", 0.5)
 sfx(SAY[0] + SLAM_LAND, "knock", 0.85)
 sfx(SAY[0] + 12, "glint", 0.4)
 sfx(SAY[1] + SLAM_LAND, "knock", 0.75)
-sfx(END, "end", 0.85)
+file(END, BRAND_STING, 0.9)
 
 // ── 1–3 · the menu, the loop, the break ────────────────────────────────────
 
@@ -349,7 +349,7 @@ export function PressOne({ safeZones }: { safeZones: boolean }) {
       {f >= BLACKOUT && f < CHAT && <AbsoluteFill style={{ background: "#000" }} />}
       {f >= CHAT && f < COMPARE && <Chat f={f} />}
       {f >= COMPARE && f < END && <Compare f={f} />}
-      {f >= END && <EndCard f={f - END} />}
+      {f >= END && <EndCard f={f - END} entry="brand" />}
       <Flash f={f} hits={[BLACKOUT, CHAT, COMPARE, END]} dur={7} />
       <Grain id="press-one-grain" opacity={0.06} />
       <Track cues={cues} />

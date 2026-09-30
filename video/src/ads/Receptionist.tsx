@@ -1,13 +1,15 @@
-import { Check, Phone } from "lucide-react"
-import { AbsoluteFill, useCurrentFrame } from "remotion"
+import { Check, Clock, Phone } from "lucide-react"
+import { AbsoluteFill, spring, useCurrentFrame } from "remotion"
 import { EndCard } from "../components/EndCard"
 import { Grain } from "../components/Grain"
 import { KineticText } from "../components/KineticText"
+import { CURTAIN_EDGE, LiquidCurtain } from "../components/LiquidCurtain"
 import { SafeZones } from "../components/SafeZones"
+import { CHANNEL_ICON } from "../components/icons"
 import { FONT_STACK } from "../fonts"
 import { Flash, Ripple, SLAM_LAND, Slam, Whip, punch, rand, shake } from "../fx"
-import { Track, cueSheet } from "../sound"
-import { CHANNEL, NIGHT, ON_DARK, ON_DARK_MUTED, clamp01, ease } from "../theme"
+import { BRAND_STING, Track, cueSheet } from "../sound"
+import { CHANNEL, CURTAIN_EASE, HAIRLINE, INK, LIVE, MUTED, NIGHT, ON_DARK, ON_DARK_MUTED, SURFACE, WHITE, WIDTH, clamp01, ease } from "../theme"
 import lines from "../voice/lines.json"
 
 /** "המזכירה של 19:00" — the voice agent. The clinic's receptionist has gone
@@ -27,10 +29,25 @@ const CALL_IN = 154 // the camera dives into the phone's display
 const CALL_AT = 160 // the call scene is on screen
 const BOOK = { in: 640, slot: 652, sms: 668, pin: 684 } // the booking, between C2 and C4
 const HANGUP = 824
-const MONTAGE = [864, 896, 928] // each call gets 32 frames
-const TAGLINE = 960
-const END = 1010
-export const RECEPTIONIST_FRAMES = 1100
+// After the call, the CRM: a white curtain carries it in, the camera sits
+// on the call's card while its summary writes itself, pulls back to the
+// board as the card moves to "נקבע תור", then whips to the night's log.
+const CRM = {
+  in: 852, // the curtain starts across
+  sweep: 22,
+  type: 884, // the summary starts typing
+  tags: [914, 919, 924],
+  zoomOut: 944,
+  move: 968, // the card leaves "פנייה חדשה"
+  land: 982, // …and lands in "נקבע תור"
+  autos: [988, 997, 1006],
+  log: 1024, // the whip to the night's log
+  rows: 1034,
+  rowGap: 7,
+}
+const TAGLINE = 1098
+const END = 1146
+export const RECEPTIONIST_FRAMES = END + 96
 
 type LineId = keyof typeof lines
 
@@ -80,6 +97,18 @@ const CALL_WORDS = CALL.map((l) => wordsOf(l.text, lines[l.id].envelope, l.at))
 
 const lineEnd = (i: number) => CALL[i].at + lines[CALL[i].id].frames
 
+// What the CRM shows after the call.
+const SUMMARY = "מטופל חדש. ביקש בדיקה וניקוי אבנית למחר. נקבע ל-10:30, ואישור נשלח ב-SMS."
+const SUMMARY_CPS = 2.5
+const SUMMARY_FRAMES = Math.ceil(SUMMARY.length / SUMMARY_CPS)
+const LOG_ROWS: { time: string; channel: "phone" | "whatsapp"; what: string; done: string; booked: boolean }[] = [
+  { time: "19:02", channel: "phone", what: "בדיקה וניקוי אבנית", done: "נקבע · מחר 10:30", booked: true },
+  { time: "21:40", channel: "phone", what: "כאב שן, דחוף", done: "נקבע · מחר 08:30", booked: true },
+  { time: "23:15", channel: "whatsapp", what: "כמה עולה הלבנה?", done: "נשלח מחיר", booked: false },
+  { time: "06:55", channel: "phone", what: "להזיז תור", done: "הוזז · יום ה׳ 12:00", booked: true },
+  { time: "חג", channel: "phone", what: "תור לבדיקה לילד", done: "נקבע · יום א׳ 16:00", booked: true },
+]
+
 // ── sound ──────────────────────────────────────────────────────────────────
 const { sfx, file, cues } = cueSheet("desk")
 sfx(0, "office", 1, LAMP_OFF + 1) // the lamp's click cuts the room's hum
@@ -101,15 +130,18 @@ sfx(BOOK.slot + 2, "confirm", 0.45)
 sfx(BOOK.sms, "sms", 0.8)
 sfx(HANGUP, "hangup", 0.85)
 sfx(HANGUP + 14, "confirm", 0.5)
-for (const at of MONTAGE) {
-  sfx(at - 4, "whip", 0.55)
-  sfx(at + 2, "ring", 0.6)
-  sfx(at + 16, "sms", 0.5)
-}
-sfx(TAGLINE - 4, "whip", 0.5)
+sfx(CRM.in, "sweep", 0.8)
+for (let at = CRM.type; at < CRM.type + SUMMARY_FRAMES; at += 2) sfx(at, "type", 0.55)
+for (const at of CRM.tags) sfx(at, "pop", 0.6)
+sfx(CRM.zoomOut, "whip", 0.5)
+sfx(CRM.move, "whip", 0.4)
+sfx(CRM.land, "drop", 0.8)
+for (const at of CRM.autos) sfx(at, "blip", 0.6)
+sfx(CRM.log - 4, "whip", 0.55)
+LOG_ROWS.forEach((_, i) => sfx(CRM.rows + i * CRM.rowGap, "blip", 0.5))
 sfx(TAGLINE + SLAM_LAND, "slam", 0.85)
-sfx(TAGLINE + 22 + SLAM_LAND, "slam", 0.75)
-sfx(END, "trill", 0.8)
+sfx(TAGLINE + 20 + SLAM_LAND, "slam", 0.75)
+file(END, BRAND_STING, 0.9)
 
 // ── 1–2 · the office closes, the phone rings ───────────────────────────────
 
@@ -520,69 +552,239 @@ function HungUp({ f }: { f: number }) {
   )
 }
 
-// ── 4 · the montage ────────────────────────────────────────────────────────
+// ── 4 · the CRM ────────────────────────────────────────────────────────────
 
-function Moment({ big, note, f }: { big: string; note: string; f: number }) {
-  const check = ease(f, 14, 8)
+const CAMERA = { x: 540, y: 790 } // the screen point the camera looks through
+const BOARD = { top: 460, bottom: 940 }
+const COL = { right: 555, left: 65, width: 460 } // "פנייה חדשה" on the right, "נקבע תור" on the left
+const CARD_TOP = 770
+const CARD_H = { compact: 150, open: 250 }
+
+function CardHeader({ size }: { size: number }) {
   return (
-    <AbsoluteFill style={{ background: `radial-gradient(80% 40% at 50% 45%, rgba(37,99,235,0.22), transparent 70%), ${NIGHT}` }}>
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: 300 }}>
-        <Slam f={f} at={2} style={{ fontSize: big.length > 5 ? 190 : 230, fontWeight: 800, color: ON_DARK, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
-          <span dir={big.length > 5 ? "rtl" : "ltr"}>{big}</span>
-        </Slam>
-        <div style={{ marginTop: 26, display: "flex", alignItems: "center", gap: 16, fontSize: 42, fontWeight: 700, color: ON_DARK }}>
-          <span style={{ opacity: 0.7 }}>שיחה נכנסת</span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 24px",
-              borderRadius: 999,
-              background: BLUE,
-              color: "#fff",
-              opacity: check,
-              transform: `scale(${0.8 + 0.2 * check})`,
-            }}
-          >
-            <Check size={32} strokeWidth={3.2} />
-            {note}
-          </span>
+    <div style={{ display: "flex", alignItems: "center", gap: size * 0.5 }}>
+      <div style={{ width: size * 1.7, height: size * 1.7, borderRadius: 999, background: BLUE, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Phone size={size} strokeWidth={2.4} />
+      </div>
+      <div style={{ flex: 1, fontSize: size, fontWeight: 700, color: INK }}>שיחה חדשה · 19:02</div>
+      <div dir="ltr" style={{ fontSize: size * 0.85, fontWeight: 500, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
+        00:22
+      </div>
+    </div>
+  )
+}
+
+/** The call's card. Opened, it carries the summary the agent wrote and the
+ *  tags it set; closed, it is one card on the board. */
+function CallCard({ f, open }: { f: number; open: number }) {
+  const typed = Math.max(0, Math.min(SUMMARY.length, Math.floor((f - CRM.type) * SUMMARY_CPS)))
+  const typing = f >= CRM.type && typed < SUMMARY.length
+  const tags = ["מטופל חדש", "חם", "תור נקבע"]
+  return (
+    <div style={{ padding: "18px 20px", borderRadius: 20, background: WHITE, border: `2px solid ${HAIRLINE}`, boxShadow: "0 18px 40px -26px rgba(17,17,17,0.45)" }}>
+      <CardHeader size={22} />
+      <div style={{ marginTop: 10, fontSize: 19, color: MUTED }}>בדיקה וניקוי אבנית · מחר 10:30</div>
+      <div style={{ display: "grid", gridTemplateRows: `${open}fr`, opacity: open }}>
+        <div style={{ minHeight: 0, overflow: "hidden" }}>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `2px solid ${HAIRLINE}` }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: BLUE, letterSpacing: "0.06em" }}>סיכום אוטומטי של השיחה</div>
+            <div style={{ marginTop: 6, fontSize: 19, lineHeight: 1.4, color: INK, minHeight: 54 }}>
+              {SUMMARY.slice(0, typed)}
+              {typing && <span style={{ display: "inline-block", width: 9, height: 20, marginInlineStart: 2, background: INK, verticalAlign: "-3px" }} />}
+            </div>
+            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+              {tags.map((t, i) => {
+                const p = spring({ frame: f - CRM.tags[i], fps: 30, config: { damping: 13, stiffness: 320, mass: 0.5 } })
+                return (
+                  <span key={t} style={{ padding: "4px 12px", borderRadius: 999, fontSize: 15, fontWeight: 700, background: i === 1 ? INK : `color-mix(in srgb, ${BLUE} 12%, ${WHITE})`, color: i === 1 ? WHITE : BLUE, opacity: clamp01(p * 1.5), transform: `scale(${Math.max(0, p)})` }}>
+                    {t}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OtherCard({ name, text, channel }: { name: string; text: string; channel: "whatsapp" | "instagram" }) {
+  const Icon = CHANNEL_ICON[channel]
+  return (
+    <div style={{ padding: "18px 20px", borderRadius: 20, background: WHITE, border: `2px solid ${HAIRLINE}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+        <div style={{ width: 37, height: 37, borderRadius: 999, background: CHANNEL[channel].color, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={20} strokeWidth={2.4} />
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>{name}</div>
+      </div>
+      <div style={{ marginTop: 10, fontSize: 19, color: MUTED }}>{text}</div>
+    </div>
+  )
+}
+
+function Column({ x, title, count }: { x: number; title: string; count: number }) {
+  return (
+    <div style={{ position: "absolute", left: x, top: BOARD.top + 76, width: COL.width, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 26, fontWeight: 700, color: INK }}>
+      <span>{title}</span>
+      <span style={{ minWidth: 40, padding: "2px 12px", borderRadius: 999, background: SURFACE, border: `2px solid ${HAIRLINE}`, fontSize: 22, color: MUTED, textAlign: "center" }}>{count}</span>
+    </div>
+  )
+}
+
+function Automation({ text, at, f, done }: { text: string; at: number; f: number; done: boolean }) {
+  const p = spring({ frame: f - at, fps: 30, config: { damping: 16, stiffness: 260, mass: 0.6 } })
+  if (f < at) return null
+  const Icon = done ? Check : Clock
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 18, height: 66, opacity: clamp01(p * 1.5), transform: `translateX(${(1 - p) * 80}px)` }}>
+      <div style={{ width: 46, height: 46, borderRadius: 999, background: done ? BLUE : WHITE, border: done ? "none" : `3px solid ${BLUE}`, color: done ? WHITE : BLUE, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={26} strokeWidth={3} />
+      </div>
+      <span style={{ fontSize: 32, fontWeight: 600, color: INK }}>{text}</span>
+    </div>
+  )
+}
+
+/** The board: one world under a camera that starts close on the call's card. */
+function Board({ f }: { f: number }) {
+  const out = ease(f, CRM.zoomOut, 20)
+  const z = 2 - out
+  const focus = { x: COL.right + COL.width / 2, y: CARD_TOP + CARD_H.open / 2 }
+  const fx = focus.x + (CAMERA.x - focus.x) * out
+  const fy = focus.y + (CAMERA.y - focus.y) * out
+  const open = 1 - ease(f, CRM.zoomOut, 14)
+  const move = clamp01((f - CRM.move) / (CRM.land - CRM.move))
+  const slide = move < 0.5 ? 2 * move * move : 1 - (-2 * move + 2) ** 2 / 2
+  const lift = Math.sin(move * Math.PI)
+  const landed = f >= CRM.land
+  const settle = punch(f, [CRM.land], 0.04, 10)
+  return (
+    <AbsoluteFill style={{ background: WHITE }}>
+      <AbsoluteFill style={{ transformOrigin: "0 0", transform: `translate(${CAMERA.x}px, ${CAMERA.y}px) scale(${z}) translate(${-fx}px, ${-fy}px)` }}>
+        {/* the app around the card, which only comes up as the camera pulls back */}
+        <div style={{ opacity: out }}>
+          <div style={{ position: "absolute", left: 45, right: 45, top: BOARD.top, height: BOARD.bottom - BOARD.top, borderRadius: 32, background: SURFACE, border: `2px solid ${HAIRLINE}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 24px", borderBottom: `2px solid ${HAIRLINE}`, fontSize: 22, fontWeight: 700, color: MUTED }}>
+              {[0, 1, 2].map((i) => (
+                <span key={i} style={{ width: 13, height: 13, borderRadius: 999, background: "rgba(17,17,17,0.15)" }} />
+              ))}
+              <span style={{ marginInlineStart: 8 }}>נפוץ' · CRM · מרפאת השיניים</span>
+              <span style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8, fontSize: 20 }}>
+                <span style={{ width: 11, height: 11, borderRadius: 999, background: LIVE }} />
+                מחובר
+              </span>
+            </div>
+          </div>
+          <Column x={COL.right} title="פנייה חדשה" count={landed ? 1 : 2} />
+          <Column x={COL.left} title="נקבע תור" count={landed ? 2 : 1} />
+          <div style={{ position: "absolute", left: COL.right, top: 600, width: COL.width }}>
+            <OtherCard name="יעל" channel="whatsapp" text="יש לכם חניה קרובה?" />
+          </div>
+          <div style={{ position: "absolute", left: COL.left, top: 600, width: COL.width }}>
+            <OtherCard name="דנה" channel="instagram" text="תור · יום ב׳ 12:00" />
+          </div>
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: COL.right - slide * (COL.right - COL.left),
+            top: CARD_TOP - lift * 16,
+            width: COL.width,
+            transform: `scale(${(1 + lift * 0.05) * settle}) rotate(${-lift * 2.5}deg)`,
+            filter: lift > 0.05 ? `drop-shadow(0 ${30 * lift}px ${30 * lift}px rgba(17,17,17,0.25))` : undefined,
+          }}
+        >
+          <CallCard f={f} open={open} />
         </div>
       </AbsoluteFill>
-      <Ripple f={f} hits={[2]} x={540} y={700} color={BLUE_LIGHT} size={1100} dur={26} />
+      {/* what the system did with it, in screen space under the board */}
+      <div style={{ position: "absolute", top: 966, left: 80, right: 80 }}>
+        <Automation text="נרשם ביומן · מחר 10:30" at={CRM.autos[0]} f={f} done />
+        <Automation text="אישור נשלח ב-SMS" at={CRM.autos[1]} f={f} done />
+        <Automation text="תזכורת תישלח יום לפני" at={CRM.autos[2]} f={f} done={false} />
+      </div>
+      <div style={{ position: "absolute", top: 300, left: 0, right: 0 }}>
+        {f < CRM.zoomOut + 2 && <KineticText lines={["כל שיחה נרשמת."]} f={f} inAt={CRM.in + 20} outAt={CRM.zoomOut - 8} size={96} color={INK} />}
+        {f >= CRM.zoomOut - 4 && <KineticText lines={["וכל תור נסגר עד הסוף."]} f={f} inAt={CRM.zoomOut} size={76} color={INK} />}
+      </div>
+      <Flash f={f} hits={[CRM.land]} dur={5} color={BLUE_LIGHT} max={0.25} />
     </AbsoluteFill>
   )
 }
 
-function Montage({ f }: { f: number }) {
-  const moments: [string, string][] = [
-    ["21:40", "נענתה"],
-    ["06:55", "נענתה"],
-    ["גם בחג", "נענתה"],
-  ]
-  const scene = (k: number) => <Moment big={moments[k][0]} note={moments[k][1]} f={f - MONTAGE[k]} />
-  if (f < MONTAGE[1] - 4) return <Whip f={f} at={MONTAGE[0] - 4} dur={8} id="w0" from={<Call f={f} />} to={scene(0)} />
-  if (f < MONTAGE[2] - 4) return <Whip f={f} at={MONTAGE[1] - 4} dur={8} id="w1" from={scene(0)} to={scene(1)} />
-  return <Whip f={f} at={MONTAGE[2] - 4} dur={8} id="w2" from={scene(1)} to={scene(2)} />
+function NightLog({ f }: { f: number }) {
+  const booked = LOG_ROWS.filter((r) => r.booked).length
+  const counters = ease(f, CRM.rows + LOG_ROWS.length * CRM.rowGap, 10)
+  return (
+    <AbsoluteFill style={{ background: WHITE }}>
+      <div style={{ position: "absolute", top: 296, left: 0, right: 0, textAlign: "center" }}>
+        <Slam f={f} at={CRM.log + 2} style={{ fontSize: 96, fontWeight: 800, color: INK, letterSpacing: "-0.035em" }}>
+          גם בלילה. גם בחג.
+        </Slam>
+      </div>
+      <div style={{ position: "absolute", top: 460, left: 45, right: 45, borderRadius: 32, background: WHITE, border: `2px solid ${HAIRLINE}`, boxShadow: "0 40px 90px -40px rgba(17,17,17,0.35)", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", padding: "20px 28px", background: SURFACE, borderBottom: `2px solid ${HAIRLINE}`, fontSize: 26, fontWeight: 700, color: INK }}>
+          <span>יומן פעילות · מאז שהמשרד נסגר</span>
+          <span style={{ marginInlineStart: "auto", fontSize: 24, fontWeight: 600, color: MUTED, opacity: counters }}>
+            {LOG_ROWS.length} פניות · {LOG_ROWS.length} נענו · {booked} תורים
+          </span>
+        </div>
+        {LOG_ROWS.map((r, i) => {
+          const at = CRM.rows + i * CRM.rowGap
+          const p = spring({ frame: f - at, fps: 30, config: { damping: 17, stiffness: 240, mass: 0.6 } })
+          const Icon = CHANNEL_ICON[r.channel]
+          return (
+            <div key={r.time} style={{ display: "grid", gridTemplateColumns: "110px 56px 1fr auto", alignItems: "center", gap: 16, height: 116, padding: "0 28px", borderTop: i ? `2px solid ${HAIRLINE}` : "none", opacity: f < at ? 0 : clamp01(p * 1.5), transform: `translateX(${(1 - Math.min(1, p)) * 120}px)` }}>
+              <span dir={r.time === "חג" ? "rtl" : "ltr"} style={{ fontSize: 34, fontWeight: 700, color: INK, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                {r.time}
+              </span>
+              <span style={{ width: 50, height: 50, borderRadius: 999, background: CHANNEL[r.channel].color, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={26} strokeWidth={2.4} />
+              </span>
+              <span style={{ fontSize: 30, color: INK }}>{r.what}</span>
+              <span style={{ padding: "8px 18px", borderRadius: 999, fontSize: 26, fontWeight: 700, background: r.booked ? INK : WHITE, color: r.booked ? WHITE : MUTED, border: r.booked ? "none" : `2px solid ${HAIRLINE}`, whiteSpace: "nowrap" }}>
+                {r.done}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </AbsoluteFill>
+  )
+}
+
+function Crm({ f }: { f: number }) {
+  // The night, frozen on the hung-up call, while the white curtain crosses it.
+  const x = (WIDTH + CURTAIN_EDGE) * (1 - CURTAIN_EASE(clamp01((f - CRM.in) / CRM.sweep)))
+  const board = <Board f={f} />
+  const scene = f < CRM.log - 4 ? board : <Whip f={f} at={CRM.log - 4} dur={8} id="to-log" from={board} to={<NightLog f={f} />} />
+  if (f >= CRM.in + CRM.sweep) return scene
+  return (
+    <AbsoluteFill>
+      <Call f={f} />
+      <LiquidCurtain x={x} frame={f} color="white">
+        {scene}
+      </LiquidCurtain>
+    </AbsoluteFill>
+  )
 }
 
 // ── 5 · the tagline and the end card ───────────────────────────────────────
 
 function Tagline({ f }: { f: number }) {
   const style = { textAlign: "center", fontSize: 124, fontWeight: 800, color: ON_DARK, letterSpacing: "-0.035em", lineHeight: 1.05 } as const
-  const tag = (
-    <AbsoluteFill style={{ background: NIGHT, justifyContent: "center", paddingBottom: 320, transform: shake(f, [TAGLINE + SLAM_LAND, TAGLINE + 22 + SLAM_LAND], 10, 10) }}>
+  return (
+    <AbsoluteFill style={{ background: NIGHT, justifyContent: "center", paddingBottom: 320, transform: shake(f, [TAGLINE + SLAM_LAND, TAGLINE + 20 + SLAM_LAND], 10, 10) }}>
       <Slam f={f} at={TAGLINE} style={style}>
         מזכירה שלא
       </Slam>
-      <Slam f={f} at={TAGLINE + 22} style={{ ...style, color: BLUE_LIGHT }}>
+      <Slam f={f} at={TAGLINE + 20} style={{ ...style, color: BLUE_LIGHT }}>
         הולכת הביתה.
       </Slam>
     </AbsoluteFill>
   )
-  const last = <Moment big="גם בחג" note="נענתה" f={f - MONTAGE[2]} />
-  return <Whip f={f} at={TAGLINE - 4} dur={8} id="w3" from={last} to={tag} />
 }
 
 /** Scenes take the ad's own frame, so every timing constant above is absolute. */
@@ -591,11 +793,11 @@ export function Receptionist({ safeZones }: { safeZones: boolean }) {
   return (
     <AbsoluteFill style={{ direction: "rtl", fontFamily: FONT_STACK, background: NIGHT }}>
       {f < CALL_AT && <Office f={f} />}
-      {f >= CALL_AT && f < MONTAGE[0] - 4 && <Call f={f} />}
-      {f >= MONTAGE[0] - 4 && f < TAGLINE - 4 && <Montage f={f} />}
-      {f >= TAGLINE - 4 && f < END && <Tagline f={f} />}
-      {f >= END && <EndCard f={f - END} />}
-      <Flash f={f} hits={[CALL_AT, END]} dur={8} max={0.85} />
+      {f >= CALL_AT && f < CRM.in && <Call f={f} />}
+      {f >= CRM.in && f < TAGLINE && <Crm f={f} />}
+      {f >= TAGLINE && f < END && <Tagline f={f} />}
+      {f >= END && <EndCard f={f - END} entry="brand" />}
+      <Flash f={f} hits={[CALL_AT, TAGLINE, END]} dur={8} max={0.85} />
       <Grain id="receptionist-grain" opacity={0.07} />
       <Track cues={cues} />
       {safeZones && <SafeZones />}

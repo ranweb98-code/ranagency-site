@@ -15,6 +15,11 @@
     "slam": 3,
     "hangup": 1,
     "trill": 1,
+    "sweep": 1,
+    "type": 24,
+    "pop": 4,
+    "drop": 2,
+    "blip": 14,
     "zap": 3
   },
   "ivr": {
@@ -39,7 +44,7 @@
     "double": 4,
     "domino": 1,
     "air": 2,
-    "tap": 16,
+    "tap": 24,
     "whip": 4,
     "answer": 6,
     "slam": 3,
@@ -60,5 +65,8 @@
     "winddown": 1,
     "final": 1,
     "flash": 4
+  },
+  "brand": {
+    "sting": 1
   }
 }

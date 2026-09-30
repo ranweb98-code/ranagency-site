@@ -1,6 +1,8 @@
-# The four ads' sound kits are generated (deterministically) by
-# scripts/build-sfx-kits.py — run it once before rendering.
+# The follow-up ads' sound kits and the brand sting are generated
+# (deterministically) by scripts/build-sfx-kits.py — run it once before
+# rendering.
 public/sfx/desk/
 public/sfx/ivr/
 public/sfx/flood/
 public/sfx/factory/
+public/sfx/brand/

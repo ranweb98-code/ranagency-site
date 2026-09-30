@@ -7,7 +7,7 @@ import { SafeZones } from "../components/SafeZones"
 import { CHANNEL_ICON } from "../components/icons"
 import { FONT_STACK } from "../fonts"
 import { Flash, SLAM_LAND, Slam, Whip, punch, rand, shake } from "../fx"
-import { Track, cueSheet } from "../sound"
+import { BRAND_STING, Track, cueSheet } from "../sound"
 import { CHANNEL, HAIRLINE, INK, MUTED, SURFACE, WHITE, clamp01, ease, type Channel } from "../theme"
 
 /** "כמה עולה?" — the flood. One question becomes hundreds across the three
@@ -26,20 +26,30 @@ const WAVE_DUR = 60
 const BELL = WAVE + 80
 const OPEN = WAVE + 64 // the camera finds one question and opens its answer
 const CHANNELS_AT = 424
-const CH_EVERY = 98
+const CH_EVERY = 150 // two exchanges per channel
 const LINE2 = CHANNELS_AT + 2 * CH_EVERY + 4
-const END = 724
-export const FLOOD_FRAMES = 900
+const END = CHANNELS_AT + 3 * CH_EVERY
+export const FLOOD_FRAMES = END + 110
 
 const QUESTIONS = ["כמה עולה?", "מחיר?", "כמה זה עולה?", "יש מחירון?", "כמה עולה טיפול?", "כמה?", "מה המחיר?", "כמה עולה אצלכם?", "אפשר מחיר?", "כמה עולה תור?"]
 const CHANNELS: Channel[] = ["whatsapp", "instagram", "phone"]
 
-// The world the bubbles live in: a portrait grid of cells, filled from the
-// centre outward (with a little noise), so every generation rings the last.
+// The world the bubbles live in: a grid of cells around the first bubble,
+// filled from the centre outward (with a little noise), so every generation
+// rings the last. The grid reaches past every edge of the frame at the
+// camera's widest, and the last generation takes every cell left, so at its
+// peak the flood covers the whole screen, corner to corner.
 const CELL = { w: 380, h: 150 }
-const COLS = 8
-const ROWS = 36
-const COUNTS = [1, 2, 8, 30, 100, 300]
+const ORIGIN = { x: 540, y: 760 } // on screen: the first bubble, in the safe band
+const Z_WIDE = 0.33
+const REACH = {
+  x: ORIGIN.x / Z_WIDE + CELL.w,
+  top: ORIGIN.y / Z_WIDE + CELL.h,
+  bottom: (1920 - ORIGIN.y) / Z_WIDE + CELL.h,
+}
+const COLS = Math.ceil((2 * REACH.x) / CELL.w) + 1
+const ROWS = Math.ceil((REACH.top + REACH.bottom) / CELL.h) + 1
+const COUNTS = [1, 2, 8, 30, 110, COLS * ROWS]
 
 type Q = { x: number; y: number; text: string; channel: Channel; at: number; tilt: number }
 
@@ -47,16 +57,20 @@ const BUBBLES: Q[] = (() => {
   const cells: { x: number; y: number; d: number }[] = []
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const x = (c - (COLS - 1) / 2) * CELL.w + (r % 2 ? CELL.w / 2 : 0) + (rand(r * 31 + c) - 0.5) * 60
-      const y = (r - (ROWS - 1) / 2) * CELL.h + (rand(r * 17 + c * 5) - 0.5) * 30
-      // Distance in a squashed metric so the swarm grows as a portrait oval.
-      cells.push({ x, y, d: Math.hypot(x / 0.56, y) + rand(r * 7 + c * 13) * 260 })
+      const x = -REACH.x + c * CELL.w + (r % 2 ? CELL.w / 2 : 0) + (rand(r * 31 + c) - 0.5) * 60
+      const y = -REACH.top + r * CELL.h + (rand(r * 17 + c * 5) - 0.5) * 30
+      // A rounded-rectangle distance in the frame's proportions, so each
+      // generation fills a frame-shaped block (corners included) that the
+      // camera can pull back to the edges of.
+      const sx = Math.abs(x) / 0.56
+      const sy = Math.abs(y)
+      cells.push({ x, y, d: 0.75 * Math.max(sx, sy) + 0.25 * Math.hypot(sx, sy) + rand(r * 7 + c * 13) * 200 })
     }
   }
   cells.sort((a, b) => a.d - b.d)
   // The first bubble sits dead centre.
   cells[0] = { x: 0, y: 0, d: 0 }
-  return cells.slice(0, COUNTS[COUNTS.length - 1]).map((cell, i) => {
+  return cells.map((cell, i) => {
     const gen = COUNTS.findIndex((n) => i < n)
     // The first bubble is already mid-pop on frame 0: no blank opening frame.
     const start = gen === 0 ? FIRST - 3 : GENS[gen - 1]
@@ -73,52 +87,20 @@ const BUBBLES: Q[] = (() => {
   })
 })()
 
-// The camera pulls back as the swarm grows.
-const ZOOM_KEYS: [number, number][] = [
-  [0, 1.7],
-  [GENS[0], 1.45],
-  [GENS[1], 0.95],
-  [GENS[2], 0.66],
-  [GENS[3], 0.46],
-  [GENS[4], 0.36],
-  [GENS[4] + 30, 0.33],
-]
+// The camera pulls back as the swarm grows: one step per generation, taken
+// while that generation pops in, to the zoom at which it reaches the edges
+// of the frame (from the third one on; the first few are meant to be few).
+const ZOOMS = [1.7, 1.45, 1.2, 1.1, 0.64, Z_WIDE]
 function zoomAt(f: number) {
-  for (let i = ZOOM_KEYS.length - 1; i >= 0; i--) {
-    const [at, z] = ZOOM_KEYS[i]
-    if (f >= at) {
-      const next = ZOOM_KEYS[i + 1]
-      if (!next) return z
-      return z + (next[1] - z) * ease(f, at, next[0] - at)
-    }
-  }
-  return ZOOM_KEYS[0][1]
+  let z = ZOOMS[0]
+  GENS.forEach((g, i) => {
+    z += (ZOOMS[i + 1] - z) * ease(f, g, 10)
+  })
+  return z
 }
 
 // The answer the camera finds after the wave.
 const HERO = BUBBLES.findIndex((b, i) => i > 3 && b.text === "כמה עולה טיפול?")
-
-// ── sound ──────────────────────────────────────────────────────────────────
-const { sfx, cues } = cueSheet("flood")
-sfx(FIRST, "pop", 0.8)
-sfx(0, "air", 0.8, BLACK) // cut with the swarm at the black
-sfx(GENS[0], "pop", 0.8)
-sfx(GENS[0] + 2, "swarm", 0.85, BLACK - GENS[0] - 2) // cut dead at the black
-GENS.slice(1).forEach((at) => sfx(at, "double", 0.7))
-sfx(HEADLINE + SLAM_LAND, "slam", 0.8)
-sfx(WAVE, "domino", 0.8)
-sfx(WAVE, "air", 0.8, END - WAVE)
-CHANNELS.forEach((_, k) => {
-  const at = CHANNELS_AT + k * CH_EVERY
-  if (k > 0) sfx(at - 6, "whip", 0.6)
-  sfx(at + 8, "pop", 0.6)
-  for (let tap = at + 24; tap < at + 42; tap += 5) sfx(tap, "tap", 0.5)
-  sfx(at + 44, "answer", 0.7)
-})
-sfx(CHANNELS_AT + SLAM_LAND, "slam", 0.7)
-sfx(LINE2 + SLAM_LAND, "slam", 0.6)
-sfx(END - 6, "whip", 0.5)
-sfx(END, "end", 0.85)
 
 // ── pieces ─────────────────────────────────────────────────────────────────
 
@@ -160,7 +142,7 @@ function Question({ q, f, answered }: { q: Q; f: number; answered: number }) {
 }
 
 /** When the wave (right edge → left edge, as the page reads) reaches x. */
-const HALF = (COLS / 2 + 1) * CELL.w
+const HALF = REACH.x
 const answeredAt = (x: number) => WAVE + ((HALF - x) / (2 * HALF)) * WAVE_DUR
 
 function Swarm({ f }: { f: number }) {
@@ -176,7 +158,7 @@ function Swarm({ f }: { f: number }) {
   const cam = punch(f, hits, 0.04, 10)
   return (
     <AbsoluteFill style={{ background: SURFACE, transform: shake(f, hits.slice(2), 8, 8) }}>
-      <div style={{ position: "absolute", left: 540, top: 760, transform: `scale(${zoom * cam}) translate(${cx}px, ${cy}px)` }}>
+      <div style={{ position: "absolute", left: ORIGIN.x, top: ORIGIN.y, transform: `scale(${zoom * cam}) translate(${cx}px, ${cy}px)` }}>
         {BUBBLES.map((q, i) => {
           if (t < q.at) return null
           const answered = f >= WAVE ? ease(f, answeredAt(q.x), 6) : 0
@@ -219,47 +201,131 @@ function Headline({ f }: { f: number }) {
 
 // ── 5 · the three channels ─────────────────────────────────────────────────
 
-const ANSWERS: Record<Channel, { business: string; q: string; a: string }> = {
-  whatsapp: { business: "קליניקה לטיפולי פנים", q: "כמה עולה?", a: "טיפול פנים קלאסי 280₪. יש מקום ביום ג׳ ב-14:00, לקבוע לך?" },
-  instagram: { business: "קליניקה לטיפולי פנים", q: "מחיר?", a: "שלחתי לך מחירון בפרטי 🙂 הכי מבוקש: טיפול פנים ב-280₪" },
-  phone: { business: "קליניקה לטיפולי פנים", q: "כמה זה עולה?", a: "מתחיל ב-280₪, כולל ניקוי עמוק. רוצה שאקבע לך?" },
+/** Each channel: the question, an answer, a follow-up, and the answer that
+ *  moves it to a booking. Frames are relative to the channel's start. */
+const CHATS: Record<Channel, { from: "customer" | "agent"; text: string; at: number }[]> = {
+  whatsapp: [
+    { from: "customer", text: "כמה עולה?", at: 6 },
+    { from: "agent", text: "טיפול פנים קלאסי 280₪, כולל ניקוי עמוק 🙂", at: 32 },
+    { from: "customer", text: "יש מקום השבוע?", at: 72 },
+    { from: "agent", text: "יש ביום ג׳ ב-14:00 או ביום ה׳ ב-11:00. מה מתאים?", at: 98 },
+  ],
+  instagram: [
+    { from: "customer", text: "מחיר?", at: 6 },
+    { from: "agent", text: "שלחתי לך מחירון בפרטי 🙂 הכי מבוקש: טיפול פנים ב-280₪", at: 32 },
+    { from: "customer", text: "אפשר לקבוע דרכך?", at: 72 },
+    { from: "agent", text: "בטח! איזה יום נוח לך השבוע?", at: 98 },
+  ],
+  phone: [
+    { from: "customer", text: "כמה זה עולה?", at: 6 },
+    { from: "agent", text: "מתחיל ב-280₪, כולל ניקוי עמוק.", at: 32 },
+    { from: "customer", text: "ויש משהו מחר?", at: 72 },
+    { from: "agent", text: "יש מחר ב-16:00. לקבוע לך?", at: 98 },
+  ],
+}
+const TYPING_LEAD = 16 // the agent's dots show for this long before each answer
+
+// ── sound ──────────────────────────────────────────────────────────────────
+const { sfx, file, cues } = cueSheet("flood")
+sfx(FIRST, "pop", 0.8)
+sfx(0, "air", 0.8, BLACK) // cut with the swarm at the black
+sfx(GENS[0], "pop", 0.8)
+sfx(GENS[0] + 2, "swarm", 0.85, BLACK - GENS[0] - 2) // cut dead at the black
+GENS.slice(1).forEach((at) => sfx(at, "double", 0.7))
+sfx(HEADLINE + SLAM_LAND, "slam", 0.8)
+sfx(WAVE, "domino", 0.8)
+sfx(WAVE, "air", 0.8, END - WAVE)
+CHANNELS.forEach((channel, k) => {
+  const at = CHANNELS_AT + k * CH_EVERY
+  if (k > 0) sfx(at - 6, "whip", 0.6)
+  for (const m of CHATS[channel]) {
+    if (m.from === "customer") sfx(at + m.at, "pop", 0.6)
+    else {
+      for (let tap = at + m.at - TYPING_LEAD + 2; tap < at + m.at - 2; tap += 5) sfx(tap, "tap", 0.5)
+      sfx(at + m.at, "answer", 0.7)
+    }
+  }
+})
+sfx(CHANNELS_AT + SLAM_LAND, "slam", 0.7)
+sfx(LINE2 + SLAM_LAND, "slam", 0.6)
+file(END, BRAND_STING, 0.9)
+
+function ChatBubble({ from, text, p, color, call }: { from: "customer" | "agent"; text: string; p: number; color: string; call: boolean }) {
+  const agent = from === "agent"
+  return (
+    <div
+      style={{
+        alignSelf: agent ? "flex-end" : "flex-start",
+        maxWidth: "88%",
+        padding: agent ? "24px 34px" : "20px 32px",
+        borderRadius: 38,
+        borderStartStartRadius: agent ? 38 : 12,
+        borderStartEndRadius: agent ? 12 : 38,
+        background: agent ? (call ? WHITE : color) : WHITE,
+        color: agent && !call ? WHITE : INK,
+        border: agent && !call ? "none" : `2px solid ${HAIRLINE}`,
+        borderInlineEnd: agent && call ? `8px solid ${color}` : undefined,
+        fontSize: agent ? 46 : 48,
+        fontWeight: agent ? 400 : 600,
+        lineHeight: 1.3,
+        boxShadow: agent ? `0 24px 50px -30px ${color}` : "0 18px 40px -30px rgba(0,0,0,0.4)",
+        opacity: clamp01(p * 1.5),
+        transform: `translateY(${(1 - p) * 30}px) scale(${0.9 + 0.1 * p})`,
+        transformOrigin: agent ? "left bottom" : "right bottom",
+      }}
+    >
+      {call ? `״${text}״` : text}
+    </div>
+  )
 }
 
 function ChannelScreen({ channel, f }: { channel: Channel; f: number }) {
-  const { business, q, a } = ANSWERS[channel]
   const color = CHANNEL[channel].color
   const Icon = CHANNEL_ICON[channel]
-  const qp = popIn(f, 8)
-  const typing = f >= 22 && f < 44
-  const ap = popIn(f, 44)
   const call = channel === "phone"
-  return (
-    <AbsoluteFill style={{ background: `radial-gradient(120% 60% at 80% 30%, color-mix(in srgb, ${color} 10%, ${SURFACE}) 0%, ${SURFACE} 70%)` }}>
-      <div style={{ position: "absolute", top: 560, left: 65, right: 65, display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{ width: 84, height: 84, borderRadius: 999, background: color, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon size={42} strokeWidth={2.2} />
-        </div>
-        <div>
-          <div style={{ fontSize: 38, fontWeight: 700, color: INK }}>{CHANNEL[channel].label}</div>
-          <div style={{ fontSize: 28, color: MUTED }}>{business}</div>
-        </div>
-      </div>
-      <div style={{ position: "absolute", top: 700, left: 65, right: 65, display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ alignSelf: "flex-start", padding: "22px 34px", borderRadius: 38, borderStartStartRadius: 12, background: WHITE, border: `2px solid ${HAIRLINE}`, fontSize: 52, fontWeight: 600, color: INK, opacity: clamp01(qp * 1.5), transform: `translateY(${(1 - qp) * 30}px) scale(${0.9 + 0.1 * qp})`, transformOrigin: "right top" }}>
-          {call ? `״${q}״` : q}
-        </div>
-        {typing && (
+  const chat = CHATS[channel]
+  // The thread is anchored to the bottom of the safe band and grows upward,
+  // each entry opening its own height so the older ones glide up.
+  const entries: { key: string; at: number; until?: number; node: (p: number) => ReactNode }[] = []
+  for (const m of chat) {
+    if (m.from === "agent") {
+      entries.push({
+        key: `t${m.at}`,
+        at: m.at - TYPING_LEAD,
+        until: m.at,
+        node: () => (
           <div style={{ alignSelf: "flex-end", display: "flex", gap: 12, padding: "30px 36px", borderRadius: 38, background: `color-mix(in srgb, ${color} 85%, white)` }}>
             {[0, 1, 2].map((i) => (
               <div key={i} style={{ width: 18, height: 18, borderRadius: 999, background: WHITE, opacity: 0.5 + 0.5 * Math.sin(((f - i * 4) / 18) * Math.PI * 2) }} />
             ))}
           </div>
-        )}
-        {f >= 44 && (
-          <div style={{ alignSelf: "flex-end", maxWidth: "88%", padding: "26px 36px", borderRadius: 38, borderStartEndRadius: 12, background: call ? WHITE : color, color: call ? INK : WHITE, borderInlineEnd: call ? `8px solid ${color}` : undefined, fontSize: 50, lineHeight: 1.32, boxShadow: `0 24px 50px -30px ${color}`, opacity: clamp01(ap * 1.5), transform: `translateY(${(1 - ap) * 30}px) scale(${0.9 + 0.1 * ap})`, transformOrigin: "left top" }}>
-            {call ? `״${a}״` : a}
-          </div>
-        )}
+        ),
+      })
+    }
+    entries.push({ key: `m${m.at}`, at: m.at, node: (p) => <ChatBubble from={m.from} text={m.text} p={p} color={color} call={call} /> })
+  }
+  return (
+    <AbsoluteFill style={{ background: `radial-gradient(120% 60% at 80% 30%, color-mix(in srgb, ${color} 10%, ${SURFACE}) 0%, ${SURFACE} 70%)` }}>
+      <div style={{ position: "absolute", top: 520, left: 65, right: 65, display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ width: 80, height: 80, borderRadius: 999, background: color, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={40} strokeWidth={2.2} />
+        </div>
+        <div>
+          <div style={{ fontSize: 36, fontWeight: 700, color: INK }}>{CHANNEL[channel].label}</div>
+          <div style={{ fontSize: 27, color: MUTED }}>קליניקה לטיפולי פנים</div>
+        </div>
+      </div>
+      <div style={{ position: "absolute", top: 616, bottom: 1920 - 1236, left: 65, right: 65, display: "flex", flexDirection: "column", justifyContent: "flex-end", overflow: "hidden", maskImage: "linear-gradient(to bottom, transparent 0px, black 60px)" }}>
+        {entries.map((e) => {
+          if (f < e.at) return null
+          const open = e.until !== undefined && f >= e.until ? 1 - ease(f, e.until, 5) : ease(f, e.at, 7)
+          if (open <= 0.001) return null
+          return (
+            <div key={e.key} style={{ display: "grid", gridTemplateRows: `${open}fr` }}>
+              <div style={{ minHeight: 0, display: "flex", flexDirection: "column", paddingTop: 22 }}>{e.node(popIn(f, e.at))}</div>
+            </div>
+          )
+        })}
       </div>
     </AbsoluteFill>
   )
@@ -302,7 +368,7 @@ export function Flood({ safeZones }: { safeZones: boolean }) {
         </AbsoluteFill>
       )}
       {f >= CHANNELS_AT && f < END && <Channels f={f} />}
-      {f >= END && <EndCard f={f - END} />}
+      {f >= END && <EndCard f={f - END} entry="brand" />}
       <Flash f={f} hits={[...GENS, WAVE, BELL, CHANNELS_AT, END]} dur={6} max={0.7} />
       <Grain id="flood-grain" opacity={0.05} />
       <Track cues={cues} />

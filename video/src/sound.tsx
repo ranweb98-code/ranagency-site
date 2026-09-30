@@ -6,6 +6,9 @@ import kits from "./sfx-kits.json"
  *  than once is handed out variant by variant, so no hit is heard
  *  identically twice. */
 
+/** The sonic logo every follow-up ad ends on, with EndCard's "brand" entry. */
+export const BRAND_STING = "sfx/brand/sting-1.wav"
+
 type Kits = typeof kits
 export type Kit = keyof Kits
 
