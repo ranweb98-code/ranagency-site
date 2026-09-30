@@ -492,7 +492,7 @@ def build_flood():
 
     # The white page's air, under everything but the black.
     def air(rng, k):
-        d = 16.0
+        d = 24.0
         x = filt(noise(rng, d), "bp", (3000, 10000)) * 0.35 + filt(noise(rng, d), "lp", 250) * 0.65
         x *= 1 + 0.12 * np.sin(2 * math.pi * (0.17 + 0.05 * k) * t(d))
         x[: n_of(0.05)] *= np.linspace(0, 1, n_of(0.05))
