@@ -12,5 +12,11 @@ for (const weight of RUBIK_WEIGHTS) {
   void loadFont({ family: "Rubik", url: staticFile(`fonts/Rubik-${weight}.ttf`), weight })
 }
 void loadFont({ family: "Napuch Emoji", url: staticFile("fonts/NotoColorEmoji-chat.ttf") })
+// Cousine, a monospace with Hebrew, is the phone-menu terminal of "הקישו 1"
+// (Apache 2.0 — see public/fonts/LICENSE-Cousine.txt).
+for (const weight of ["400", "700"] as const) {
+  void loadFont({ family: "Cousine", url: staticFile(`fonts/Cousine-${weight}.ttf`), weight })
+}
 
 export const FONT_STACK = `Rubik, "Napuch Emoji", sans-serif`
+export const MONO_STACK = `Cousine, monospace`

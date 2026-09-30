@@ -1,0 +1,59 @@
+{
+  "desk": {
+    "lamp": 1,
+    "door": 1,
+    "ring": 5,
+    "office": 1,
+    "tick": 4,
+    "confirm": 2,
+    "pickup": 1,
+    "line": 1,
+    "linebed": 1,
+    "slot": 1,
+    "sms": 2,
+    "whip": 4,
+    "slam": 3,
+    "hangup": 1,
+    "trill": 1,
+    "zap": 3
+  },
+  "ivr": {
+    "dtmf": 12,
+    "hum": 1,
+    "key": 30,
+    "error": 4,
+    "thump": 2,
+    "crunch": 1,
+    "wood": 8,
+    "chip": 1,
+    "knock": 3,
+    "swish": 3,
+    "end": 1,
+    "glint": 3
+  },
+  "flood": {
+    "pop": 24,
+    "swarm": 1,
+    "double": 4,
+    "domino": 1,
+    "whip": 4,
+    "answer": 6,
+    "slam": 3,
+    "end": 1
+  },
+  "factory": {
+    "conveyor": 1,
+    "belt": 1,
+    "pipe": 5,
+    "metal": 4,
+    "scan": 5,
+    "stamp": 5,
+    "gate": 10,
+    "ding": 5,
+    "tray": 3,
+    "air": 4,
+    "winddown": 1,
+    "final": 1,
+    "flash": 4
+  }
+}

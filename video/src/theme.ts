@@ -37,3 +37,7 @@ export const CURTAIN_EASE = Easing.bezier(0.17, 0.67, 0.83, 0.67)
 export const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 /** 0→1 over `dur` frames starting at `start`, eased with the site's curve. */
 export const ease = (f: number, start: number, dur: number) => EASE_OUT(clamp01((f - start) / dur))
+
+/** The founding offer, as on the site: keep in sync with SPOTS_TAKEN in
+ *  src/components/site/founding-offer-section.tsx. */
+export const FOUNDING = { taken: 6, total: 10 } as const
