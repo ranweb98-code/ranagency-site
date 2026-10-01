@@ -669,3 +669,114 @@ html[data-curtain="skip"] .liquid-curtain {
     animation: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CRM — the per-client dashboard under /crm. Soft pastel field, frosted-glass
+   cards, one solid-colour card family and a dark floating dock.
+
+   Every colour resolves through the --crm-* variables, which the tenant layout
+   overwrites inline from the client's industry pack and brand. Nothing in the
+   CRM components names a hex value, so retinting a client is data, not code.
+   ══════════════════════════════════════════════════════════════════════════ */
+@theme inline {
+  --color-crm-accent: var(--crm-accent);
+  --color-crm-accent-2: var(--crm-accent-2);
+  --color-crm-warm: var(--crm-warm);
+  --color-crm-ink: var(--crm-ink);
+  --color-crm-muted: var(--crm-muted);
+}
+
+.crm-root {
+  --crm-accent: #2f4bff;
+  --crm-accent-2: #3f8f9e;
+  --crm-warm: #f2e24a;
+  --crm-ink: #0d0d0d;
+  --crm-bg-from: #cbd7f2;
+  --crm-bg-to: #e3efdc;
+  --crm-muted: rgba(17, 17, 17, 0.5);
+  position: relative;
+  min-height: 100dvh;
+  color: #111;
+  background: linear-gradient(
+    120deg,
+    var(--crm-bg-from) 0%,
+    color-mix(in oklab, var(--crm-bg-from) 45%, var(--crm-bg-to)) 48%,
+    var(--crm-bg-to) 100%
+  );
+}
+
+/* Two slow-set highlights behind everything: it is what makes the glass
+   above read as glass instead of as a pale rectangle. */
+.crm-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 85% -10%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(50rem 36rem at 0% 110%, rgba(255, 255, 255, 0.45), transparent 60%);
+}
+
+/* NOTE: these are plain (unlayered) rules, so they outrank Tailwind utilities:
+   a utility like bg-white/90 on an element that also has .crm-glass is
+   silently ignored. Opaque surfaces use .crm-panel instead of overriding. */
+.crm-glass {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.3));
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 24px 48px -32px rgba(24, 32, 64, 0.28);
+}
+
+.crm-glass-soft {
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.crm-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 30px 60px -20px rgba(10, 14, 30, 0.45);
+}
+
+.crm-dock {
+  background: linear-gradient(180deg, #1d1d17, #12120e);
+  box-shadow:
+    0 24px 48px -18px rgba(10, 10, 6, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Thin scrollbars for the inner scroll regions (inbox list, kanban lanes). */
+.crm-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.18) transparent;
+}
+
+.crm-hide-scrollbar {
+  scrollbar-width: none;
+}
+.crm-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes crm-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+.crm-live-dot {
+  animation: crm-pulse-dot 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crm-live-dot {
+    animation: none;
+  }
+}

@@ -8,7 +8,7 @@ import { useLenis } from "lenis/react"
    the last frame has painted, so it is never yanked mid-sweep. */
 const CURTAIN_TOTAL_MS = 1950
 
-/* Shared with the inline script in src/app/layout.tsx — change both. */
+/* Shared with the inline script in src/app/(site)/layout.tsx — change both. */
 const SESSION_KEY = "napuch:curtain-seen"
 
 /**

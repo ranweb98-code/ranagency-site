@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Geist_Mono, Rubik } from "next/font/google";
 import { CurtainLoader } from "@/components/motion/curtain-loader";
 import { LenisProvider } from "@/components/motion/lenis-provider";
-import "./globals.css";
+import "../globals.css";
 
 const rubik = Rubik({
   variable: "--font-rubik",
