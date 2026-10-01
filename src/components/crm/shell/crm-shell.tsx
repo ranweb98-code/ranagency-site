@@ -58,6 +58,7 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leadOpen, setLeadOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   const nav: NavItem[] = [
     { key: "overview", href: base, label: "סקירה", icon: LayoutDashboard },
@@ -83,14 +84,30 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
+  // The bar is transparent at the top of a page (airy, like the reference) and
+  // turns into frosted glass once content starts to slide under it — without
+  // that, scrolled titles and cards show straight through the logo and the
+  // buttons and the words pile up.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   const mobilePrimary = nav.filter((n) => ["overview", "inbox", "pipeline", "calendar"].includes(n.key))
   const moreActive = !mobilePrimary.some(isActive)
 
   return (
     <ToastProvider>
-      <div className="relative z-10 mx-auto w-full max-w-[1480px] px-3 pb-28 sm:px-5 md:pb-10 md:ps-[88px]">
+      <div className="relative z-10">
         {/* ── top bar ─────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-40 -mx-3 flex items-center justify-between gap-3 px-3 py-3 sm:-mx-5 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:py-5">
+        <header
+          className={cn(
+            "sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300",
+            scrolled ? "border-white/70 bg-white/80 backdrop-blur-lg" : "border-transparent",
+          )}
+        >
+          <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-3 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:ps-[88px] md:py-4">
           <Link href={base} className="flex min-w-0 items-center gap-2.5" aria-label={`${businessName} — סקירה`}>
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-crm-ink text-base font-semibold text-white">
               {businessName.replace(/[^\p{L}]/gu, "").slice(0, 1)}
@@ -151,9 +168,10 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
             </IconButton>
             <Avatar name={ownerName} size="md" className="ring-2 ring-white/90" />
           </div>
+          </div>
         </header>
 
-        {children}
+        <div className="mx-auto w-full max-w-[1480px] px-3 pb-28 sm:px-5 md:pb-10 md:ps-[88px]">{children}</div>
       </div>
 
       {/* ── desktop dock ────────────────────────────────────────── */}
