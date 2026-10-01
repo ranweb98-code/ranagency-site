@@ -23,10 +23,13 @@ FPS = 30
 ROOT = Path(__file__).resolve().parent.parent
 # `process-voice.py` levels the ElevenLabs takes; `process-voice.py azure`
 # levels the Azure ones (scripts/azure-voice.py) into their own folder.
-AZURE = len(sys.argv) > 1 and sys.argv[1] == "azure"
-SRC = ROOT / ("voice-src-azure" if AZURE else "voice-src")
-VOICE = ROOT / "public" / ("voice-azure" if AZURE else "voice")
-LINES_JSON = ROOT / "src" / "voice" / ("lines-azure.json" if AZURE else "lines.json")
+# `process-voice.py emergency` levels the emergency call (ElevenLabs).
+SET = sys.argv[1] if len(sys.argv) > 1 else ""
+AZURE = SET == "azure"
+SUFFIX = f"-{SET}" if SET else ""
+SRC = ROOT / f"voice-src{SUFFIX}"
+VOICE = ROOT / "public" / f"voice{SUFFIX}"
+LINES_JSON = ROOT / "src" / "voice" / f"lines{SUFFIX}.json"
 VOICE.mkdir(parents=True, exist_ok=True)
 FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
 

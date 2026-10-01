@@ -11,6 +11,7 @@ import { Flash, Ripple, SLAM_LAND, Slam, Whip, decay, punch, rand, shake } from 
 import { BRAND_STING, Track, cueSheet } from "../sound"
 import { CHANNEL, CURTAIN_EASE, HAIRLINE, INK, LIVE, MUTED, NIGHT, ON_DARK, SURFACE, WHITE, WIDTH, clamp01, ease } from "../theme"
 import linesAzure from "../voice/lines-azure.json"
+import linesEmergency from "../voice/lines-emergency.json"
 import linesEleven from "../voice/lines.json"
 
 /** "המזכירה של 19:00" — the voice agent. The clinic's receptionist has gone
@@ -21,16 +22,79 @@ import linesEleven from "../voice/lines.json"
 const BLUE = CHANNEL.phone.color
 const BLUE_LIGHT = `color-mix(in srgb, ${BLUE} 62%, white)`
 
-// ── voice ──────────────────────────────────────────────────────────────────
-// The call comes in two takes of the same six lines: ElevenLabs ("eleven")
-// and Azure Speech ("azure": Hila and Avri). Pick with --props='{"voice":"azure"}'.
-// Every timing after the first line is derived from the take's line lengths.
+// ── call, voice ────────────────────────────────────────────────────────────
+// Two calls, one structure (six lines, the booking between the fourth and
+// fifth): a routine check-up booked for tomorrow, and an emergency, a broken
+// tooth, seen the same evening. The check-up comes in two voice takes,
+// ElevenLabs ("eleven") and Azure Speech ("azure": Hila and Avri); the
+// emergency is ElevenLabs. Pick with --props='{"call":"emergency"}' or
+// --props='{"voice":"azure"}'. Every timing after the first line is derived
+// from the take's line lengths.
 export type Voice = "eleven" | "azure"
+export type CallKind = "checkup" | "emergency"
 type LineId = keyof typeof linesEleven
 type Take = Record<LineId, { speaker: string; frames: number; envelope: number[] }>
-const TAKES: Record<Voice, { lines: Take; dir: string }> = {
-  eleven: { lines: linesEleven, dir: "voice" },
-  azure: { lines: linesAzure, dir: "voice-azure" },
+const TAKES: Record<string, { lines: Take; dir: string }> = {
+  "checkup-eleven": { lines: linesEleven, dir: "voice" },
+  "checkup-azure": { lines: linesAzure, dir: "voice-azure" },
+  "emergency-eleven": { lines: linesEmergency, dir: "voice-emergency" },
+  "emergency-azure": { lines: linesEmergency, dir: "voice-emergency" }, // no Azure take of the emergency
+}
+
+/** What each call says and books. `[...]` marks the words that carry the
+ *  booking; they are set bold in blue within the sentence. */
+const SCENARIOS: Record<
+  CallKind,
+  {
+    texts: [LineId, string][]
+    clinic: string
+    /** "מחר" / "היום" */
+    day: string
+    /** The three calendar rows, the booked one in the middle. */
+    slots: [string, string, string]
+    what: string
+    when: string
+    summary: string
+    tags: [string, string, string]
+    logFirst: { what: string; done: string }
+  }
+> = {
+  checkup: {
+    texts: [
+      ["a1-answer", "[מרפאת השיניים], ערב טוב! איך אפשר לעזור?"],
+      ["c1-ask", "היי, ערב טוב... אני צריך לקבוע [בדיקה וניקוי אבנית]. יש משהו [מחר]?"],
+      ["a2-offer", "בטח. מחר יש לי פנוי [בעשר וחצי] בבוקר, או [בארבע] אחר הצהריים. מה נוח לך?"],
+      ["c2-pick", "[עשר וחצי], מעולה."],
+      ["c4-thanks", "וואו, מושלם. תודה רבה!"],
+      ["a5-bye", "בשמחה! ערב טוב."],
+    ],
+    clinic: "מרפאת השיניים",
+    day: "מחר",
+    slots: ["09:30", "10:30", "11:30"],
+    what: "בדיקה וניקוי אבנית",
+    when: "מחר 10:30",
+    summary: "מטופל חדש. ביקש בדיקה וניקוי אבנית למחר. נקבע ל-10:30, ואישור נשלח ב-SMS.",
+    tags: ["מטופל חדש", "חם", "תור נקבע"],
+    logFirst: { what: "בדיקה וניקוי אבנית", done: "נקבע · מחר 10:30" },
+  },
+  emergency: {
+    texts: [
+      ["a1-answer", "שלום, זו המזכירה של [ד״ר לוי]. הגעת למרפאה של [ד״ר לוי]. איך אפשר לעזור?"],
+      ["c1-ask", "שלום! שברתי את [השן]! אני צריך [תור דחוף], זה [מקרה חירום]!"],
+      ["a2-offer", "אני מבינה, אל תדאג. יש לנו [תור דחוף] היום, [בשמונה בערב], אצל ד״ר לוי עצמו. מתאים לך?"],
+      ["c2-pick", "כן, כן, [בשמונה]! מעולה!"],
+      ["c4-thanks", "וואו, תודה רבה! אתם מצילים אותי!"],
+      ["a5-bye", "בשמחה. נתראה בשמונה."],
+    ],
+    clinic: "מרפאת ד״ר לוי",
+    day: "היום",
+    slots: ["19:30", "20:00", "20:30"],
+    what: "תור דחוף · שן שבורה",
+    when: "היום 20:00",
+    summary: "מטופל חדש. שן שבורה, מקרה חירום. נקבע לתור דחוף היום ב-20:00, ואישור נשלח ב-SMS.",
+    tags: ["מטופל חדש", "דחוף", "תור נקבע"],
+    logFirst: { what: "שן שבורה, מקרה חירום", done: "נקבע · היום 20:00" },
+  },
 }
 
 // ── timeline (frames at 30 fps) ────────────────────────────────────────────
@@ -41,24 +105,12 @@ const PICKUP = 150
 const CALL_IN = 154 // the camera dives into the phone's display
 const CALL_AT = 160 // the call scene is on screen
 
-/** The call, in order. `[...]` marks the words that carry the booking; they
- *  are set bold in blue within the sentence. The agent's name-taking lines
- *  were cut (their answer could not be recorded), so the booking itself
- *  shows on screen. */
-const TEXTS: [LineId, string][] = [
-  ["a1-answer", "[מרפאת השיניים], ערב טוב! איך אפשר לעזור?"],
-  ["c1-ask", "היי, ערב טוב... אני צריך לקבוע [בדיקה וניקוי אבנית]. יש משהו [מחר]?"],
-  ["a2-offer", "בטח. מחר יש לי פנוי [בעשר וחצי] בבוקר, או [בארבע] אחר הצהריים. מה נוח לך?"],
-  ["c2-pick", "[עשר וחצי], מעולה."],
-  ["c4-thanks", "וואו, מושלם. תודה רבה!"],
-  ["a5-bye", "בשמחה! ערב טוב."],
-]
-
 /** Where everything lands for a take: each line starts a beat after the
  *  last one ends, the booking sits between "עשר וחצי" and the thanks, and
  *  the CRM, tagline and end card follow the hang-up. */
-export function plan(voice: Voice) {
-  const L = TAKES[voice].lines
+export function plan(voice: Voice, call: CallKind = "checkup") {
+  const take = TAKES[`${call}-${voice}`]
+  const L = take.lines
   const at: Partial<Record<LineId, number>> = {}
   let cursor = CALL_AT
   const place = (id: LineId, gap: number) => {
@@ -75,28 +127,27 @@ export function plan(voice: Voice) {
   place("c4-thanks", 0)
   place("a5-bye", 8)
   const HANGUP = cursor + 9
-  // After the call, the CRM: a black curtain carries it in, the camera sits
+  // After the call, the CRM: the site's black sheet crosses the whole frame and the CRM is under it when it leaves; the camera sits
   // on the call's card while its summary writes itself, pulls back to the
   // board as the card moves to "נקבע תור", then whips to the night's log.
   const CRM = {
-    in: HANGUP + 28, // the curtain starts across
-    sweep: 22,
-    type: HANGUP + 60, // the summary starts typing
-    tags: [HANGUP + 90, HANGUP + 95, HANGUP + 100],
-    zoomOut: HANGUP + 120,
-    move: HANGUP + 144, // the card leaves "פנייה חדשה"
-    land: HANGUP + 158, // …and lands in "נקבע תור"
-    autos: [HANGUP + 164, HANGUP + 173, HANGUP + 182],
-    log: HANGUP + 200, // the whip to the night's log
-    rows: HANGUP + 210,
+    in: HANGUP + 28, // the black sheet starts across
+    type: HANGUP + 84, // the summary starts typing
+    tags: [HANGUP + 114, HANGUP + 119, HANGUP + 124],
+    zoomOut: HANGUP + 144,
+    move: HANGUP + 168, // the card leaves "פנייה חדשה"
+    land: HANGUP + 182, // …and lands in "נקבע תור"
+    autos: [HANGUP + 188, HANGUP + 197, HANGUP + 206],
+    log: HANGUP + 224, // the whip to the night's log
+    rows: HANGUP + 234,
     rowGap: 7,
   }
-  const TAGLINE = HANGUP + 274
+  const TAGLINE = HANGUP + 298
   const END = TAGLINE + 48
   return {
     lines: L,
-    dir: TAKES[voice].dir,
-    CALL: TEXTS.map(([id, text]) => ({ id, at: at[id]!, text })),
+    dir: take.dir,
+    CALL: SCENARIOS[call].texts.map(([id, text]) => ({ id, at: at[id]!, text })),
     BOOK,
     HANGUP,
     CRM,
@@ -106,24 +157,29 @@ export function plan(voice: Voice) {
   }
 }
 
-/** Read once at load: the render's input props pick the take. */
-const VOICE: Voice = getInputProps<{ voice?: Voice }>().voice === "azure" ? "azure" : "eleven"
-const { lines, dir: VOICE_DIR, CALL, BOOK, HANGUP, CRM, TAGLINE, END } = plan(VOICE)
-export const receptionistFrames = (voice: Voice) => plan(voice).frames
+/** Read once at load: the render's input props pick the call and the take. */
+const PROPS = getInputProps<{ voice?: Voice; call?: CallKind }>()
+const VOICE: Voice = PROPS.voice === "azure" ? "azure" : "eleven"
+const KIND: CallKind = PROPS.call === "emergency" ? "emergency" : "checkup"
+const S = SCENARIOS[KIND]
+const { lines, dir: VOICE_DIR, CALL, BOOK, HANGUP, CRM, TAGLINE, END } = plan(VOICE, KIND)
+export const receptionistFrames = (voice: Voice, call: CallKind = "checkup") => plan(voice, call).frames
 
 const lineEnd = (i: number) => CALL[i].at + lines[CALL[i].id].frames
 
 // What the CRM shows after the call.
-const SUMMARY = "מטופל חדש. ביקש בדיקה וניקוי אבנית למחר. נקבע ל-10:30, ואישור נשלח ב-SMS."
+const SUMMARY = S.summary
 const SUMMARY_CPS = 2.5
 const SUMMARY_FRAMES = Math.ceil(SUMMARY.length / SUMMARY_CPS)
 const LOG_ROWS: { time: string; channel: "phone" | "whatsapp"; what: string; done: string; booked: boolean }[] = [
-  { time: "19:02", channel: "phone", what: "בדיקה וניקוי אבנית", done: "נקבע · מחר 10:30", booked: true },
+  { time: "19:02", channel: "phone", what: S.logFirst.what, done: S.logFirst.done, booked: true },
   { time: "21:40", channel: "phone", what: "כאב שן, דחוף", done: "נקבע · מחר 08:30", booked: true },
   { time: "23:15", channel: "whatsapp", what: "כמה עולה הלבנה?", done: "נשלח מחיר", booked: false },
   { time: "06:55", channel: "phone", what: "להזיז תור", done: "הוזז · יום ה׳ 12:00", booked: true },
   { time: "חג", channel: "phone", what: "תור לבדיקה לילד", done: "נקבע · יום א׳ 16:00", booked: true },
 ]
+
+const SHEET = { in: 22, hold: 8, out: 22 }
 
 // ── sound ──────────────────────────────────────────────────────────────────
 const { sfx, file, cues } = cueSheet("desk")
@@ -147,7 +203,8 @@ sfx(BOOK.sms, "sms", 0.8)
 sfx(HANGUP, "hangup", 0.85)
 sfx(HANGUP + 14, "confirm", 0.5)
 sfx(CRM.in, "sweep", 0.8)
-sfx(CRM.in + 6, "crmbed", 0.9, TAGLINE - CRM.in - 6) // cut dead on the tagline
+sfx(CRM.in + SHEET.in + SHEET.hold - 6, "sweep", 0.7)
+sfx(CRM.in + 40, "crmbed", 0.9, TAGLINE - CRM.in - 40) // cut dead on the tagline
 for (let at = CRM.type; at < CRM.type + SUMMARY_FRAMES; at += 2) sfx(at, "type", 0.8)
 for (const at of CRM.tags) sfx(at, "pop", 0.75)
 sfx(CRM.zoomOut, "whip", 0.5)
@@ -167,11 +224,11 @@ function Lamp({ on }: { on: number }) {
     <svg width={1080} height={1920} viewBox="0 0 1080 1920" style={{ position: "absolute", inset: 0 }}>
       <defs>
         <linearGradient id="cone" x1="0" y1="0" x2="0.35" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity={0.95 * on} />
+          <stop offset="0" stopColor="#fff" stopOpacity={0.34 * on} />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
         <radialGradient id="pool" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#fff" stopOpacity={0.95 * on} />
+          <stop offset="0" stopColor="#fff" stopOpacity={0.3 * on} />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </radialGradient>
       </defs>
@@ -179,11 +236,11 @@ function Lamp({ on }: { on: number }) {
       <ellipse cx={520} cy={1170} rx={430} ry={120} fill="url(#pool)" />
       <polygon points="262,744 372,700 820,1170 160,1180" fill="url(#cone)" />
       {/* the lamp: base, arm, shade */}
-      <ellipse cx={170} cy={1168} rx={96} ry={20} fill={INK} />
-      <path d="M170 1160 L128 910 L292 736" stroke={INK} strokeWidth={14} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={128} cy={910} r={14} fill={INK} />
-      <path d="M232 690 L392 640 L420 700 L262 760 Z" fill={INK} strokeLinejoin="round" />
-      <path d="M262 758 L420 700" stroke={`rgba(255,255,255,${0.9 * on})`} strokeWidth={6} strokeLinecap="round" />
+      <ellipse cx={170} cy={1168} rx={96} ry={20} fill="#1d1d1d" stroke="#2c2c2c" strokeWidth={3} />
+      <path d="M170 1160 L128 910 L292 736" stroke="#2a2a2a" strokeWidth={14} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={128} cy={910} r={14} fill="#2f2f2f" />
+      <path d="M232 690 L392 640 L420 700 L262 760 Z" fill="#262626" stroke="#343434" strokeWidth={3} strokeLinejoin="round" />
+      <path d="M262 758 L420 700" stroke={`rgba(255,255,255,${0.85 * on})`} strokeWidth={6} strokeLinecap="round" />
     </svg>
   )
 }
@@ -199,13 +256,12 @@ function DeskPhone({ f, lit, label }: { f: number; lit: number; label: string })
         </radialGradient>
       </defs>
       <ellipse cx={600} cy={1060} rx={420} ry={260} fill="url(#lcd-glow)" />
-      <ellipse cx={600} cy={1172} rx={250} ry={20} fill="rgba(17,17,17,0.16)" />
       {/* the body */}
-      <path d="M430 980 Q432 964 450 962 L750 962 Q768 964 770 980 L800 1150 Q800 1166 782 1166 L418 1166 Q400 1166 400 1150 Z" fill={WHITE} stroke={INK} strokeWidth={5} strokeLinejoin="round" />
+      <path d="M430 980 Q432 964 450 962 L750 962 Q768 964 770 980 L800 1150 Q800 1166 782 1166 L418 1166 Q400 1166 400 1150 Z" fill="#1f1f1f" stroke="#303030" strokeWidth={3} />
       {/* the handset in its cradle */}
-      <path d="M410 918 Q400 900 420 892 L500 884 Q520 884 522 900 L522 912 L678 912 L678 900 Q680 884 700 884 L780 892 Q800 900 790 918 L772 958 Q766 968 752 966 L700 960 Q690 958 690 946 L510 946 Q510 958 500 960 L448 966 Q434 968 428 958 Z" fill={SURFACE} stroke={INK} strokeWidth={5} strokeLinejoin="round" />
+      <path d="M410 918 Q400 900 420 892 L500 884 Q520 884 522 900 L522 912 L678 912 L678 900 Q680 884 700 884 L780 892 Q800 900 790 918 L772 958 Q766 968 752 966 L700 960 Q690 958 690 946 L510 946 Q510 958 500 960 L448 966 Q434 968 428 958 Z" fill="#242424" stroke="#353535" strokeWidth={3} />
       {/* the display */}
-      <rect x={470} y={986} width={260} height={62} rx={10} fill={lit > 0.02 ? BLUE : INK} opacity={lit > 0.02 ? 0.35 + 0.65 * lit : 1} />
+      <rect x={470} y={986} width={260} height={62} rx={10} fill={lit > 0.02 ? BLUE : "#121212"} opacity={0.25 + 0.75 * lit} stroke="#333" strokeWidth={2} />
       <text x={600} y={1027} textAnchor="middle" fontFamily="Rubik" fontWeight={700} fontSize={28} fill="#fff" opacity={lit} direction="rtl">
         {label}
       </text>
@@ -215,7 +271,7 @@ function DeskPhone({ f, lit, label }: { f: number; lit: number; label: string })
         const row = Math.floor(k / 3)
         const glow = lit * (0.25 + 0.2 * rand(k * 3.1 + Math.floor(f / 6)))
         return (
-          <rect key={k} x={532 + col * 48} y={1064 + row * 24} width={38} height={16} rx={5} fill={`rgba(37,99,235,${0.06 + glow})`} stroke={INK} strokeWidth={2.5} />
+          <rect key={k} x={532 + col * 48} y={1064 + row * 24} width={38} height={16} rx={5} fill={`rgba(120,160,255,${glow})`} stroke="#343434" strokeWidth={2} />
         )
       })}
     </svg>
@@ -237,7 +293,7 @@ function Office({ f }: { f: number }) {
   return (
     <AbsoluteFill
       style={{
-        background: `linear-gradient(180deg, #ffffff 0%, #fbfbfa 58%, #f1f0ed 60%, #ebeae6 100%)`,
+        background: `linear-gradient(180deg, #151515 0%, #0d0d0d 58%, #080808 60%, #050505 100%)`,
         transform: `scale(${1 + dive ** 2 * 7})`,
         transformOrigin: "600px 1017px",
         filter: dive > 0 ? `blur(${dive * 10}px)` : undefined,
@@ -245,13 +301,11 @@ function Office({ f }: { f: number }) {
     >
       {/* the wall, lit by the lamp while it is on */}
       <AbsoluteFill
-        style={{ background: "radial-gradient(70% 38% at 30% 42%, rgba(255,255,255,0.9), transparent 70%)", opacity: on }}
+        style={{ background: "radial-gradient(70% 38% at 30% 42%, rgba(255,255,255,0.09), transparent 70%)", opacity: on }}
       />
-      {/* the room dims when the lamp goes off */}
-      <AbsoluteFill style={{ background: INK, opacity: (1 - on) * 0.045 }} />
       {/* the desk's edge */}
-      <div style={{ position: "absolute", top: 1150, left: 0, right: 0, height: 4, background: "rgba(17,17,17,0.14)" }} />
-      {/* the wall clock */}
+      <div style={{ position: "absolute", top: 1150, left: 0, right: 0, height: 4, background: `rgba(255,255,255,${0.05 + 0.08 * on})` }} />
+      {/* the wall clock, an LED that stays on in the dark */}
       <div
         style={{
           position: "absolute",
@@ -260,8 +314,8 @@ function Office({ f }: { f: number }) {
           fontSize: 112,
           fontWeight: 300,
           letterSpacing: "0.04em",
-          color: INK,
-          opacity: 0.3 + 0.08 * on,
+          color: ON_DARK,
+          opacity: 0.2 + 0.1 * on,
           fontVariantNumeric: "tabular-nums",
         }}
       >
@@ -271,14 +325,14 @@ function Office({ f }: { f: number }) {
       <AbsoluteFill style={{ transform: vib }}>
         <DeskPhone f={f} lit={lit} label={label} />
       </AbsoluteFill>
-      <Ripple f={f} hits={RINGS} x={600} y={1017} color={BLUE} size={1300} dur={32} />
+      <Ripple f={f} hits={RINGS} x={600} y={1017} color={BLUE_LIGHT} size={1300} dur={32} />
       {/* headlines */}
       <div style={{ position: "absolute", top: 320, left: 0, right: 0 }}>
         {f < RINGS[0] && (
-          <KineticText lines={["המזכירה", "הלכה הביתה."]} f={f} inAt={6} outAt={RINGS[0] - 10} size={112} color={INK} />
+          <KineticText lines={["המזכירה", "הלכה הביתה."]} f={f} inAt={6} outAt={RINGS[0] - 10} size={112} color={ON_DARK} />
         )}
         {f >= RING_SLAM && (
-          <Slam f={f} at={RING_SLAM} style={{ textAlign: "center", fontSize: 128, fontWeight: 800, color: INK, letterSpacing: "-0.035em" }}>
+          <Slam f={f} at={RING_SLAM} style={{ textAlign: "center", fontSize: 128, fontWeight: 800, color: ON_DARK, letterSpacing: "-0.035em" }}>
             הטלפון לא.
           </Slam>
         )}
@@ -350,7 +404,7 @@ function CallHeader({ f }: { f: number }) {
         <Phone size={44} strokeWidth={2.2} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 42, fontWeight: 700, color: INK }}>מרפאת השיניים</div>
+        <div style={{ fontSize: 42, fontWeight: 700, color: INK }}>{S.clinic}</div>
         <div style={{ fontSize: 30, color: MUTED, marginTop: 2 }}>{ended ? "השיחה הסתיימה" : "סוכן קולי · עונה בשם המרפאה"}</div>
       </div>
       <div dir="ltr" style={{ fontSize: 40, fontWeight: 500, color: INK, fontVariantNumeric: "tabular-nums" }}>
@@ -494,12 +548,12 @@ function Booking({ f }: { f: number }) {
     <div style={{ position: "absolute", top: 650, left: 90, right: 90, opacity: inP, transform: `translateX(${(1 - inP) * 140}px)` }}>
       <div style={{ transform: `scale(${scale})`, padding: "26px 34px 10px", borderRadius: 32, background: SURFACE, border: `2px solid ${HAIRLINE}`, boxShadow: "0 40px 80px -44px rgba(17,17,17,0.4)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32, fontWeight: 700, color: INK, marginBottom: 16 }}>
-          <span>יומן המרפאה · מחר</span>
+          <span>יומן המרפאה · {S.day}</span>
           <span style={{ color: BLUE }}>{f >= BOOK.slot ? "עודכן" : "פנוי"}</span>
         </div>
-        <Slot time="09:30" p={0} />
-        <Slot time="10:30" text="בדיקה וניקוי אבנית" p={drop} />
-        <Slot time="11:30" p={0} />
+        <Slot time={S.slots[0]} p={0} />
+        <Slot time={S.slots[1]} text={S.what} p={drop} />
+        <Slot time={S.slots[2]} p={0} />
       </div>
       <div
         style={{
@@ -521,8 +575,8 @@ function Booking({ f }: { f: number }) {
           <Check size={36} strokeWidth={3.2} />
         </div>
         <div>
-          <div style={{ fontSize: 26, color: MUTED }}>הודעה · מרפאת השיניים</div>
-          <div style={{ fontSize: 34, fontWeight: 700 }}>התור אושר: מחר 10:30</div>
+          <div style={{ fontSize: 26, color: MUTED }}>הודעה · {S.clinic}</div>
+          <div style={{ fontSize: 34, fontWeight: 700 }}>התור אושר: {S.when}</div>
         </div>
       </div>
     </div>
@@ -534,7 +588,7 @@ function BookedPin({ p }: { p: number }) {
     <div style={{ position: "absolute", top: 660, left: 0, right: 0, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * -20}px)` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 30px", borderRadius: 999, background: "rgba(37,99,235,0.1)", border: `2px solid ${BLUE}`, color: INK, fontSize: 32, fontWeight: 700 }}>
         <Check size={30} strokeWidth={3.2} color={BLUE} />
-        נקבע ביומן · מחר 10:30 · אישור נשלח
+        נקבע ביומן · {S.when} · אישור נשלח
       </div>
     </div>
   )
@@ -612,11 +666,11 @@ function CardHeader({ size }: { size: number }) {
 function CallCard({ f, open }: { f: number; open: number }) {
   const typed = Math.max(0, Math.min(SUMMARY.length, Math.floor((f - CRM.type) * SUMMARY_CPS)))
   const typing = f >= CRM.type && typed < SUMMARY.length
-  const tags = ["מטופל חדש", "חם", "תור נקבע"]
+  const tags = S.tags
   return (
     <div style={{ padding: "18px 20px", borderRadius: 20, background: WHITE, border: `2px solid ${HAIRLINE}`, boxShadow: "0 18px 40px -26px rgba(17,17,17,0.45)" }}>
       <CardHeader size={22} />
-      <div style={{ marginTop: 10, fontSize: 19, color: MUTED }}>בדיקה וניקוי אבנית · מחר 10:30</div>
+      <div style={{ marginTop: 10, fontSize: 19, color: MUTED }}>{S.what} · {S.when}</div>
       <div style={{ display: "grid", gridTemplateRows: `${open}fr`, opacity: open }}>
         <div style={{ minHeight: 0, overflow: "hidden" }}>
           <div style={{ marginTop: 14, paddingTop: 12, borderTop: `2px solid ${HAIRLINE}` }}>
@@ -703,7 +757,7 @@ function Board({ f }: { f: number }) {
               {[0, 1, 2].map((i) => (
                 <span key={i} style={{ width: 13, height: 13, borderRadius: 999, background: "rgba(17,17,17,0.15)" }} />
               ))}
-              <span style={{ marginInlineStart: 8 }}>נפוץ' · CRM · מרפאת השיניים</span>
+              <span style={{ marginInlineStart: 8 }}>נפוץ' · CRM · {S.clinic}</span>
               <span style={{ marginInlineStart: "auto", display: "flex", alignItems: "center", gap: 8, fontSize: 20 }}>
                 <span style={{ width: 11, height: 11, borderRadius: 999, background: LIVE }} />
                 מחובר
@@ -734,12 +788,12 @@ function Board({ f }: { f: number }) {
       </AbsoluteFill>
       {/* what the system did with it, in screen space under the board */}
       <div style={{ position: "absolute", top: 966, left: 80, right: 80 }}>
-        <Automation text="נרשם ביומן · מחר 10:30" at={CRM.autos[0]} f={f} done />
+        <Automation text={`נרשם ביומן · ${S.when}`} at={CRM.autos[0]} f={f} done />
         <Automation text="אישור נשלח ב-SMS" at={CRM.autos[1]} f={f} done />
         <Automation text="תזכורת תישלח יום לפני" at={CRM.autos[2]} f={f} done={false} />
       </div>
       <div style={{ position: "absolute", top: 300, left: 0, right: 0 }}>
-        {f < CRM.zoomOut + 2 && <KineticText lines={["כל שיחה נרשמת."]} f={f} inAt={CRM.in + 20} outAt={CRM.zoomOut - 8} size={96} color={INK} />}
+        {f < CRM.zoomOut + 2 && <KineticText lines={["כל שיחה נרשמת."]} f={f} inAt={CRM.in + SHEET.in + SHEET.hold + 6} outAt={CRM.zoomOut - 8} size={96} color={INK} />}
         {f >= CRM.zoomOut - 4 && <KineticText lines={["וכל תור נסגר עד הסוף."]} f={f} inAt={CRM.zoomOut} size={76} color={INK} />}
       </div>
       <Flash f={f} hits={[CRM.land]} dur={5} color={BLUE_LIGHT} max={0.25} />
@@ -788,18 +842,24 @@ function NightLog({ f }: { f: number }) {
   )
 }
 
+// The site's curtain, as in the 23:41 ad: a black sheet crosses the whole
+// frame, covers it for a beat (the scene changes underneath), and leaves.
+const SHEET_OFF = WIDTH + CURTAIN_EDGE
+function sheetX(r: number) {
+  if (r < SHEET.in) return SHEET_OFF * (1 - CURTAIN_EASE(clamp01(r / SHEET.in)))
+  if (r < SHEET.in + SHEET.hold) return 0
+  return -SHEET_OFF * CURTAIN_EASE(clamp01((r - SHEET.in - SHEET.hold) / SHEET.out))
+}
+
 function Crm({ f }: { f: number }) {
-  // The hung-up call, while the phone-blue curtain crosses it.
-  const x = (WIDTH + CURTAIN_EDGE) * (1 - CURTAIN_EASE(clamp01((f - CRM.in) / CRM.sweep)))
+  const r = f - CRM.in
+  const covered = r >= SHEET.in + SHEET.hold / 2
   const board = <Board f={f} />
   const scene = f < CRM.log - 4 ? board : <Whip f={f} at={CRM.log - 4} dur={8} id="to-log" from={board} to={<NightLog f={f} />} />
-  if (f >= CRM.in + CRM.sweep) return scene
   return (
     <AbsoluteFill>
-      <Call f={f} />
-      <LiquidCurtain x={x} frame={f} color={BLUE}>
-        {scene}
-      </LiquidCurtain>
+      {covered ? scene : <Call f={f} />}
+      {r < SHEET.in + SHEET.hold + SHEET.out && <LiquidCurtain x={sheetX(r)} frame={r} />}
     </AbsoluteFill>
   )
 }
@@ -821,7 +881,7 @@ function Tagline({ f }: { f: number }) {
 }
 
 /** Scenes take the ad's own frame, so every timing constant above is absolute. */
-export function Receptionist({ safeZones }: { safeZones: boolean; voice?: Voice }) {
+export function Receptionist({ safeZones }: { safeZones: boolean; voice?: Voice; call?: CallKind }) {
   const f = useCurrentFrame()
   return (
     <AbsoluteFill style={{ direction: "rtl", fontFamily: FONT_STACK, background: NIGHT }}>

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { AbsoluteFill } from "remotion"
 import { FPS, WIDTH } from "../theme"
 
@@ -39,20 +39,34 @@ export function LiquidCurtain({
   const fill = color === "black" ? "#000000" : color === "white" ? "#ffffff" : color
   const tint = (src: string) => (fill === "#000000" ? src : src.replace("fill:%23000000", `fill:%23${fill.slice(1)}`))
   const wave = -((frame / (7.5 * FPS)) % 1) * TILE
-  const edge = (src: string) => ({
-    position: "absolute" as const,
-    top: 0,
-    height: "100%",
-    backgroundImage: `url("${src}")`,
-    backgroundRepeat: "repeat-y",
-    backgroundSize: `${CURTAIN_EDGE}px ${TILE}px`,
-    backgroundPosition: `0 ${wave}px`,
-  })
+  // The edge art tiles down the frame. Each tile is its own element, placed
+  // on a whole pixel and overlapping the next by a pixel, rather than a CSS
+  // repeating background: that left a notch at every seam, which showed
+  // against a light scene.
+  const edge = (src: string, style: CSSProperties) => (
+    <div style={{ position: "absolute", top: 0, height: "100%", overflow: "hidden", ...style }}>
+      {[0, 1, 2].map((k) => (
+        <div
+          key={k}
+          style={{
+            position: "absolute",
+            left: 0,
+            width: "100%",
+            top: Math.round(wave + k * TILE),
+            height: TILE + 2,
+            backgroundImage: `url("${src}")`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
+      ))}
+    </div>
+  )
   return (
     <AbsoluteFill style={{ overflow: "hidden", direction: "ltr" }}>
       <div style={{ position: "absolute", top: 0, left: 0, width: WIDTH, height: "100%", transform: `translateX(${x}px)` }}>
-        <div style={{ ...edge(tint(LEADING)), left: -CURTAIN_EDGE + 8 + band, width: CURTAIN_EDGE }} />
-        <div style={{ ...edge(tint(TRAILING)), right: -CURTAIN_EDGE - 2, width: CURTAIN_EDGE + 10 }} />
+        {edge(tint(LEADING), { left: -CURTAIN_EDGE + 8 + band, width: CURTAIN_EDGE })}
+        {edge(tint(TRAILING), { right: -CURTAIN_EDGE - 2, width: CURTAIN_EDGE + 10 })}
         <div style={{ position: "absolute", inset: 0, background: fill, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, direction: "rtl", transform: `translateX(${-x}px)` }}>{children}</div>
         </div>

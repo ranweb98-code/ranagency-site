@@ -294,7 +294,7 @@ def build_desk():
 
     # The CRM after the call: clean digital sounds, the office left behind.
     # The white curtain crossing the night: one long, airy sweep.
-    single(kit, "sweep", mix(whoosh(r, 0.8, 300, 7000, 0.8, 1.0), 0.3 * whoosh(r, 0.8, 150, 1200, 0.7, 1.0)), -5)
+    variants(kit, "sweep", 2, lambda rng, k: mix(whoosh(rng, 0.8, 300 + 120 * k, 7000 - 1200 * k, 0.8, 1.0), 0.3 * whoosh(rng, 0.8, 150, 1200, 0.7, 1.0)), -5)
 
     # Under the CRM: a bright, quiet room, so the white screens are never dead air.
     d = 10.0
