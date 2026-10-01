@@ -34,7 +34,7 @@ export const dental: IndustryPack = {
   valueFactor: 1,
   brand: {
     accent: "#2f4bff",
-    accent2: "#3f8f9e",
+    accent2: "#347582",
     warm: "#f2e24a",
     ink: "#0d0d0d",
     bgFrom: "#cbd7f2",

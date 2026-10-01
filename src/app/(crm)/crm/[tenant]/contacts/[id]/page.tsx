@@ -90,7 +90,7 @@ export default async function ContactPage({ params }: { params: Promise<{ tenant
               {recent.map((m) => (
                 <li key={m.id} className={cn("max-w-[92%] rounded-[18px] px-3.5 py-2 text-[12.5px] leading-relaxed", m.from === "customer" ? "bg-white/85 ms-auto" : m.from === "agent" ? "bg-crm-accent text-white" : "bg-crm-ink text-white")}>
                   {m.text}
-                  <span className="mt-0.5 block text-[10px] opacity-60">{formatTime(m.at)}</span>
+                  <span className="mt-0.5 block text-[10px] opacity-90">{formatTime(m.at)}</span>
                 </li>
               ))}
             </ul>

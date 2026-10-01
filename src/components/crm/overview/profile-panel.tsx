@@ -38,7 +38,7 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
       <div className="mx-auto w-fit rounded-full p-1.5 ring-1 ring-white/70">
         <Avatar name={contact.name} size="xl" className="shadow-lg" />
       </div>
-      <h3 className="mt-4 text-[21px] font-medium tracking-tight">{contact.name}</h3>
+      <h2 className="mt-4 text-[21px] font-medium tracking-tight">{contact.name}</h2>
       <p className="mt-0.5 text-xs text-crm-muted">
         {stage?.label} · {formatMoney(contact.value)}
       </p>

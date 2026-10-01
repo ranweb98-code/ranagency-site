@@ -34,7 +34,7 @@ export const chef: IndustryPack = {
   valueFactor: 1,
   valueByField: "guests",
   brand: {
-    accent: "#e4572e",
+    accent: "#b94625",
     accent2: "#2f6b5a",
     warm: "#f2c14e",
     ink: "#161210",

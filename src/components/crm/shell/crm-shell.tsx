@@ -99,6 +99,12 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
 
   return (
     <ToastProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-crm-ink focus:px-5 focus:py-2.5 focus:text-sm focus:font-medium focus:text-white"
+      >
+        דלג לתוכן הראשי
+      </a>
       <div className="relative z-10">
         {/* ── top bar ─────────────────────────────────────────────── */}
         <header
@@ -108,8 +114,8 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
           )}
         >
           <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-3 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:ps-[88px] md:py-4">
-          <Link href={base} className="flex min-w-0 items-center gap-2.5" aria-label={`${businessName} — סקירה`}>
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-crm-ink text-base font-semibold text-white">
+          <Link href={base} className="flex min-w-0 items-center gap-2.5">
+            <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-crm-ink text-base font-semibold text-white">
               {businessName.replace(/[^\p{L}]/gu, "").slice(0, 1)}
             </span>
             <span className="truncate text-lg font-medium tracking-tight">{businessName}</span>
@@ -171,7 +177,9 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-[1480px] px-3 pb-28 sm:px-5 md:pb-10 md:ps-[88px]">{children}</div>
+        <main id="main-content" className="mx-auto w-full max-w-[1480px] px-3 pb-28 sm:px-5 md:pb-10 md:ps-[88px]">
+          {children}
+        </main>
       </div>
 
       {/* ── desktop dock ────────────────────────────────────────── */}

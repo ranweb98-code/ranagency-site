@@ -82,12 +82,12 @@ export function CalendarCard({
         </IconButton>
       </div>
 
-      <div className="mb-1.5 grid grid-cols-7 gap-1.5 text-center text-[10px] text-crm-muted">
+      <div aria-hidden className="mb-1.5 grid grid-cols-7 gap-1.5 text-center text-[10px] text-crm-muted">
         {WEEKDAYS.map((d) => (
           <span key={d}>{d}</span>
         ))}
       </div>
-      <div role="grid" aria-label={monthLabel} className="grid grid-cols-7 gap-1.5">
+      <div role="group" aria-label={monthLabel} className="grid grid-cols-7 gap-1.5">
         {Array.from({ length: view.lead }).map((_, i) => (
           <span key={`lead-${i}`} aria-hidden />
         ))}
@@ -103,9 +103,8 @@ export function CalendarCard({
             <button
               key={key}
               type="button"
-              role="gridcell"
               aria-label={`${day} ב${monthLabel.split(" ")[0]}${list.length ? `, ${list.length} באותו יום` : ""}`}
-              aria-selected={isSelected}
+              aria-pressed={isSelected}
               onClick={() => setSelected(key)}
               className={cn(
                 "relative flex aspect-square flex-col items-start justify-between rounded-xl p-1.5 text-[10px] transition-transform duration-200 hover:scale-[1.06]",
@@ -116,10 +115,10 @@ export function CalendarCard({
             >
               <span className="flex [&>*+*]:-ms-1.5">
                 {names.slice(0, 2).map((name) => (
-                  <Avatar key={name} name={name} size="xs" className="size-4 text-[7px] ring-1 ring-white" />
+                  <Avatar key={name} name={name} size="xs" decorative className="size-4 text-[7px] ring-1 ring-white" />
                 ))}
               </span>
-              <span className="leading-none tabular-nums opacity-80">{day}</span>
+              <span className="leading-none tabular-nums">{day}</span>
             </button>
           )
         })}

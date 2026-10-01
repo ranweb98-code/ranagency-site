@@ -57,15 +57,15 @@ export function AgentWorkCard({ data, metrics }: { data: CrmData; metrics: Metri
 export function RoiCard({ data, metrics }: { data: CrmData; metrics: Metrics }) {
   return (
     <div className="relative flex flex-col justify-between overflow-hidden rounded-[28px] bg-crm-accent p-5 text-white shadow-[0_24px_48px_-28px_rgba(24,32,64,0.5)] md:rounded-[34px]">
-      <span aria-hidden className="absolute -start-10 -top-12 size-48 rounded-full bg-white/10" />
+      <span aria-hidden className="absolute -start-10 -top-12 size-48 rounded-full bg-white/[0.05]" />
       <span aria-hidden className="absolute -bottom-16 end-6 size-40 rounded-full bg-black/10" />
       <div className="relative">
         <p className="text-[15px] font-medium">החזר על ההשקעה</p>
         <p className="mt-5 text-[64px] font-semibold leading-none tracking-tight tabular-nums"><Ltr>×{metrics.roi}</Ltr></p>
       </div>
-      <p className="relative mt-5 text-[13px] leading-relaxed text-white/80">
+      <p className="relative mt-5 text-[13px] leading-relaxed text-white">
         ב־30 הימים האחרונים נסגרו {formatMoney(metrics.closed30)} ב-{metrics.closedCount30} עסקאות, מול מנוי של {formatMoney(data.tenant.planMonthly)} בחודש.
-        <span className="mt-2 block text-[11px] text-white/60">לפי עסקאות שסומנו כשולמות</span>
+        <span className="mt-2 block text-[11px] text-white/90">לפי עסקאות שסומנו כשולמות</span>
       </p>
     </div>
   )

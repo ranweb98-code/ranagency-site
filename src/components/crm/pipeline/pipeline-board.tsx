@@ -93,7 +93,7 @@ export function PipelineBoard({ data }: { data: CrmData }) {
                     style={{ backgroundColor: won ? "var(--crm-warm)" : `color-mix(in oklab, var(--crm-accent) ${Math.round((index / lastIndex) * 100)}%, var(--crm-accent-2))` }}
                   />
                   <h2 className="text-[13px] font-medium">{stage.label}</h2>
-                  <span className={cn("text-[11px] tabular-nums", won ? "text-white/60" : "text-crm-muted")}>{cards.length}</span>
+                  <span className={cn("text-[11px] tabular-nums", won ? "text-white/80" : "text-crm-muted")}>{cards.length}</span>
                 </div>
                 <span className="text-[13px] font-medium tabular-nums">{formatMoneyCompact(total)}</span>
               </header>

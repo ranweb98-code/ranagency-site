@@ -33,16 +33,16 @@ function gradientFor(name: string) {
   return GRADIENTS[h % GRADIENTS.length]
 }
 
-export function Avatar({ name, size = "md", className }: { name: string; size?: keyof typeof SIZES; className?: string }) {
+/** `decorative` for avatars inside a control whose own name already says who it is. */
+export function Avatar({ name, size = "md", className, decorative }: { name: string; size?: keyof typeof SIZES; className?: string; decorative?: boolean }) {
   const [from, to] = gradientFor(name)
   return (
     <span
-      role="img"
-      aria-label={name}
+      {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": name })}
       className={cn("inline-grid shrink-0 select-none place-items-center rounded-full font-semibold text-black/70", SIZES[size], className)}
       style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
     >
-      {initials(name)}
+      {decorative ? null : initials(name)}
     </span>
   )
 }

@@ -33,8 +33,8 @@ export const bridal: IndustryPack = {
   catalogIcon: "gem",
   valueFactor: 1,
   brand: {
-    accent: "#9a6f4e",
-    accent2: "#7c9184",
+    accent: "#8b6446",
+    accent2: "#5f7066",
     warm: "#ead9a3",
     ink: "#17120e",
     bgFrom: "#f0e4d8",

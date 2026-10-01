@@ -13,9 +13,9 @@ import { cn } from "@/lib/utils"
 // ink, one yellow, then quiet glass for the older ones. Colour carries rank,
 // not category, so the newest money is always the loudest.
 const TONES = [
-  { surface: "bg-crm-accent text-white", muted: "text-white/75", ring: "ring-crm-accent" },
-  { surface: "bg-crm-accent-2 text-white", muted: "text-white/75", ring: "ring-crm-accent-2" },
-  { surface: "bg-crm-ink text-white", muted: "text-white/65", ring: "ring-crm-ink" },
+  { surface: "bg-crm-accent text-white", muted: "text-white/90", ring: "ring-crm-accent" },
+  { surface: "bg-crm-accent-2 text-white", muted: "text-white/90", ring: "ring-crm-accent-2" },
+  { surface: "bg-crm-ink text-white", muted: "text-white/80", ring: "ring-crm-ink" },
   { surface: "bg-crm-warm text-crm-ink", muted: "text-crm-ink/65", ring: "ring-crm-warm" },
   { surface: "crm-glass-soft text-crm-ink", muted: "text-crm-muted", ring: "ring-white" },
   { surface: "crm-glass-soft text-crm-ink", muted: "text-crm-muted", ring: "ring-white" },

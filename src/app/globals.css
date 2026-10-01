@@ -693,7 +693,7 @@ html[data-curtain="skip"] .liquid-curtain {
   --crm-ink: #0d0d0d;
   --crm-bg-from: #cbd7f2;
   --crm-bg-to: #e3efdc;
-  --crm-muted: rgba(17, 17, 17, 0.5);
+  --crm-muted: rgba(17, 17, 17, 0.64);
   position: relative;
   min-height: 100dvh;
   color: #111;

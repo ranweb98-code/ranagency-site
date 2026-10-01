@@ -34,7 +34,7 @@ export const realestate: IndustryPack = {
   valueFactor: 0.02,
   brand: {
     accent: "#124e8f",
-    accent2: "#1d9a89",
+    accent2: "#177a6c",
     warm: "#f3cb4d",
     ink: "#0b1118",
     bgFrom: "#cddfee",

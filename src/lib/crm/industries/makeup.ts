@@ -33,8 +33,8 @@ export const makeup: IndustryPack = {
   catalogIcon: "palette",
   valueFactor: 1,
   brand: {
-    accent: "#d6336c",
-    accent2: "#8e5bd1",
+    accent: "#c52f63",
+    accent2: "#8354c0",
     warm: "#f7c65a",
     ink: "#150d12",
     bgFrom: "#f4d3e2",

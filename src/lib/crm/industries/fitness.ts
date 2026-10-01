@@ -32,7 +32,7 @@ export const fitness: IndustryPack = {
   catalogIcon: "dumbbell",
   valueFactor: 1,
   brand: {
-    accent: "#ff5b2e",
+    accent: "#bd4322",
     accent2: "#1f7a5c",
     warm: "#e4ef4a",
     ink: "#120e0c",

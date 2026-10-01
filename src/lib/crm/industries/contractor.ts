@@ -33,7 +33,7 @@ export const contractor: IndustryPack = {
   catalogIcon: "hammer",
   valueFactor: 1,
   brand: {
-    accent: "#e8801f",
+    accent: "#a25a16",
     accent2: "#3a6ea5",
     warm: "#f2d349",
     ink: "#14110d",

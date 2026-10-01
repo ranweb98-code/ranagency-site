@@ -32,8 +32,8 @@ export const nails: IndustryPack = {
   catalogIcon: "sparkles",
   valueFactor: 1,
   brand: {
-    accent: "#7c5cff",
-    accent2: "#ff7aa8",
+    accent: "#6e52e3",
+    accent2: "#a64f6d",
     warm: "#ffd166",
     ink: "#120d1c",
     bgFrom: "#e2d9f8",

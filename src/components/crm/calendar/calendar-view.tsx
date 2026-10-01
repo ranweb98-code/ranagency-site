@@ -80,7 +80,7 @@ export function CalendarView({ data, metrics }: { data: CrmData; metrics: Metric
             </IconButton>
           </div>
 
-          <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10px] text-crm-muted md:gap-1.5 md:text-[11px]">
+          <div aria-hidden className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10px] text-crm-muted md:gap-1.5 md:text-[11px]">
             {WEEKDAYS.map((d) => (
               <span key={d}>
                 <span className="md:hidden">{d[0] === "ש" ? d.slice(0, 2) : d[0]}</span>
@@ -89,7 +89,7 @@ export function CalendarView({ data, metrics }: { data: CrmData; metrics: Metric
             ))}
           </div>
 
-          <div role="grid" aria-label={monthLabel} className="grid grid-cols-7 gap-1 md:gap-1.5">
+          <div role="group" aria-label={monthLabel} className="grid grid-cols-7 gap-1 md:gap-1.5">
             {Array.from({ length: lead }).map((_, i) => (
               <span key={`lead-${i}`} aria-hidden />
             ))}
@@ -104,18 +104,23 @@ export function CalendarView({ data, metrics }: { data: CrmData; metrics: Metric
                 <button
                   key={key}
                   type="button"
-                  role="gridcell"
-                  aria-selected={isSelected}
-                  aria-label={`${day} ב${monthLabel.split(" ")[0]}${list.length ? `, ${list.length} ב${pack.vocab.bookings}` : ""}`}
+                  aria-pressed={isSelected}
                   onClick={() => setSelected(key)}
                   className={cn(
                     "flex aspect-square flex-col rounded-[14px] p-1.5 text-start transition-all duration-200 md:aspect-auto md:min-h-[96px] md:rounded-[18px] md:p-2",
                     isSelected ? "bg-white shadow-[0_10px_28px_-16px_rgba(24,32,64,0.55)]" : "bg-black/[0.045] hover:bg-white/70",
-                    past && !isSelected && "opacity-60",
+                    past && !isSelected && "bg-black/[0.025]",
                     isToday && "ring-2 ring-crm-ink",
                   )}
                 >
-                  <span className={cn("text-[11px] tabular-nums md:text-xs", isToday ? "font-semibold" : "text-crm-ink/60")}>{day}</span>
+                  <span className={cn("text-[11px] tabular-nums md:text-xs", isToday ? "font-semibold" : "text-crm-ink/60")}>
+                    {day}
+                    <span className="sr-only">
+                      {" "}
+                      ב{monthLabel.split(" ")[0]}
+                      {list.length ? `, ${list.length} ${list.length === 1 ? pack.vocab.booking : pack.vocab.bookings}` : ""}
+                    </span>
+                  </span>
                   {/* phones: dots; desktop: readable chips */}
                   <span className="mt-auto flex flex-wrap gap-0.5 md:hidden">
                     {list.slice(0, 4).map((a) => (

@@ -35,7 +35,7 @@ export const generic: IndustryPack = {
   valueFactor: 1,
   brand: {
     accent: "#4338ff",
-    accent2: "#2a9d8f",
+    accent2: "#20796e",
     warm: "#f1e44a",
     ink: "#0d0d0d",
     bgFrom: "#d3d9ee",
