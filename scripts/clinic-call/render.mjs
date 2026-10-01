@@ -2,7 +2,7 @@
 // Needs: ffmpeg, ffprobe, playwright-core (+ Chromium) and @fontsource/rubik.
 // Usage: node scripts/clinic-call/render.mjs [out.mp4]
 import { execFileSync, spawn, spawnSync } from "node:child_process"
-import { readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import { LINES } from "./script.mjs"
 
@@ -23,10 +23,10 @@ const dur = (f) => parseFloat(execFileSync("ffprobe", ["-v", "error", "-show_ent
 const cues = []
 let t = 0
 const hook = (text, len, hl) => { cues.push({ t0: t, t1: t + len, text, kind: "hook", hl }); t += len }
-hook("22:47", 0.9)
-hook("המרפאה סגורה.", 1.0)
-hook("המטופל עדיין כואב.", 1.15, "כואב")
-t += 0.1
+// Phone rings on white (two rings), then the call is picked up.
+const RING = 2.7
+cues.push({ t0: 0, t1: RING, text: "מרפאת שיניים", sub: "שיחה נכנסת", kind: "ring" })
+t = RING + 0.25
 
 const audioIn = [] // {file, at}
 const TMP = process.env.RENDER_TMP ?? "/tmp"
@@ -43,7 +43,8 @@ function pauses(file) {
   return [...log.matchAll(/silence_start: ([\d.]+)[\s\S]*?silence_end: ([\d.]+)/g)].map((m) => (+m[1] + +m[2]) / 2)
 }
 for (const l of LINES) {
-  const f = trim(`${AUDIO}${l.id}-${l.who}.mp3`, `${l.id}-${l.who}`)
+  const el = `${AUDIO}eleven/${l.id}.mp3`
+  const f = trim(existsSync(el) ? el : `${AUDIO}${l.id}-${l.who}.mp3`, `${l.id}-${l.who}`)
   const d = dur(f)
   audioIn.push({ file: f, at: t })
   // cut points: real pauses when the clip has exactly as many as the captions need
@@ -63,13 +64,18 @@ for (const l of LINES) {
 t += 0.15
 const tail = (text, len, hl) => { cues.push({ t0: t, t1: t + len, text, kind: "hook", hl }); t += len }
 tail("התור נקבע.", 1.1, "נקבע")
-tail("אף אחד לא ענה.", 1.25, "אף אחד")
+tail("אף אחד לא הרים טלפון.", 1.5, "אף אחד")
 cues.push({ t0: t, t1: t + 2.6, text: "נפוץ׳", sub: "סוכן קולי שעונה בכל שעה", kind: "end" })
 const TOTAL = t + 2.6
 // hold each cue until the next begins so there is never a dead white frame mid-talk
 for (let i = 0; i < cues.length - 1; i++) if (cues[i + 1].t0 - cues[i].t1 < 0.35) cues[i].t1 = cues[i + 1].t0
 
 // ---- audio mix --------------------------------------------------------
+const RINGWAV = `${TMP}/ring.wav`
+// 440+480Hz double ring, 20Hz warble, then a soft pickup click
+execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i",
+  `aevalsrc='(sin(2*PI*440*t)+sin(2*PI*480*t))*0.22*(0.6+0.4*sin(2*PI*20*t))*if(lt(mod(t,1.3),0.9),1,0)*if(lt(t,2.5),1,0)+if(between(t,2.5,2.53),0.35*sin(2*PI*1800*t)*(1-(t-2.5)/0.03),0)':d=${RING}:s=48000`, RINGWAV])
+audioIn.unshift({ file: RINGWAV, at: 0 })
 const mixArgs = audioIn.flatMap((a) => ["-i", a.file])
 const filt = audioIn.map((a, i) => `[${i}:a]adelay=${Math.round(a.at * 1000)}|${Math.round(a.at * 1000)},volume=1.0[a${i}]`).join(";")
   + `;${audioIn.map((_, i) => `[a${i}]`).join("")}amix=inputs=${audioIn.length}:normalize=0,apad=whole_dur=${TOTAL.toFixed(2)},atrim=0:${TOTAL.toFixed(2)}[m]`
@@ -90,7 +96,7 @@ body{width:${W}px;height:${H}px;overflow:hidden;font-family:R,sans-serif;backgro
 #sub{font-weight:500;font-size:52px;margin-top:44px;color:#6f6f6f}
 #brand{position:absolute;bottom:90px;left:0;right:0;text-align:center;font-weight:500;font-size:34px;color:#9a9a9a;letter-spacing:.04em}
 #bar{position:absolute;bottom:0;left:0;height:10px;background:${ACCENT}}
-</style><body><div id="bg"></div><div id="stage"><div id="tag"></div><div id="txt"></div><div id="sub"></div></div><div id="brand">נפוץ׳</div><div id="bar"></div></body></html>`
+</style><body><div id="bg"></div><div id="stage"><div id="tag"></div><div id="phone" style="display:none;position:relative;width:340px;height:340px;margin-bottom:70px;transform:scale(1.25)"><svg id="waves" viewBox="0 0 340 340" style="position:absolute;inset:0;overflow:visible"><circle id="w1" cx="170" cy="170" r="150" fill="none" stroke="#2563eb" stroke-width="6"/><circle id="w2" cx="170" cy="170" r="150" fill="none" stroke="#2563eb" stroke-width="6"/></svg><svg id="ph" viewBox="0 0 24 24" style="position:absolute;inset:60px;width:220px;height:220px" fill="#2563eb"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg></div><div id="txt"></div><div id="sub"></div></div><div id="brand">נפוץ׳</div><div id="bar"></div></body></html>`
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" })
 const page = await browser.newPage({ viewport: { width: W, height: H } })
@@ -103,16 +109,16 @@ function state(time) {
   const age = time - c.t0
   const f = Math.floor(age * FPS)
   // two-frame hard flash on every cut: ink-black first, then a half-tone, then white
-  const flash = f === 0 ? "#111" : f === 1 ? (c.kind === "say" && c.tag === "agent" ? ACCENT : "#111") : f === 2 ? "#e9e9e9" : "#fff"
+  const flash = c.kind === "ring" ? "#fff" : f === 0 ? ACCENT : f === 1 ? "#9db9f5" : f === 2 ? "#eef3ff" : "#fff"
   const p = ease(age / 0.2)
-  const big = c.kind === "end" ? 230 : c.kind === "hook" ? (c.text === "22:47" ? 330 : 190) : c.text.length > 20 ? 132 : c.text.length > 12 ? 168 : 214
+  const big = c.kind === "ring" ? 120 : c.kind === "end" ? 230 : c.kind === "hook" ? (c.text === "22:47" ? 330 : 190) : c.text.length > 20 ? 132 : c.text.length > 12 ? 168 : 214
   let text = c.text
   if (c.hl) text = text.replace(c.hl, `<span style="color:${ACCENT}">${c.hl}</span>`)
   return {
-    flash, hidden: f < 2, scale: 1.14 - 0.14 * p, y: (1 - p) * 26, text, big,
+    flash, hidden: c.kind !== "ring" && f < 2, ring: c.kind === "ring" ? age : -1, scale: 1.14 - 0.14 * p, y: (1 - p) * 26, text, big,
     tag: c.kind === "say" ? (c.tag === "agent" ? "הסוכן" : "המטופל") : "",
     tagColor: c.tag === "agent" ? ACCENT : "#6f6f6f",
-    sub: c.sub ?? "", end: c.kind === "end", time: c.kind === "end" ? 1 : 0, prog: time / TOTAL,
+    sub: c.sub ?? "", end: c.kind === "end" || c.kind === "ring", time: c.kind === "end" ? 1 : 0, prog: time / TOTAL,
   }
 }
 
@@ -131,6 +137,15 @@ for (let i = 0; i < frames; i++) {
     tag.textContent = s.tag; tag.style.display = s.tag ? "block" : "none"; tag.style.color = s.tagColor
     sub.textContent = s.sub; sub.style.display = s.sub ? "block" : "none"
     document.getElementById("brand").style.display = s.end ? "none" : "block"
+    const ph = document.getElementById("phone"); ph.style.display = s.ring >= 0 ? "block" : "none"
+    if (s.ring >= 0) {
+      const a = s.ring, on = a < 2.5 && (a % 1.3) < 0.9
+      document.getElementById("ph").style.transform = on ? `rotate(${Math.sin(a * 2 * Math.PI * 9) * 11}deg)` : "rotate(0)"
+      ;["w1", "w2"].forEach((id, k) => {
+        const el = document.getElementById(id), q = ((a % 1.3) - k * 0.3) / 0.9, v = on && q > 0 && q < 1 ? q : 0
+        el.setAttribute("r", String(95 + v * 120)); el.style.opacity = v ? String(0.55 * (1 - v)) : "0"
+      })
+    }
     document.getElementById("bar").style.width = (s.prog * 100) + "%"
   }, s)
   const buf = await page.screenshot({ type: "jpeg", quality: 94 })
