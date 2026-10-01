@@ -4,7 +4,7 @@ import { Ad15, Ad6, CUT_15, CUT_6 } from "./Cutdowns"
 import { FLOOD_FRAMES, Flood } from "./ads/Flood"
 import { HOT_OR_COLD_FRAMES, HotOrCold } from "./ads/HotOrCold"
 import { PRESS_ONE_FRAMES, PressOne } from "./ads/PressOne"
-import { RECEPTIONIST_FRAMES, Receptionist } from "./ads/Receptionist"
+import { type Voice, Receptionist, receptionistFrames } from "./ads/Receptionist"
 import { totalFrames } from "./edit"
 import { FPS, HEIGHT, WIDTH } from "./theme"
 
@@ -18,7 +18,14 @@ export function RemotionRoot() {
       <Composition id="Ad15" component={Ad15} durationInFrames={totalFrames(CUT_15)} {...size} />
       <Composition id="Ad6" component={Ad6} durationInFrames={totalFrames(CUT_6)} {...size} />
       <Composition id="PressOne" component={PressOne} durationInFrames={PRESS_ONE_FRAMES} {...size} />
-      <Composition id="Receptionist" component={Receptionist} durationInFrames={RECEPTIONIST_FRAMES} {...size} />
+      <Composition
+        id="Receptionist"
+        component={Receptionist}
+        durationInFrames={receptionistFrames("eleven")}
+        calculateMetadata={({ props }) => ({ durationInFrames: receptionistFrames(props.voice ?? "eleven") })}
+        {...size}
+        defaultProps={{ safeZones: false, voice: "eleven" as Voice }}
+      />
       <Composition id="HotOrCold" component={HotOrCold} durationInFrames={HOT_OR_COLD_FRAMES} {...size} />
       <Composition id="Flood" component={Flood} durationInFrames={FLOOD_FRAMES} {...size} />
     </>

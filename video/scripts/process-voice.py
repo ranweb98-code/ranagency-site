@@ -10,6 +10,7 @@ loudness envelope (30 fps), which drives the on-screen waveform.
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import wave
 from pathlib import Path
@@ -20,8 +21,13 @@ from scipy.signal import butter, sosfilt
 SR = 48000
 FPS = 30
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "voice-src"
-VOICE = ROOT / "public" / "voice"
+# `process-voice.py` levels the ElevenLabs takes; `process-voice.py azure`
+# levels the Azure ones (scripts/azure-voice.py) into their own folder.
+AZURE = len(sys.argv) > 1 and sys.argv[1] == "azure"
+SRC = ROOT / ("voice-src-azure" if AZURE else "voice-src")
+VOICE = ROOT / "public" / ("voice-azure" if AZURE else "voice")
+LINES_JSON = ROOT / "src" / "voice" / ("lines-azure.json" if AZURE else "lines.json")
+VOICE.mkdir(parents=True, exist_ok=True)
 FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
 
 # Speaker per line: "agent" is Michal (the clinic's AI receptionist), "caller" is Itai.
@@ -76,8 +82,10 @@ def clean(x):
 
 out = {}
 for name, who in LINES.items():
-    x = trim(read(SRC / f"{name}.mp3"))
-    x = phone(x) if who == "caller" else clean(x)
+    x = trim(read(next(SRC.glob(f"{name}.*"))))
+    # The ElevenLabs caller is put on a phone line; the Azure voices are
+    # already distinct (Avri and Hila) and clearer left clean.
+    x = phone(x) if who == "caller" and not AZURE else clean(x)
     # Level for an ad: RMS at -16 dB, the loudest syllables rounded off by a
     # soft limiter, peaks under -1 dBFS.
     x *= 10 ** (-16 / 20) / (np.sqrt(np.mean(x ** 2)) + 1e-9)
@@ -95,5 +103,6 @@ for name, who in LINES.items():
     }
     print(f"{name:10s} {who:6s} {len(x) / SR:5.2f}s")
 
-(ROOT / "src" / "voice").mkdir(parents=True, exist_ok=True)
-(ROOT / "src" / "voice" / "lines.json").write_text(json.dumps(out))
+VOICE.mkdir(parents=True, exist_ok=True)
+LINES_JSON.parent.mkdir(parents=True, exist_ok=True)
+LINES_JSON.write_text(json.dumps(out))

@@ -1,5 +1,5 @@
 import { Check, Clock, Phone } from "lucide-react"
-import { AbsoluteFill, spring, useCurrentFrame } from "remotion"
+import { AbsoluteFill, getInputProps, spring, useCurrentFrame } from "remotion"
 import { EndCard } from "../components/EndCard"
 import { Grain } from "../components/Grain"
 import { KineticText } from "../components/KineticText"
@@ -7,10 +7,11 @@ import { CURTAIN_EDGE, LiquidCurtain } from "../components/LiquidCurtain"
 import { SafeZones } from "../components/SafeZones"
 import { CHANNEL_ICON } from "../components/icons"
 import { FONT_STACK } from "../fonts"
-import { Flash, Ripple, SLAM_LAND, Slam, Whip, punch, rand, shake } from "../fx"
+import { Flash, Ripple, SLAM_LAND, Slam, Whip, decay, punch, rand, shake } from "../fx"
 import { BRAND_STING, Track, cueSheet } from "../sound"
-import { CHANNEL, CURTAIN_EASE, HAIRLINE, INK, LIVE, MUTED, NIGHT, ON_DARK, ON_DARK_MUTED, SURFACE, WHITE, WIDTH, clamp01, ease } from "../theme"
-import lines from "../voice/lines.json"
+import { CHANNEL, CURTAIN_EASE, HAIRLINE, INK, LIVE, MUTED, NIGHT, ON_DARK, SURFACE, WHITE, WIDTH, clamp01, ease } from "../theme"
+import linesAzure from "../voice/lines-azure.json"
+import linesEleven from "../voice/lines.json"
 
 /** "המזכירה של 19:00" — the voice agent. The clinic's receptionist has gone
  *  home; the phone rings in the dark office and the agent answers a real
@@ -20,6 +21,18 @@ import lines from "../voice/lines.json"
 const BLUE = CHANNEL.phone.color
 const BLUE_LIGHT = `color-mix(in srgb, ${BLUE} 62%, white)`
 
+// ── voice ──────────────────────────────────────────────────────────────────
+// The call comes in two takes of the same six lines: ElevenLabs ("eleven")
+// and Azure Speech ("azure": Hila and Avri). Pick with --props='{"voice":"azure"}'.
+// Every timing after the first line is derived from the take's line lengths.
+export type Voice = "eleven" | "azure"
+type LineId = keyof typeof linesEleven
+type Take = Record<LineId, { speaker: string; frames: number; envelope: number[] }>
+const TAKES: Record<Voice, { lines: Take; dir: string }> = {
+  eleven: { lines: linesEleven, dir: "voice" },
+  azure: { lines: linesAzure, dir: "voice-azure" },
+}
+
 // ── timeline (frames at 30 fps) ────────────────────────────────────────────
 const LAMP_OFF = 60
 const RINGS = [88, 124]
@@ -27,73 +40,76 @@ const RING_SLAM = 92
 const PICKUP = 150
 const CALL_IN = 154 // the camera dives into the phone's display
 const CALL_AT = 160 // the call scene is on screen
-const BOOK = { in: 640, slot: 652, sms: 668, pin: 684 } // the booking, between C2 and C4
-const HANGUP = 824
-// After the call, the CRM: a white curtain carries it in, the camera sits
-// on the call's card while its summary writes itself, pulls back to the
-// board as the card moves to "נקבע תור", then whips to the night's log.
-const CRM = {
-  in: 852, // the curtain starts across
-  sweep: 22,
-  type: 884, // the summary starts typing
-  tags: [914, 919, 924],
-  zoomOut: 944,
-  move: 968, // the card leaves "פנייה חדשה"
-  land: 982, // …and lands in "נקבע תור"
-  autos: [988, 997, 1006],
-  log: 1024, // the whip to the night's log
-  rows: 1034,
-  rowGap: 7,
-}
-const TAGLINE = 1098
-const END = 1146
-export const RECEPTIONIST_FRAMES = END + 96
 
-type LineId = keyof typeof lines
-
-/** The call, in order. `[...]` marks the words that carry the booking — they
- *  light up as they are said. The agent's name-taking lines were cut (their
- *  answer could not be recorded), so the booking itself shows on screen. */
-const CALL: { id: LineId; at: number; text: string }[] = [
-  { id: "a1-answer", at: 160, text: "[מרפאת השיניים], ערב טוב! איך אפשר לעזור?" },
-  { id: "c1-ask", at: 270, text: "היי, ערב טוב... אני צריך לקבוע [בדיקה וניקוי אבנית]. יש משהו [מחר]?" },
-  { id: "a2-offer", at: 401, text: "בטח. מחר יש לי פנוי [בעשר וחצי] בבוקר, או [בארבע] אחר הצהריים. מה נוח לך?" },
-  { id: "c2-pick", at: 606, text: "[עשר וחצי], מעולה." },
-  { id: "c4-thanks", at: 690, text: "וואו, מושלם. תודה רבה!" },
-  { id: "a5-bye", at: 752, text: "בשמחה! ערב טוב." },
+/** The call, in order. `[...]` marks the words that carry the booking; they
+ *  are set bold in blue within the sentence. The agent's name-taking lines
+ *  were cut (their answer could not be recorded), so the booking itself
+ *  shows on screen. */
+const TEXTS: [LineId, string][] = [
+  ["a1-answer", "[מרפאת השיניים], ערב טוב! איך אפשר לעזור?"],
+  ["c1-ask", "היי, ערב טוב... אני צריך לקבוע [בדיקה וניקוי אבנית]. יש משהו [מחר]?"],
+  ["a2-offer", "בטח. מחר יש לי פנוי [בעשר וחצי] בבוקר, או [בארבע] אחר הצהריים. מה נוח לך?"],
+  ["c2-pick", "[עשר וחצי], מעולה."],
+  ["c4-thanks", "וואו, מושלם. תודה רבה!"],
+  ["a5-bye", "בשמחה! ערב טוב."],
 ]
 
-type Word = { text: string; group: number; marked: boolean; suffix: string; at: number }
-
-/** Split a line into words and give each the frame it is spoken on: the
- *  line's loudness is integrated over time and each word starts where its
- *  share of the letters is reached, so pauses in the voice hold the words. */
-function wordsOf(text: string, envelope: number[], at: number): Word[] {
-  const words: Omit<Word, "at">[] = []
-  let group = 0
-  for (const m of text.matchAll(/\[([^\]]+)\]([^\s[]*)|(\S+)/g)) {
-    if (m[1]) {
-      const parts = m[1].split(" ")
-      parts.forEach((w, i) => words.push({ text: w, group, marked: true, suffix: i === parts.length - 1 ? m[2] : "" }))
-    } else {
-      words.push({ text: m[3], group, marked: false, suffix: "" })
-    }
-    group++
+/** Where everything lands for a take: each line starts a beat after the
+ *  last one ends, the booking sits between "עשר וחצי" and the thanks, and
+ *  the CRM, tagline and end card follow the hang-up. */
+export function plan(voice: Voice) {
+  const L = TAKES[voice].lines
+  const at: Partial<Record<LineId, number>> = {}
+  let cursor = CALL_AT
+  const place = (id: LineId, gap: number) => {
+    at[id] = cursor + gap
+    cursor = at[id]! + L[id].frames
   }
-  const cum: number[] = []
-  envelope.reduce((acc, e, i) => (cum[i] = acc + e ** 1.5), 0)
-  const total = cum[cum.length - 1] || 1
-  const letters = words.reduce((n, w) => n + w.text.length + w.suffix.length, 0)
-  let before = 0
-  return words.map((w) => {
-    const target = (before / letters) * total
-    before += w.text.length + w.suffix.length
-    const i = cum.findIndex((c) => c >= target)
-    return { ...w, at: at + Math.max(0, i) - 2 }
-  })
+  place("a1-answer", 0)
+  place("c1-ask", 12)
+  place("a2-offer", 8)
+  place("c2-pick", 10)
+  const bookIn = cursor + 3
+  const BOOK = { in: bookIn, slot: bookIn + 12, sms: bookIn + 28, pin: bookIn + 44 }
+  cursor = bookIn + 50
+  place("c4-thanks", 0)
+  place("a5-bye", 8)
+  const HANGUP = cursor + 9
+  // After the call, the CRM: a black curtain carries it in, the camera sits
+  // on the call's card while its summary writes itself, pulls back to the
+  // board as the card moves to "נקבע תור", then whips to the night's log.
+  const CRM = {
+    in: HANGUP + 28, // the curtain starts across
+    sweep: 22,
+    type: HANGUP + 60, // the summary starts typing
+    tags: [HANGUP + 90, HANGUP + 95, HANGUP + 100],
+    zoomOut: HANGUP + 120,
+    move: HANGUP + 144, // the card leaves "פנייה חדשה"
+    land: HANGUP + 158, // …and lands in "נקבע תור"
+    autos: [HANGUP + 164, HANGUP + 173, HANGUP + 182],
+    log: HANGUP + 200, // the whip to the night's log
+    rows: HANGUP + 210,
+    rowGap: 7,
+  }
+  const TAGLINE = HANGUP + 274
+  const END = TAGLINE + 48
+  return {
+    lines: L,
+    dir: TAKES[voice].dir,
+    CALL: TEXTS.map(([id, text]) => ({ id, at: at[id]!, text })),
+    BOOK,
+    HANGUP,
+    CRM,
+    TAGLINE,
+    END,
+    frames: END + 96,
+  }
 }
 
-const CALL_WORDS = CALL.map((l) => wordsOf(l.text, lines[l.id].envelope, l.at))
+/** Read once at load: the render's input props pick the take. */
+const VOICE: Voice = getInputProps<{ voice?: Voice }>().voice === "azure" ? "azure" : "eleven"
+const { lines, dir: VOICE_DIR, CALL, BOOK, HANGUP, CRM, TAGLINE, END } = plan(VOICE)
+export const receptionistFrames = (voice: Voice) => plan(voice).frames
 
 const lineEnd = (i: number) => CALL[i].at + lines[CALL[i].id].frames
 
@@ -123,7 +139,7 @@ sfx(RING_SLAM + SLAM_LAND, "slam", 0.8)
 sfx(PICKUP, "pickup", 0.9)
 sfx(CALL_IN + 2, "line", 0.7)
 sfx(CALL_IN + 2, "linebed", 0.55, HANGUP - CALL_IN)
-for (const l of CALL) file(l.at, `voice/${l.id}.wav`, 1)
+for (const l of CALL) file(l.at, `${VOICE_DIR}/${l.id}.wav`, 1)
 sfx(BOOK.in, "whip", 0.35)
 sfx(BOOK.slot, "slot", 0.85)
 sfx(BOOK.slot + 2, "confirm", 0.45)
@@ -271,8 +287,7 @@ function Office({ f }: { f: number }) {
 
 // ── 3 · the call ───────────────────────────────────────────────────────────
 
-const activeLine = (f: number) =>
-  CALL.findIndex((l, i) => f >= l.at && f < lineEnd(i))
+const activeLine = (f: number) => CALL.findIndex((l, i) => f >= l.at && f < lineEnd(i))
 
 function Wave({ f }: { f: number }) {
   const i = activeLine(f)
@@ -284,7 +299,7 @@ function Wave({ f }: { f: number }) {
     return Math.max(env[d] ?? 0, 0.6 * (env[d - 1] ?? 0), 0.35 * (env[d - 2] ?? 0))
   }
   const amp = f < HANGUP ? level(i) : 0
-  const color = agent ? BLUE_LIGHT : ON_DARK
+  const color = agent ? BLUE : INK
   const bars = 46
   return (
     <div style={{ position: "absolute", top: 450, left: 70, right: 70, height: 170, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -300,9 +315,9 @@ function Wave({ f }: { f: number }) {
               width: 10,
               height: h,
               borderRadius: 999,
-              background: color,
-              opacity: 0.35 + 0.65 * Math.min(1, amp * 2 + 0.1),
-              boxShadow: agent && amp > 0.1 ? `0 0 ${24 * amp}px ${BLUE}` : undefined,
+              background: amp > 0.02 ? color : "rgba(17,17,17,0.18)",
+              opacity: 0.45 + 0.55 * Math.min(1, amp * 2 + 0.1),
+              boxShadow: agent && amp > 0.1 ? `0 0 ${24 * amp}px -4px ${BLUE}` : undefined,
             }}
           />
         )
@@ -321,98 +336,121 @@ function CallHeader({ f }: { f: number }) {
           width: 96,
           height: 96,
           borderRadius: 999,
-          background: ended ? "#2a2a2a" : BLUE,
+          background: ended ? INK : BLUE,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#fff",
-          boxShadow: ended ? undefined : `0 0 40px -6px ${BLUE}`,
+          color: WHITE,
+          boxShadow: ended ? undefined : `0 18px 40px -12px ${BLUE}`,
         }}
       >
         <Phone size={44} strokeWidth={2.2} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 42, fontWeight: 700, color: ON_DARK }}>מרפאת השיניים</div>
-        <div style={{ fontSize: 30, color: ON_DARK_MUTED, marginTop: 2 }}>
-          {ended ? "השיחה הסתיימה" : "סוכן קולי · עונה בשם המרפאה"}
-        </div>
+        <div style={{ fontSize: 42, fontWeight: 700, color: INK }}>מרפאת השיניים</div>
+        <div style={{ fontSize: 30, color: MUTED, marginTop: 2 }}>{ended ? "השיחה הסתיימה" : "סוכן קולי · עונה בשם המרפאה"}</div>
       </div>
-      <div dir="ltr" style={{ fontSize: 40, fontWeight: 500, color: ON_DARK, fontVariantNumeric: "tabular-nums" }}>
+      <div dir="ltr" style={{ fontSize: 40, fontWeight: 500, color: INK, fontVariantNumeric: "tabular-nums" }}>
         00:{String(secs).padStart(2, "0")}
       </div>
     </div>
   )
 }
 
-function Caption({ index, f, p }: { index: number; f: number; p: number }) {
+/** A sentence as segments, so the words that carry the booking can be set apart. */
+const segments = (text: string) =>
+  text
+    .split(/(\[[^\]]+\])/)
+    .filter(Boolean)
+    .map((t) => (t.startsWith("[") ? { text: t.slice(1, -1), marked: true } : { text: t, marked: false }))
+
+/** Frame on which line i's sentence pops onto the screen: just ahead of its voice. */
+const ENTRY = (i: number) => CALL[i].at - 2
+
+/** One sentence, whole. It lands oversized and blurred, snaps to size with a
+ *  glow and a flash of brightness, and stays on the thread. */
+function Bubble({ index, f }: { index: number; f: number }) {
   const line = CALL[index]
-  const words = CALL_WORDS[index]
   const agent = lines[line.id].speaker === "agent"
-  const marks = words.filter((w) => w.marked && words.find((v) => v.group === w.group) === w).map((w) => w.at)
-  const scale = punch(f, marks, 0.035, 10)
-  const groups: Word[][] = []
-  for (const w of words) (groups[w.group] ??= []).push(w)
+  const d = f - ENTRY(index)
+  const p = spring({ frame: d, fps: 30, config: { damping: 15, stiffness: 420, mass: 0.55 } })
+  const glow = decay(f, [ENTRY(index)], 10)
   return (
-    <div style={{ opacity: p, transform: `translateY(${(1 - p) * 30}px) scale(${scale})` }}>
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 30 }}>
-        <div
-          style={{
-            padding: "10px 26px",
-            borderRadius: 999,
-            fontSize: 30,
-            fontWeight: 700,
-            color: agent ? "#fff" : ON_DARK,
-            background: agent ? BLUE : "rgba(255,255,255,0.12)",
-          }}
-        >
-          {agent ? "הסוכן" : "המטופל"}
-        </div>
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", columnGap: "0.26em", rowGap: 10, fontSize: 66, fontWeight: 700, lineHeight: 1.22, letterSpacing: "-0.02em" }}>
-        {groups.map((g, gi) => {
-          const said = (w: Word) => ease(f, w.at, 5)
-          if (!g[0].marked) {
-            const w = g[0]
-            return (
-              <span key={gi} style={{ color: ON_DARK, opacity: 0.16 + 0.84 * said(w), display: "inline-block", transform: `translateY(${(1 - said(w)) * 10}px)` }}>
-                {w.text}
-              </span>
-            )
-          }
-          const on = said(g[0])
-          return (
-            <span key={gi} style={{ display: "inline-flex", alignItems: "baseline" }}>
-              <span
-                style={{
-                  display: "inline-flex",
-                  columnGap: "0.26em",
-                  padding: "0 0.2em",
-                  borderRadius: 16,
-                  background: `color-mix(in srgb, ${BLUE} ${on * 100}%, transparent)`,
-                  color: "#fff",
-                  opacity: 0.16 + 0.84 * on,
-                  boxShadow: on > 0.5 ? `0 0 44px -10px ${BLUE}` : undefined,
-                }}
-              >
-                {g.map((w, wi) => (
-                  <span key={wi} style={{ opacity: 0.3 + 0.7 * said(w) }}>
-                    {w.text}
-                  </span>
-                ))}
-              </span>
-              <span style={{ color: ON_DARK, opacity: 0.16 + 0.84 * on }}>{g[g.length - 1].suffix}</span>
+    <div
+      style={{
+        alignSelf: agent ? "flex-end" : "flex-start",
+        maxWidth: "90%",
+        padding: "22px 38px 26px",
+        borderRadius: 42,
+        borderStartStartRadius: agent ? 42 : 12,
+        borderStartEndRadius: agent ? 12 : 42,
+        background: agent ? BLUE : WHITE,
+        color: agent ? WHITE : INK,
+        border: agent ? `2px solid ${BLUE}` : `2px solid ${HAIRLINE}`,
+        boxShadow: `0 26px 50px -30px ${agent ? BLUE : "rgba(17,17,17,0.5)"}, 0 0 ${80 * glow}px ${glow * 6}px ${agent ? "rgba(37,99,235,0.55)" : "rgba(17,17,17,0.18)"}`,
+        opacity: clamp01(d < 0 ? 0 : p * 2),
+        transform: `scale(${1 + (1 - Math.min(p, 1.2)) * 0.18})`,
+        transformOrigin: agent ? "left bottom" : "right bottom",
+        filter: `brightness(${1 + 0.4 * glow}) blur(${Math.max(0, (1 - p) * 9)}px)`,
+      }}
+    >
+      <div style={{ fontSize: 24, fontWeight: 700, opacity: 0.68, marginBottom: 6 }}>{agent ? "הסוכן" : "המטופל"}</div>
+      <div style={{ fontSize: 50, fontWeight: 600, lineHeight: 1.32, letterSpacing: "-0.01em" }}>
+        {segments(line.text).map((seg, k) =>
+          seg.marked ? (
+            <span key={k} style={{ padding: "0 0.16em", borderRadius: 12, fontWeight: 800, background: agent ? "rgba(255,255,255,0.24)" : "rgba(37,99,235,0.13)", color: agent ? WHITE : BLUE }}>
+              {seg.text}
             </span>
-          )
-        })}
+          ) : (
+            <span key={k}>{seg.text}</span>
+          ),
+        )}
       </div>
+    </div>
+  )
+}
+
+/** A run of lines as a conversation: the newest at the bottom of the safe
+ *  band, older ones gliding up and out under a soft fade at the top. */
+function Thread({ f, from, to, top, opacity = 1 }: { f: number; from: number; to: number; top: number; opacity?: number }) {
+  const zoom = punch(f, CALL.slice(from, to).map((_, k) => ENTRY(from + k)), 0.018, 10)
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top,
+        bottom: 1920 - 1236,
+        left: 65,
+        right: 65,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        overflow: "hidden",
+        maskImage: "linear-gradient(to bottom, transparent 0px, black 90px)",
+        opacity,
+        transform: `scale(${zoom})`,
+        transformOrigin: "50% 90%",
+      }}
+    >
+      {CALL.slice(from, to).map((_, k) => {
+        const i = from + k
+        if (f < ENTRY(i)) return null
+        return (
+          <div key={i} style={{ display: "grid", gridTemplateRows: `${ease(f, ENTRY(i), 7)}fr` }}>
+            <div style={{ minHeight: 0, display: "flex", flexDirection: "column", paddingTop: 22 }}>
+              <Bubble index={i} f={f} />
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 function Slot({ time, text, p }: { time: string; text?: string; p: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 26, height: 84, borderTop: "2px solid rgba(255,255,255,0.08)" }}>
-      <div dir="ltr" style={{ width: 120, fontSize: 32, fontWeight: 500, color: ON_DARK_MUTED, fontVariantNumeric: "tabular-nums" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 26, height: 84, borderTop: `2px solid ${HAIRLINE}` }}>
+      <div dir="ltr" style={{ width: 120, fontSize: 32, fontWeight: 500, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
         {time}
       </div>
       <div style={{ flex: 1, height: 64, position: "relative" }}>
@@ -423,7 +461,7 @@ function Slot({ time, text, p }: { time: string; text?: string; p: number }) {
               inset: 0,
               borderRadius: 16,
               background: BLUE,
-              color: "#fff",
+              color: WHITE,
               display: "flex",
               alignItems: "center",
               gap: 14,
@@ -451,10 +489,10 @@ function Booking({ f }: { f: number }) {
   const scale = punch(f, [BOOK.slot], 0.06, 12)
   return (
     <div style={{ position: "absolute", top: 650, left: 90, right: 90, opacity: inP, transform: `translateX(${(1 - inP) * 140}px)` }}>
-      <div style={{ transform: `scale(${scale})`, padding: "26px 34px 10px", borderRadius: 32, background: "#161616", border: "2px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32, fontWeight: 700, color: ON_DARK, marginBottom: 16 }}>
+      <div style={{ transform: `scale(${scale})`, padding: "26px 34px 10px", borderRadius: 32, background: SURFACE, border: `2px solid ${HAIRLINE}`, boxShadow: "0 40px 80px -44px rgba(17,17,17,0.4)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32, fontWeight: 700, color: INK, marginBottom: 16 }}>
           <span>יומן המרפאה · מחר</span>
-          <span style={{ color: BLUE_LIGHT }}>{f >= BOOK.slot ? "עודכן" : "פנוי"}</span>
+          <span style={{ color: BLUE }}>{f >= BOOK.slot ? "עודכן" : "פנוי"}</span>
         </div>
         <Slot time="09:30" p={0} />
         <Slot time="10:30" text="בדיקה וניקוי אבנית" p={drop} />
@@ -465,8 +503,10 @@ function Booking({ f }: { f: number }) {
           marginTop: 26,
           padding: "26px 30px",
           borderRadius: 28,
-          background: "#f7f7f6",
-          color: "#111",
+          background: WHITE,
+          border: `2px solid ${HAIRLINE}`,
+          boxShadow: "0 30px 60px -36px rgba(17,17,17,0.45)",
+          color: INK,
           display: "flex",
           alignItems: "center",
           gap: 22,
@@ -474,11 +514,11 @@ function Booking({ f }: { f: number }) {
           transform: `translateY(${(1 - sms) * 80}px)`,
         }}
       >
-        <div style={{ width: 64, height: 64, borderRadius: 18, background: BLUE, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 18, background: BLUE, color: WHITE, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <Check size={36} strokeWidth={3.2} />
         </div>
         <div>
-          <div style={{ fontSize: 26, color: "#6f6f6f" }}>הודעה · מרפאת השיניים</div>
+          <div style={{ fontSize: 26, color: MUTED }}>הודעה · מרפאת השיניים</div>
           <div style={{ fontSize: 34, fontWeight: 700 }}>התור אושר: מחר 10:30</div>
         </div>
       </div>
@@ -489,50 +529,39 @@ function Booking({ f }: { f: number }) {
 function BookedPin({ p }: { p: number }) {
   return (
     <div style={{ position: "absolute", top: 660, left: 0, right: 0, display: "flex", justifyContent: "center", opacity: p, transform: `translateY(${(1 - p) * -20}px)` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 30px", borderRadius: 999, background: "rgba(37,99,235,0.18)", border: `2px solid ${BLUE}`, color: ON_DARK, fontSize: 32, fontWeight: 700 }}>
-        <Check size={30} strokeWidth={3.2} color={BLUE_LIGHT} />
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 30px", borderRadius: 999, background: "rgba(37,99,235,0.1)", border: `2px solid ${BLUE}`, color: INK, fontSize: 32, fontWeight: 700 }}>
+        <Check size={30} strokeWidth={3.2} color={BLUE} />
         נקבע ביומן · מחר 10:30 · אישור נשלח
       </div>
     </div>
   )
 }
 
-/** How much of line i's caption is on screen: it enters a few frames before
- *  its line starts and leaves as the next one enters. The booking pushes the
- *  caption of C2 ("עשר וחצי, מעולה.") off early. */
-function captionVisibility(i: number, f: number) {
-  const enter = ease(f, CALL[i].at - 4, 8)
-  const exit = i + 1 < CALL.length ? 1 - ease(f, CALL[i + 1].at - 4, 6) : 1
-  const booked = CALL[i].id === "c2-pick" ? 1 - ease(f, BOOK.in - 2, 6) : 1
-  return f >= HANGUP ? 0 : enter * exit * booked
-}
+const FIRST_THREAD = 4 // lines 0–3 form the first thread; the booking closes it
 
 function Call({ f }: { f: number }) {
   const booking = f >= BOOK.in && f < BOOK.pin + 10
   const pin = ease(f, BOOK.pin, 10)
+  const first = f < BOOK.in ? 1 : 1 - ease(f, BOOK.in - 2, 6) // the first thread leaves for the booking
   return (
-    <AbsoluteFill style={{ background: `radial-gradient(90% 40% at 50% 18%, rgba(37,99,235,0.2), transparent 70%), ${NIGHT}` }}>
+    <AbsoluteFill style={{ background: `radial-gradient(90% 40% at 50% 18%, rgba(37,99,235,0.1), transparent 70%), ${WHITE}` }}>
       <CallHeader f={f} />
       <Wave f={f} />
       {f >= BOOK.pin && <BookedPin p={pin} />}
-      <div style={{ position: "absolute", top: 680 + 90 * pin, left: 80, right: 80, height: 460, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {CALL.map((_, i) => {
-          const v = captionVisibility(i, f)
-          if (v <= 0) return null
-          return (
-            <div key={i} style={{ position: "absolute", left: 0, right: 0 }}>
-              <Caption index={i} f={f} p={v} />
-            </div>
-          )
-        })}
-        {f >= HANGUP && <HungUp f={f - HANGUP} />}
-      </div>
+      {first > 0 && <Thread f={f} from={0} to={FIRST_THREAD} top={650} opacity={first} />}
+      {f >= ENTRY(FIRST_THREAD) && f < HANGUP && <Thread f={f} from={FIRST_THREAD} to={CALL.length} top={650 + 90 * pin} />}
+      {f >= HANGUP && (
+        <div style={{ position: "absolute", top: 770, left: 80, right: 80 }}>
+          <HungUp f={f - HANGUP} />
+        </div>
+      )}
       {booking && (
         <AbsoluteFill style={{ opacity: 1 - ease(f, BOOK.pin, 8) }}>
           <Booking f={f} />
         </AbsoluteFill>
       )}
-      <Flash f={f} hits={[BOOK.slot]} dur={6} color={BLUE_LIGHT} max={0.35} />
+      <Flash f={f} hits={CALL.map((_, i) => ENTRY(i))} dur={5} color={BLUE} max={0.14} />
+      <Flash f={f} hits={[BOOK.slot]} dur={6} color={BLUE} max={0.16} />
     </AbsoluteFill>
   )
 }
@@ -541,10 +570,10 @@ function HungUp({ f }: { f: number }) {
   const p = ease(f, 10, 12)
   return (
     <div style={{ textAlign: "center", opacity: p, transform: `translateY(${(1 - p) * 30}px)` }}>
-      <div style={{ fontSize: 34, color: ON_DARK_MUTED }}>
+      <div style={{ fontSize: 34, color: MUTED }}>
         השיחה הסתיימה · <span dir="ltr">00:{String(Math.floor((HANGUP - CALL_AT) / 30)).padStart(2, "0")}</span>
       </div>
-      <div style={{ marginTop: 20, fontSize: 84, fontWeight: 800, color: ON_DARK, letterSpacing: "-0.03em", lineHeight: 1.08 }}>
+      <div style={{ marginTop: 20, fontSize: 84, fontWeight: 800, color: INK, letterSpacing: "-0.03em", lineHeight: 1.08 }}>
         תור נקבע.
         <br />
         בלי אף אחד במשרד.
@@ -757,7 +786,7 @@ function NightLog({ f }: { f: number }) {
 }
 
 function Crm({ f }: { f: number }) {
-  // The night, frozen on the hung-up call, while the white curtain crosses it.
+  // The hung-up call, while the black curtain crosses it.
   const x = (WIDTH + CURTAIN_EDGE) * (1 - CURTAIN_EASE(clamp01((f - CRM.in) / CRM.sweep)))
   const board = <Board f={f} />
   const scene = f < CRM.log - 4 ? board : <Whip f={f} at={CRM.log - 4} dur={8} id="to-log" from={board} to={<NightLog f={f} />} />
@@ -765,7 +794,7 @@ function Crm({ f }: { f: number }) {
   return (
     <AbsoluteFill>
       <Call f={f} />
-      <LiquidCurtain x={x} frame={f} color="white">
+      <LiquidCurtain x={x} frame={f} color="black">
         {scene}
       </LiquidCurtain>
     </AbsoluteFill>
@@ -789,7 +818,7 @@ function Tagline({ f }: { f: number }) {
 }
 
 /** Scenes take the ad's own frame, so every timing constant above is absolute. */
-export function Receptionist({ safeZones }: { safeZones: boolean }) {
+export function Receptionist({ safeZones }: { safeZones: boolean; voice?: Voice }) {
   const f = useCurrentFrame()
   return (
     <AbsoluteFill style={{ direction: "rtl", fontFamily: FONT_STACK, background: NIGHT }}>
