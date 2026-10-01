@@ -85,7 +85,7 @@ function PaletteBody({
   }
 
   return (
-    <div className="crm-panel overflow-hidden rounded-[28px] backdrop-blur-2xl">
+    <div className="crm-panel overflow-hidden rounded-[28px]">
       <div className="flex items-center gap-3 border-b border-black/8 px-5 py-4">
         <Search className="size-4 text-crm-muted" aria-hidden />
         <input

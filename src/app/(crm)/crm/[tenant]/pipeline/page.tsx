@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 import { PipelineBoard } from "@/components/crm/pipeline/pipeline-board"
 import { getCrm } from "@/lib/crm/repository"
 
+export const revalidate = 3600
+
 export const metadata = { title: "צינור מכירות" }
 
 export default async function PipelinePage({ params }: { params: Promise<{ tenant: string }> }) {

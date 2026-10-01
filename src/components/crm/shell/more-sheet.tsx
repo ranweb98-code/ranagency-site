@@ -20,7 +20,7 @@ export function MoreSheet({
 }) {
   return (
     <Modal open={open} onClose={onClose} label="עוד" variant="bottom">
-      <div className="crm-panel rounded-t-[32px] p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] backdrop-blur-2xl">
+      <div className="crm-panel rounded-t-[32px] p-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium">עוד</h2>
           <IconButton label="סגירה" size="sm" onClick={onClose}>

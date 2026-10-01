@@ -3,9 +3,15 @@ import { notFound } from "next/navigation"
 import type { CSSProperties, ReactNode } from "react"
 
 import { CrmShell } from "@/components/crm/shell/crm-shell"
-import { getCrm } from "@/lib/crm/repository"
+import { getCrm, listTenants } from "@/lib/crm/repository"
 
 type Params = { params: Promise<{ tenant: string }> }
+
+export const revalidate = 3600
+
+export function generateStaticParams() {
+  return listTenants().map((t) => ({ tenant: t.slug }))
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { tenant } = await params

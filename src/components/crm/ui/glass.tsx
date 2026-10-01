@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 export function Glass({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("crm-glass min-w-0 rounded-[28px] backdrop-blur-2xl backdrop-saturate-150 md:rounded-[34px]", className)}
+      className={cn("crm-glass min-w-0 rounded-[28px] md:rounded-[34px]", className)}
       {...props}
     />
   )

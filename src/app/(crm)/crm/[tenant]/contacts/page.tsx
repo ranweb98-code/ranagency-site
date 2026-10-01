@@ -1,19 +1,15 @@
 import { notFound } from "next/navigation"
 
-import { ContactsView } from "@/components/crm/contacts/contacts-view"
+import { ContactsEntry } from "@/components/crm/contacts/contacts-entry"
 import { getCrm } from "@/lib/crm/repository"
+
+export const revalidate = 3600
 
 export const metadata = { title: "לקוחות" }
 
-export default async function ContactsPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ tenant: string }>
-  searchParams: Promise<{ temp?: string }>
-}) {
-  const [{ tenant }, { temp }] = await Promise.all([params, searchParams])
+export default async function ContactsPage({ params }: { params: Promise<{ tenant: string }> }) {
+  const { tenant } = await params
   const data = await getCrm(tenant)
   if (!data) notFound()
-  return <ContactsView data={data} initialTemp={temp} />
+  return <ContactsEntry data={data} />
 }

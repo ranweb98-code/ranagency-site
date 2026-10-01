@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 import { CatalogView } from "@/components/crm/catalog/catalog-view"
 import { getCrm } from "@/lib/crm/repository"
 
+export const revalidate = 3600
+
 export const metadata = { title: "קטלוג" }
 
 export default async function CatalogPage({ params }: { params: Promise<{ tenant: string }> }) {

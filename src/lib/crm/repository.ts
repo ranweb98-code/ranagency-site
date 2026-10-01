@@ -1,5 +1,4 @@
 import { cache } from "react"
-import { connection } from "next/server"
 
 import { generateCrmData } from "./demo-data"
 import { DEMO_TENANTS } from "./industries"
@@ -16,9 +15,11 @@ export function listTenants(): Tenant[] {
 }
 
 export const getCrm = cache(async (slug: string): Promise<CrmData | null> => {
-  // "now" must be the request's now, not the build's, or the demo would
-  // freeze on the day it was deployed.
-  await connection()
+  // Demo pages are prerendered and regenerated hourly (`revalidate` on the
+  // tenant routes), so "now" is at most an hour old and the pages are served
+  // from the CDN instead of a cold serverless function in another continent.
+  // Real tenants will read live rows and become dynamic; this is the one place
+  // that changes.
   const tenant = DEMO_TENANTS.find((t) => t.slug === slug)
   return tenant ? generateCrmData(tenant) : null
 })

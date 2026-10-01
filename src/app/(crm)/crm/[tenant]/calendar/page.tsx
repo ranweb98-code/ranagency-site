@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 import { CalendarView } from "@/components/crm/calendar/calendar-view"
 import { getCrmWithMetrics } from "@/lib/crm/repository"
 
+export const revalidate = 3600
+
 export const metadata = { title: "יומן" }
 
 export default async function CalendarPage({ params }: { params: Promise<{ tenant: string }> }) {

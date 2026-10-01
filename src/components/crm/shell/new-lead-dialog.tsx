@@ -38,7 +38,7 @@ export function NewLeadDialog({
 
   return (
     <Modal open={open} onClose={onClose} label="הוספת ליד" variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!w-[min(92vw,30rem)]">
-      <form onSubmit={submit} className="crm-panel rounded-t-[32px] p-6 backdrop-blur-2xl md:rounded-[32px]">
+      <form onSubmit={submit} className="crm-panel rounded-t-[32px] p-6 md:rounded-[32px]">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-medium">ליד חדש</h2>
           <IconButton label="סגירה" size="sm" onClick={onClose}>

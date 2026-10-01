@@ -81,7 +81,7 @@ export function PipelineBoard({ data }: { data: CrmData }) {
                 if (contact) move(contact, stage.id)
               }}
               className={cn(
-                "crm-glass-soft flex w-[84%] shrink-0 snap-start flex-col rounded-[28px] p-2.5 backdrop-blur-xl transition-colors duration-200 sm:w-[300px]",
+                "crm-glass-soft flex w-[84%] shrink-0 snap-start flex-col rounded-[28px] p-2.5 transition-colors duration-200 sm:w-[300px]",
                 highlighted && "bg-white/70 ring-2 ring-crm-ink/40",
               )}
             >

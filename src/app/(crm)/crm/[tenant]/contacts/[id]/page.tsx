@@ -10,10 +10,17 @@ import { Pill } from "@/components/crm/ui/pill"
 import { SectionCard } from "@/components/crm/ui/section-card"
 import { Timeline } from "@/components/crm/ui/timeline"
 import { formatMoney, formatTime } from "@/lib/crm/format"
-import { getCrm } from "@/lib/crm/repository"
+import { generateCrmData } from "@/lib/crm/demo-data"
+import { getCrm, listTenants } from "@/lib/crm/repository"
 import { cn } from "@/lib/utils"
 
+export const revalidate = 3600
+
 export const metadata = { title: "כרטיס" }
+
+export function generateStaticParams() {
+  return listTenants().flatMap((t) => generateCrmData(t).contacts.map((c) => ({ tenant: t.slug, id: c.id })))
+}
 
 export default async function ContactPage({ params }: { params: Promise<{ tenant: string; id: string }> }) {
   const { tenant, id } = await params

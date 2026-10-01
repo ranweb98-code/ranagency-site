@@ -34,7 +34,7 @@ export default function CrmDemoPicker() {
               <li key={tenant.slug}>
                 <Link
                   href={`/crm/${tenant.slug}`}
-                  className="crm-glass group relative block overflow-hidden rounded-[30px] p-5 backdrop-blur-2xl transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
+                  className="crm-glass group relative block overflow-hidden rounded-[30px] p-5 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
                 >
                   <div
                     aria-hidden

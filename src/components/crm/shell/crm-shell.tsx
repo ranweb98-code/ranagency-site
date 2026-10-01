@@ -99,7 +99,7 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
           </Link>
 
           <nav aria-label="ניווט ראשי" className="hidden md:block">
-            <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150">
+            <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1 backdrop-blur-xl">
               {nav.map((item) => {
                 const active = isActive(item)
                 return (
