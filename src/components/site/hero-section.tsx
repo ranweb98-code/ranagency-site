@@ -1,7 +1,5 @@
 "use client"
 
-import { motion } from "motion/react"
-
 import { Button } from "@/components/ui/button"
 import { MagneticButton } from "@/components/ui/magnetic-button"
 import { TypewriterWord } from "@/components/ui/typewriter-word"
@@ -17,19 +15,15 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-ran-surface-light pb-24 pt-36 md:pb-32 md:pt-44">
       <SectionContainer className="relative flex flex-col items-center text-center">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted"
+        <p
+          className="hero-rise [--d:0.1s] text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted"
         >
           הסוכנים של נפוץ&apos;
-        </motion.p>
+        </p>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        {/* No entrance of its own: this headline is the page's largest paint, and
+            the intro curtain sweeping away is already its reveal. */}
+        <h1
           className="mt-5 max-w-4xl font-extrabold text-ran-text-on-light"
           style={{ fontSize: "var(--text-display)", letterSpacing: "-0.035em", lineHeight: 1.06 }}
         >
@@ -37,24 +31,18 @@ export function HeroSection() {
           <br />
           ב
           <TypewriterWord words={HERO_CHANNEL_WORDS} srLabel="וואטסאפ, אינסטגרם וטלפון" />
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-6 max-w-xl text-ran-text-on-light-muted"
+        <p
+          className="hero-rise [--d:0.3s] mt-6 max-w-xl text-ran-text-on-light-muted"
           style={{ fontSize: "var(--text-body-lg)", lineHeight: 1.65 }}
         >
           שלושה סוכני AI עונים במקומכם בכל ערוץ — מסווגים כל ליד כחם או קר, וקובעים תורים
           אוטומטית. הכל זורם לדשבורד CRM אחד.
-        </motion.p>
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-3"
+        <div
+          className="hero-rise [--d:0.4s] mt-10 flex flex-wrap items-center justify-center gap-3"
         >
           <MagneticButton>
             <Button
@@ -76,16 +64,13 @@ export function HeroSection() {
           >
             איך זה עובד
           </Button>
-        </motion.div>
+        </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-7 text-sm text-ran-text-on-light-muted"
+        <p
+          className="hero-rise [--d:0.5s] mt-7 text-sm text-ran-text-on-light-muted"
         >
           מענה תוך שניות, 24/7 — גם בשבת, גם באמצע הלילה
-        </motion.p>
+        </p>
       </SectionContainer>
     </section>
   )
