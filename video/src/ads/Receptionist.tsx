@@ -167,11 +167,11 @@ function Lamp({ on }: { on: number }) {
     <svg width={1080} height={1920} viewBox="0 0 1080 1920" style={{ position: "absolute", inset: 0 }}>
       <defs>
         <linearGradient id="cone" x1="0" y1="0" x2="0.35" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity={0.34 * on} />
+          <stop offset="0" stopColor="#fff" stopOpacity={0.95 * on} />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
         <radialGradient id="pool" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#fff" stopOpacity={0.3 * on} />
+          <stop offset="0" stopColor="#fff" stopOpacity={0.95 * on} />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </radialGradient>
       </defs>
@@ -179,11 +179,11 @@ function Lamp({ on }: { on: number }) {
       <ellipse cx={520} cy={1170} rx={430} ry={120} fill="url(#pool)" />
       <polygon points="262,744 372,700 820,1170 160,1180" fill="url(#cone)" />
       {/* the lamp: base, arm, shade */}
-      <ellipse cx={170} cy={1168} rx={96} ry={20} fill="#1d1d1d" stroke="#2c2c2c" strokeWidth={3} />
-      <path d="M170 1160 L128 910 L292 736" stroke="#2a2a2a" strokeWidth={14} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={128} cy={910} r={14} fill="#2f2f2f" />
-      <path d="M232 690 L392 640 L420 700 L262 760 Z" fill="#262626" stroke="#343434" strokeWidth={3} strokeLinejoin="round" />
-      <path d="M262 758 L420 700" stroke={`rgba(255,255,255,${0.85 * on})`} strokeWidth={6} strokeLinecap="round" />
+      <ellipse cx={170} cy={1168} rx={96} ry={20} fill={INK} />
+      <path d="M170 1160 L128 910 L292 736" stroke={INK} strokeWidth={14} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={128} cy={910} r={14} fill={INK} />
+      <path d="M232 690 L392 640 L420 700 L262 760 Z" fill={INK} strokeLinejoin="round" />
+      <path d="M262 758 L420 700" stroke={`rgba(255,255,255,${0.9 * on})`} strokeWidth={6} strokeLinecap="round" />
     </svg>
   )
 }
@@ -199,12 +199,13 @@ function DeskPhone({ f, lit, label }: { f: number; lit: number; label: string })
         </radialGradient>
       </defs>
       <ellipse cx={600} cy={1060} rx={420} ry={260} fill="url(#lcd-glow)" />
+      <ellipse cx={600} cy={1172} rx={250} ry={20} fill="rgba(17,17,17,0.16)" />
       {/* the body */}
-      <path d="M430 980 Q432 964 450 962 L750 962 Q768 964 770 980 L800 1150 Q800 1166 782 1166 L418 1166 Q400 1166 400 1150 Z" fill="#1f1f1f" stroke="#303030" strokeWidth={3} />
+      <path d="M430 980 Q432 964 450 962 L750 962 Q768 964 770 980 L800 1150 Q800 1166 782 1166 L418 1166 Q400 1166 400 1150 Z" fill={WHITE} stroke={INK} strokeWidth={5} strokeLinejoin="round" />
       {/* the handset in its cradle */}
-      <path d="M410 918 Q400 900 420 892 L500 884 Q520 884 522 900 L522 912 L678 912 L678 900 Q680 884 700 884 L780 892 Q800 900 790 918 L772 958 Q766 968 752 966 L700 960 Q690 958 690 946 L510 946 Q510 958 500 960 L448 966 Q434 968 428 958 Z" fill="#242424" stroke="#353535" strokeWidth={3} />
+      <path d="M410 918 Q400 900 420 892 L500 884 Q520 884 522 900 L522 912 L678 912 L678 900 Q680 884 700 884 L780 892 Q800 900 790 918 L772 958 Q766 968 752 966 L700 960 Q690 958 690 946 L510 946 Q510 958 500 960 L448 966 Q434 968 428 958 Z" fill={SURFACE} stroke={INK} strokeWidth={5} strokeLinejoin="round" />
       {/* the display */}
-      <rect x={470} y={986} width={260} height={62} rx={10} fill={lit > 0.02 ? BLUE : "#121212"} opacity={0.25 + 0.75 * lit} stroke="#333" strokeWidth={2} />
+      <rect x={470} y={986} width={260} height={62} rx={10} fill={lit > 0.02 ? BLUE : INK} opacity={lit > 0.02 ? 0.35 + 0.65 * lit : 1} />
       <text x={600} y={1027} textAnchor="middle" fontFamily="Rubik" fontWeight={700} fontSize={28} fill="#fff" opacity={lit} direction="rtl">
         {label}
       </text>
@@ -214,7 +215,7 @@ function DeskPhone({ f, lit, label }: { f: number; lit: number; label: string })
         const row = Math.floor(k / 3)
         const glow = lit * (0.25 + 0.2 * rand(k * 3.1 + Math.floor(f / 6)))
         return (
-          <rect key={k} x={532 + col * 48} y={1064 + row * 24} width={38} height={16} rx={5} fill={`rgba(120,160,255,${glow})`} stroke="#343434" strokeWidth={2} />
+          <rect key={k} x={532 + col * 48} y={1064 + row * 24} width={38} height={16} rx={5} fill={`rgba(37,99,235,${0.06 + glow})`} stroke={INK} strokeWidth={2.5} />
         )
       })}
     </svg>
@@ -236,7 +237,7 @@ function Office({ f }: { f: number }) {
   return (
     <AbsoluteFill
       style={{
-        background: `linear-gradient(180deg, #151515 0%, #0d0d0d 58%, #080808 60%, #050505 100%)`,
+        background: `linear-gradient(180deg, #ffffff 0%, #fbfbfa 58%, #f1f0ed 60%, #ebeae6 100%)`,
         transform: `scale(${1 + dive ** 2 * 7})`,
         transformOrigin: "600px 1017px",
         filter: dive > 0 ? `blur(${dive * 10}px)` : undefined,
@@ -244,11 +245,13 @@ function Office({ f }: { f: number }) {
     >
       {/* the wall, lit by the lamp while it is on */}
       <AbsoluteFill
-        style={{ background: "radial-gradient(70% 38% at 30% 42%, rgba(255,255,255,0.09), transparent 70%)", opacity: on }}
+        style={{ background: "radial-gradient(70% 38% at 30% 42%, rgba(255,255,255,0.9), transparent 70%)", opacity: on }}
       />
+      {/* the room dims when the lamp goes off */}
+      <AbsoluteFill style={{ background: INK, opacity: (1 - on) * 0.045 }} />
       {/* the desk's edge */}
-      <div style={{ position: "absolute", top: 1150, left: 0, right: 0, height: 4, background: `rgba(255,255,255,${0.05 + 0.08 * on})` }} />
-      {/* the wall clock, an LED that stays on in the dark */}
+      <div style={{ position: "absolute", top: 1150, left: 0, right: 0, height: 4, background: "rgba(17,17,17,0.14)" }} />
+      {/* the wall clock */}
       <div
         style={{
           position: "absolute",
@@ -257,8 +260,8 @@ function Office({ f }: { f: number }) {
           fontSize: 112,
           fontWeight: 300,
           letterSpacing: "0.04em",
-          color: ON_DARK,
-          opacity: 0.2 + 0.1 * on,
+          color: INK,
+          opacity: 0.3 + 0.08 * on,
           fontVariantNumeric: "tabular-nums",
         }}
       >
@@ -268,14 +271,14 @@ function Office({ f }: { f: number }) {
       <AbsoluteFill style={{ transform: vib }}>
         <DeskPhone f={f} lit={lit} label={label} />
       </AbsoluteFill>
-      <Ripple f={f} hits={RINGS} x={600} y={1017} color={BLUE_LIGHT} size={1300} dur={32} />
+      <Ripple f={f} hits={RINGS} x={600} y={1017} color={BLUE} size={1300} dur={32} />
       {/* headlines */}
       <div style={{ position: "absolute", top: 320, left: 0, right: 0 }}>
         {f < RINGS[0] && (
-          <KineticText lines={["המזכירה", "הלכה הביתה."]} f={f} inAt={6} outAt={RINGS[0] - 10} size={112} color={ON_DARK} />
+          <KineticText lines={["המזכירה", "הלכה הביתה."]} f={f} inAt={6} outAt={RINGS[0] - 10} size={112} color={INK} />
         )}
         {f >= RING_SLAM && (
-          <Slam f={f} at={RING_SLAM} style={{ textAlign: "center", fontSize: 128, fontWeight: 800, color: ON_DARK, letterSpacing: "-0.035em" }}>
+          <Slam f={f} at={RING_SLAM} style={{ textAlign: "center", fontSize: 128, fontWeight: 800, color: INK, letterSpacing: "-0.035em" }}>
             הטלפון לא.
           </Slam>
         )}
@@ -786,7 +789,7 @@ function NightLog({ f }: { f: number }) {
 }
 
 function Crm({ f }: { f: number }) {
-  // The hung-up call, while the black curtain crosses it.
+  // The hung-up call, while the phone-blue curtain crosses it.
   const x = (WIDTH + CURTAIN_EDGE) * (1 - CURTAIN_EASE(clamp01((f - CRM.in) / CRM.sweep)))
   const board = <Board f={f} />
   const scene = f < CRM.log - 4 ? board : <Whip f={f} at={CRM.log - 4} dur={8} id="to-log" from={board} to={<NightLog f={f} />} />
@@ -794,7 +797,7 @@ function Crm({ f }: { f: number }) {
   return (
     <AbsoluteFill>
       <Call f={f} />
-      <LiquidCurtain x={x} frame={f} color="black">
+      <LiquidCurtain x={x} frame={f} color={BLUE}>
         {scene}
       </LiquidCurtain>
     </AbsoluteFill>

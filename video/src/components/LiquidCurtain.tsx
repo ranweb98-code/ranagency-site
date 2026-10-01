@@ -23,16 +23,21 @@ export function LiquidCurtain({
   x,
   frame,
   color = "black",
+  band = 0,
   children,
 }: {
   x: number
   frame: number
-  /** The site's curtain is black; the morning in the ad crosses in white. */
-  color?: "black" | "white"
+  /** The site's curtain is black; the morning in the ad crosses in white.
+   *  Any other hex colour works too (the receptionist ad's is phone blue). */
+  color?: "black" | "white" | (string & {})
+  /** Px of the leading edge's solid body to tuck under the sheet: a thinner
+   *  band of colour ahead of whatever rides on the sheet. */
+  band?: number
   children?: ReactNode
 }) {
-  const fill = color === "black" ? "#000000" : "#ffffff"
-  const tint = (src: string) => (color === "black" ? src : src.replace("fill:%23000000", "fill:%23ffffff"))
+  const fill = color === "black" ? "#000000" : color === "white" ? "#ffffff" : color
+  const tint = (src: string) => (fill === "#000000" ? src : src.replace("fill:%23000000", `fill:%23${fill.slice(1)}`))
   const wave = -((frame / (7.5 * FPS)) % 1) * TILE
   const edge = (src: string) => ({
     position: "absolute" as const,
@@ -46,7 +51,7 @@ export function LiquidCurtain({
   return (
     <AbsoluteFill style={{ overflow: "hidden", direction: "ltr" }}>
       <div style={{ position: "absolute", top: 0, left: 0, width: WIDTH, height: "100%", transform: `translateX(${x}px)` }}>
-        <div style={{ ...edge(tint(LEADING)), left: -CURTAIN_EDGE + 8, width: CURTAIN_EDGE }} />
+        <div style={{ ...edge(tint(LEADING)), left: -CURTAIN_EDGE + 8 + band, width: CURTAIN_EDGE }} />
         <div style={{ ...edge(tint(TRAILING)), right: -CURTAIN_EDGE - 2, width: CURTAIN_EDGE + 10 }} />
         <div style={{ position: "absolute", inset: 0, background: fill, overflow: "hidden" }}>
           <div style={{ position: "absolute", inset: 0, direction: "rtl", transform: `translateX(${-x}px)` }}>{children}</div>
