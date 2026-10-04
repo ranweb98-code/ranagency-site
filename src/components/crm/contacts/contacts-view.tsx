@@ -10,6 +10,7 @@ import { Glass } from "@/components/crm/ui/glass"
 import { PageHeader } from "@/components/crm/ui/page-header"
 import { Pill } from "@/components/crm/ui/pill"
 import { Segmented } from "@/components/crm/ui/segmented"
+import { Select } from "@/components/crm/ui/select"
 import { StatTile } from "@/components/crm/ui/stat-tile"
 import { formatMoney, formatMoneyCompact, formatRelative } from "@/lib/crm/format"
 import type { Channel, Contact, CrmData, Temperature } from "@/lib/crm/types"
@@ -68,22 +69,20 @@ export function ContactsView({ data, initialTemp }: { data: CrmData; initialTemp
                 { value: "cold", label: "קרים" },
               ]}
             />
-            <select value={stage} onChange={(e) => setStage(e.target.value)} aria-label="סינון לפי שלב" className="shrink-0 rounded-full bg-black/[0.07] px-4 py-2.5 text-xs font-medium outline-none">
-              <option value="all">כל השלבים</option>
-              {pack.stages.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-            <select value={channel} onChange={(e) => setChannel(e.target.value as Channel | "all")} aria-label="סינון לפי ערוץ" className="shrink-0 rounded-full bg-black/[0.07] px-4 py-2.5 text-xs font-medium outline-none">
-              <option value="all">כל הערוצים</option>
-              {data.tenant.agents.map((a) => (
-                <option key={a} value={a}>
-                  {CHANNELS[a].label}
-                </option>
-              ))}
-            </select>
+            <Select
+              variant="pill"
+              label="סינון לפי שלב"
+              value={stage}
+              onChange={setStage}
+              options={[{ value: "all", label: "כל השלבים" }, ...pack.stages.map((s) => ({ value: s.id, label: s.label }))]}
+            />
+            <Select
+              variant="pill"
+              label="סינון לפי ערוץ"
+              value={channel}
+              onChange={(v) => setChannel(v as Channel | "all")}
+              options={[{ value: "all", label: "כל הערוצים" }, ...data.tenant.agents.map((a) => ({ value: a, label: CHANNELS[a].label }))]}
+            />
             <Segmented<Sort> label="מיון" value={sort} onChange={setSort} options={[{ value: "recent", label: "אחרונים" }, { value: "value", label: "לפי שווי" }]} />
           </div>
         </div>

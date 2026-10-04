@@ -735,9 +735,20 @@ html[data-curtain="skip"] .liquid-curtain {
 }
 
 .crm-panel {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 30px 60px -20px rgba(10, 14, 30, 0.45);
+}
+
+/* Dropdown lists: fully opaque, because they open over rows and buttons that
+   must not show through. */
+.crm-menu {
+  background: #fff;
+  border: 1px solid rgba(17, 17, 17, 0.06);
+  box-shadow:
+    0 24px 48px -16px rgba(10, 14, 30, 0.35),
+    0 2px 6px rgba(10, 14, 30, 0.08);
 }
 
 .crm-dock {
@@ -745,6 +756,59 @@ html[data-curtain="skip"] .liquid-curtain {
   box-shadow:
     0 24px 48px -18px rgba(10, 10, 6, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* The page's own scrollbar, thin and quiet, like the inner ones. */
+html:has(.crm-root) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.22) transparent;
+}
+
+/* Native form chrome that would break the rounded look. */
+.crm-root {
+  color-scheme: light;
+  accent-color: var(--crm-ink);
+}
+.crm-root ::selection {
+  background: color-mix(in oklab, var(--crm-accent) 28%, white);
+}
+.crm-root input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.crm-root input::-webkit-outer-spin-button,
+.crm-root input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Chrome paints autofilled fields blue-yellow and square; keep them our pill. */
+.crm-root input:-webkit-autofill,
+.crm-root input:-webkit-autofill:hover,
+.crm-root input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111;
+  caret-color: #111;
+  box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 9999s ease-out;
+}
+
+/* Dropdown lists and other small popovers fade in instead of snapping. */
+@keyframes crm-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.crm-pop {
+  animation: crm-pop-in 0.14s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crm-pop {
+    animation: none;
+  }
 }
 
 /* Thin scrollbars for the inner scroll regions (inbox list, kanban lanes). */

@@ -4,8 +4,10 @@ import { X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition, type FormEvent } from "react"
 
+import { fieldClass, primaryButtonClass } from "@/components/crm/ui/field"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { Modal } from "@/components/crm/ui/modal"
+import { Select } from "@/components/crm/ui/select"
 import { cn } from "@/lib/utils"
 import { useToast } from "./toast"
 
@@ -21,9 +23,6 @@ export interface LeadInput {
   source: string
 }
 export type CreateLead = (input: LeadInput) => Promise<{ ok: true } | { ok: false; error: string }>
-
-const field =
-  "w-full rounded-2xl border border-black/10 bg-white/70 px-4 py-3 text-[15px] outline-none transition-colors placeholder:text-crm-muted focus:border-crm-ink/40 focus:bg-white"
 
 /** Manual lead entry — for the walk-in or the phone call no agent took. */
 export function NewLeadDialog({
@@ -87,16 +86,14 @@ export function NewLeadDialog({
           </IconButton>
         </div>
         <div className="space-y-3">
-          <input name="name" required placeholder={`שם ${personLabel}`} className={field} aria-label="שם" autoComplete="off" />
-          <input name="phone" required type="tel" inputMode="tel" dir="ltr" placeholder="050-000-0000" className={cn(field, "text-end")} aria-label="טלפון" />
-          <select name="item" className={field} aria-label="מתעניין ב" defaultValue="">
-            <option value="">מתעניין ב… (לא חובה)</option>
-            {items.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title}
-              </option>
-            ))}
-          </select>
+          <input name="name" required placeholder={`שם ${personLabel}`} className={fieldClass} aria-label="שם" autoComplete="off" />
+          <input name="phone" required type="tel" inputMode="tel" dir="ltr" placeholder="050-000-0000" className={cn(fieldClass, "text-end")} aria-label="טלפון" />
+          <Select
+            name="item"
+            label="מתעניין ב"
+            placeholder="מתעניין ב… (לא חובה)"
+            options={[{ value: "", label: "בלי העדפה" }, ...items.map((item) => ({ value: item.id, label: item.title }))]}
+          />
           <div className="flex flex-wrap gap-2 pt-1" role="radiogroup" aria-label="מקור">
             {SOURCES.map((s) => (
               <button
@@ -117,7 +114,7 @@ export function NewLeadDialog({
             {error}
           </p>
         ) : null}
-        <button type="submit" disabled={pending} className="mt-6 w-full rounded-full bg-crm-ink py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60">
+        <button type="submit" disabled={pending} className={cn(primaryButtonClass, "mt-6 w-full")}>
           {pending ? "שומר…" : "הוספה"}
         </button>
       </form>

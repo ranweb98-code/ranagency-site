@@ -3,13 +3,10 @@
 import { ArrowLeft, Mail } from "lucide-react"
 import { useActionState } from "react"
 
+import { fieldClass, primaryButtonClass } from "@/components/crm/ui/field"
 import { cn } from "@/lib/utils"
 import { loginAction, type LoginState } from "./actions"
 
-const field =
-  "w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3.5 text-[16px] outline-none transition-colors placeholder:text-crm-muted focus:border-crm-ink/40 focus:bg-white"
-const primary =
-  "flex w-full items-center justify-center gap-2 rounded-full bg-crm-ink py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
 const quiet = "text-[13px] text-crm-ink/70 underline-offset-4 hover:underline disabled:opacity-50"
 
 const initial: LoginState = { step: "email", email: "" }
@@ -46,7 +43,7 @@ export function LoginForm({ next, notice }: { next: string; notice?: string }) {
             autoComplete="one-time-code"
             dir="ltr"
             placeholder="הקוד מהמייל"
-            className={cn(field, "text-center tracking-[0.3em]")}
+            className={cn(fieldClass, "text-center tracking-[0.3em]")}
             aria-describedby={state.error ? "login-error" : undefined}
             aria-invalid={state.error ? true : undefined}
           />
@@ -55,7 +52,7 @@ export function LoginForm({ next, notice }: { next: string; notice?: string }) {
               {state.error}
             </p>
           ) : null}
-          <button type="submit" name="intent" value="verify" disabled={pending} className={primary}>
+          <button type="submit" name="intent" value="verify" disabled={pending} className={cn(primaryButtonClass, "w-full")}>
             {pending ? "בודק…" : "כניסה עם הקוד"}
           </button>
         </div>
@@ -99,7 +96,7 @@ export function LoginForm({ next, notice }: { next: string; notice?: string }) {
           dir="ltr"
           defaultValue={state.email}
           placeholder="name@business.co.il"
-          className={cn(field, "text-end")}
+          className={cn(fieldClass, "text-end")}
           aria-describedby={state.error ? "login-error" : undefined}
           aria-invalid={state.error ? true : undefined}
         />
@@ -108,7 +105,7 @@ export function LoginForm({ next, notice }: { next: string; notice?: string }) {
             {state.error}
           </p>
         ) : null}
-        <button type="submit" disabled={pending} className={primary}>
+        <button type="submit" disabled={pending} className={cn(primaryButtonClass, "w-full")}>
           {pending ? "שולח…" : "שלחו לי קישור כניסה"}
           {pending ? null : <ArrowLeft className="size-4" aria-hidden />}
         </button>

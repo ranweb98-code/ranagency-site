@@ -314,13 +314,22 @@ export function ConsultationCard() {
             </div>
 
             <label className="mt-4 flex w-full items-start gap-2.5 text-right text-sm text-ran-text-on-light-muted">
+              {/* Round to match every other control on the page; the real input
+                  stays in the form (visually hidden) so `required` and the
+                  keyboard still work. */}
               <input
                 type="checkbox"
                 required
                 checked={consent}
                 onChange={(event) => setConsent(event.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-ran-glass-border-light text-ran-text-on-light focus:ring-ran-primary/30"
+                className="peer sr-only"
               />
+              <span
+                aria-hidden
+                className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-transparent transition-colors peer-checked:border-ran-text-on-light peer-checked:bg-ran-text-on-light peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-ran-primary/30 peer-focus-visible:ring-offset-2"
+              >
+                <Check className="size-3" strokeWidth={3} />
+              </span>
               <span>
                 קראתי ואני מסכימ/ה ל
                 <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2">

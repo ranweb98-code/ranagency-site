@@ -3,13 +3,12 @@
 import { Check, Plus } from "lucide-react"
 import { useActionState, useId } from "react"
 
+import { ChoiceChip } from "@/components/crm/ui/choice-chip"
+import { fieldClass, primaryButtonClass } from "@/components/crm/ui/field"
+import { Select } from "@/components/crm/ui/select"
 import { cn } from "@/lib/utils"
 import { createBusiness, inviteUser, type AdminState } from "./actions"
 
-const field =
-  "w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-[15px] outline-none transition-colors placeholder:text-crm-muted focus:border-crm-ink/40 focus:bg-white"
-const submit =
-  "flex items-center justify-center gap-2 rounded-full bg-crm-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
 
 const initial: AdminState = { ok: false }
 
@@ -51,17 +50,8 @@ export function NewBusinessForm({ industries }: { industries: { id: string; labe
   return (
     <form action={action} className="space-y-3">
       <div className="grid items-start gap-3 sm:grid-cols-2">
-        <input name="business_name" required placeholder="שם העסק" aria-label="שם העסק" className={field} autoComplete="off" />
-        <select name="industry" required defaultValue="" aria-label="תחום" className={field}>
-          <option value="" disabled>
-            תחום
-          </option>
-          {industries.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.label}
-            </option>
-          ))}
-        </select>
+        <input name="business_name" required placeholder="שם העסק" aria-label="שם העסק" className={fieldClass} autoComplete="off" />
+        <Select name="industry" label="תחום" placeholder="תחום" options={industries.map((i) => ({ value: i.id, label: i.label }))} />
         <div>
           <input
             name="slug"
@@ -71,34 +61,36 @@ export function NewBusinessForm({ industries }: { industries: { id: string; labe
             aria-label="כתובת העסק באנגלית"
             aria-describedby={`${id}-slug`}
             pattern="[a-z0-9][a-z0-9\-]{2,39}"
-            className={cn(field, "text-end")}
+            className={cn(fieldClass, "text-end")}
             autoComplete="off"
           />
           <p id={`${id}-slug`} className="mt-1 px-1 text-[11px] text-crm-muted">
             כתובת העסק באנגלית, בתוך <bdi dir="ltr">napuch.co.il/app/…</bdi> (אותיות קטנות, ספרות ומקף)
           </p>
         </div>
-        <input name="owner_name" placeholder="שם בעל העסק" aria-label="שם בעל העסק" className={field} autoComplete="off" />
-        <input name="owner_email" type="email" required dir="ltr" placeholder="מייל בעל העסק (להזמנה)" aria-label="מייל בעל העסק" className={cn(field, "text-end")} autoComplete="off" />
-        <input name="city" placeholder="עיר" aria-label="עיר" className={field} autoComplete="off" />
-        <input name="tagline" placeholder="משפט קצר על העסק (לא חובה)" aria-label="משפט קצר על העסק" className={cn(field, "sm:col-span-2")} autoComplete="off" />
+        <input name="owner_name" placeholder="שם בעל העסק" aria-label="שם בעל העסק" className={fieldClass} autoComplete="off" />
+        <input name="owner_email" type="email" required dir="ltr" placeholder="מייל בעל העסק (להזמנה)" aria-label="מייל בעל העסק" className={cn(fieldClass, "text-end")} autoComplete="off" />
+        <input name="city" placeholder="עיר" aria-label="עיר" className={fieldClass} autoComplete="off" />
+        <input name="tagline" placeholder="משפט קצר על העסק (לא חובה)" aria-label="משפט קצר על העסק" className={cn(fieldClass, "sm:col-span-2")} autoComplete="off" />
         <label className="block">
           <span className="mb-1 block px-1 text-[11px] text-crm-muted">מחיר חודשי בשקלים</span>
-          <input name="plan_monthly" type="number" min={0} max={100000} inputMode="numeric" defaultValue={0} className={field} />
+          <span className="relative block">
+            <span aria-hidden className="pointer-events-none absolute inset-y-0 start-5 grid place-items-center text-[15px] text-crm-muted">
+              ₪
+            </span>
+            <input name="plan_monthly" inputMode="numeric" pattern="[0-9]{1,6}" maxLength={6} defaultValue="0" className={cn(fieldClass, "ps-11")} />
+          </span>
         </label>
         <fieldset>
           <legend className="mb-1 px-1 text-[11px] text-crm-muted">סוכנים שנרכשו</legend>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1 py-2.5">
+          <div className="flex flex-wrap items-center gap-2 py-0.5">
             {AGENT_OPTIONS.map((a) => (
-              <label key={a.value} className="flex items-center gap-2 text-[14px]">
-                <input type="checkbox" name="agents" value={a.value} defaultChecked className="size-4 accent-[var(--crm-ink)]" />
-                {a.label}
-              </label>
+              <ChoiceChip key={a.value} name="agents" value={a.value} defaultChecked label={a.label} />
             ))}
           </div>
         </fieldset>
       </div>
-      <button type="submit" disabled={pending} className={submit}>
+      <button type="submit" disabled={pending} className={primaryButtonClass}>
         <Plus className="size-4" aria-hidden />
         {pending ? "יוצר…" : "יצירת עסק והזמנת הבעלים"}
       </button>
@@ -114,12 +106,18 @@ export function InviteForm({ tenantId }: { tenantId: string }) {
     <form action={action}>
       <input type="hidden" name="tenant_id" value={tenantId} />
       <div className="flex flex-wrap gap-2">
-        <input name="email" type="email" required dir="ltr" placeholder="מייל להזמנה" aria-label="מייל להזמנה" className={cn(field, "min-w-0 flex-1 basis-48 py-2.5 text-end")} autoComplete="off" />
-        <select name="role" defaultValue="staff" aria-label="תפקיד" className={cn(field, "w-auto py-2.5")}>
-          <option value="staff">צוות</option>
-          <option value="owner">בעלים</option>
-        </select>
-        <button type="submit" disabled={pending} className={cn(submit, "py-2.5")}>
+        <input name="email" type="email" required dir="ltr" placeholder="מייל להזמנה" aria-label="מייל להזמנה" className={cn(fieldClass, "min-w-0 flex-1 basis-48 py-2.5 text-end")} autoComplete="off" />
+        <Select
+          name="role"
+          label="תפקיד"
+          defaultValue="staff"
+          className="w-auto min-w-32 py-2.5"
+          options={[
+            { value: "staff", label: "צוות" },
+            { value: "owner", label: "בעלים" },
+          ]}
+        />
+        <button type="submit" disabled={pending} className={cn(primaryButtonClass, "py-2.5")}>
           {pending ? "שולח…" : "הזמנה"}
         </button>
       </div>
