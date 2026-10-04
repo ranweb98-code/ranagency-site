@@ -177,6 +177,24 @@ begin
   assert n = 1, 'confirming the address claims the invitation';
   raise notice 'PASS  invitations are claimed only once the mailbox is confirmed';
 
+  -- the platform owner's address is promoted once confirmed, never before
+  insert into auth.users (id, email) values ('aaaaaaaa-0000-0000-0000-000000000007', 'RanWeb98@Gmail.com');   -- not confirmed yet
+  select count(*) into n from public.profiles where id = 'aaaaaaaa-0000-0000-0000-000000000007' and is_super_admin;
+  assert n = 0, 'an unconfirmed sign-up with the admin address must not be promoted';
+  update auth.users set email_confirmed_at = now() where id = 'aaaaaaaa-0000-0000-0000-000000000007';
+  select count(*) into n from public.profiles where id = 'aaaaaaaa-0000-0000-0000-000000000007' and is_super_admin;
+  assert n = 1, 'confirming the admin address promotes it';
+  insert into auth.users (id, email, email_confirmed_at) values ('aaaaaaaa-0000-0000-0000-000000000008', 'someone@else.test', now());
+  select count(*) into n from public.profiles where id = 'aaaaaaaa-0000-0000-0000-000000000008' and is_super_admin;
+  assert n = 0, 'other confirmed addresses are not promoted';
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000008');
+  ok := test.rejected($q$select * from private.admin_emails$q$);
+  assert ok, 'the admin list is not readable through the API';
+  ok := test.rejected($q$update public.profiles set is_super_admin = true where id = 'aaaaaaaa-0000-0000-0000-000000000008'$q$);
+  assert ok, 'nobody can promote themselves';
+  perform test.back();
+  raise notice 'PASS  the admin address is promoted only after the mailbox is confirmed';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';
