@@ -195,6 +195,15 @@ begin
   perform test.back();
   raise notice 'PASS  the admin address is promoted only after the mailbox is confirmed';
 
+  -- no account can carry a password: a pre-registered one must not survive confirmation
+  insert into auth.users (id, email, encrypted_password) values ('aaaaaaaa-0000-0000-0000-000000000009', 'victim@acme.test', 'attacker-hash');
+  select count(*) into n from auth.users where id = 'aaaaaaaa-0000-0000-0000-000000000009' and encrypted_password = '';
+  assert n = 1, 'a password hash supplied at sign-up must be wiped';
+  update auth.users set encrypted_password = 'another-hash' where id = 'aaaaaaaa-0000-0000-0000-000000000009';
+  select count(*) into n from auth.users where id = 'aaaaaaaa-0000-0000-0000-000000000009' and encrypted_password = '';
+  assert n = 1, 'a later password change must be wiped too';
+  raise notice 'PASS  password hashes are always empty (magic link / code only)';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';

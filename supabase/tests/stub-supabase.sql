@@ -14,6 +14,7 @@ create table auth.users (
   id         uuid primary key default gen_random_uuid(),
   email      text,
   email_confirmed_at timestamptz,
+  encrypted_password text,
   created_at timestamptz not null default now()
 );
 
