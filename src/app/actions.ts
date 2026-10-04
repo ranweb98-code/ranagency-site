@@ -44,7 +44,10 @@ export async function sendLeadEmail(lead: LeadPayload) {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "נפוץ' <onboarding@resend.dev>",
+      // Sent from the verified napuch.co.il domain (SPF/DKIM live in MyNames
+      // DNS next to the Zoho mailbox records), so it is no longer limited to
+      // the sandbox sender and lands as mail from the business itself.
+      from: "נפוץ' <hello@napuch.co.il>",
       to: LEAD_EMAIL,
       subject: `🎯 ליד חדש מהאתר: ${name}`,
       html: `
@@ -77,11 +80,9 @@ export async function sendLeadEmail(lead: LeadPayload) {
     })
 
     if (error) {
-      // The Resend SDK resolves (doesn't throw) on API-level errors — e.g.
-      // the sandbox "onboarding@resend.dev" sender can only send to the
-      // email address the Resend account itself was signed up with until a
-      // custom domain is verified. Surfacing this was missing before, so a
-      // rejected send silently looked like a success.
+      // The Resend SDK resolves (doesn't throw) on API-level errors — a
+      // rejected sender or an unverified domain among them — so check `error`
+      // explicitly or a failed send silently looks like a success.
       console.error("Resend API error:", error)
       return { ok: false as const }
     }
