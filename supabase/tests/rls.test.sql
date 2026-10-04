@@ -39,12 +39,12 @@ insert into public.invitations (tenant_id, email, role) values
   ('11111111-1111-1111-1111-111111111111', 'carol@acme.test', 'staff'),
   ('22222222-2222-2222-2222-222222222222', 'bob@beta.test',   'owner');
 
-insert into auth.users (id, email) values
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'Alice@Acme.test'),   -- mixed case on purpose
-  ('aaaaaaaa-0000-0000-0000-000000000002', 'bob@beta.test'),
-  ('aaaaaaaa-0000-0000-0000-000000000003', 'carol@acme.test'),
-  ('aaaaaaaa-0000-0000-0000-000000000004', 'dave@nowhere.test'),
-  ('aaaaaaaa-0000-0000-0000-000000000005', 'admin@napuch.test');
+insert into auth.users (id, email, email_confirmed_at) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'Alice@Acme.test', now()),   -- mixed case on purpose
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'bob@beta.test', now()),
+  ('aaaaaaaa-0000-0000-0000-000000000003', 'carol@acme.test', now()),
+  ('aaaaaaaa-0000-0000-0000-000000000004', 'dave@nowhere.test', now()),
+  ('aaaaaaaa-0000-0000-0000-000000000005', 'admin@napuch.test', now());
 update public.profiles set is_super_admin = true where email = 'admin@napuch.test';
 
 insert into public.catalog_items (id, tenant_id, title, price) values
@@ -161,6 +161,21 @@ begin
   assert ok, 'anon must not call claim_my_invitations';
   perform test.back();
   raise notice 'PASS  later invitations are claimed on sign-in; anon cannot call it';
+
+
+  -- an UNCONFIRMED sign-up with an invited address must not inherit the invitation
+  insert into public.invitations (tenant_id, email, role) values ('11111111-1111-1111-1111-111111111111', 'eve@acme.test', 'staff');
+  insert into auth.users (id, email) values ('aaaaaaaa-0000-0000-0000-000000000006', 'eve@acme.test');  -- no email_confirmed_at
+  select count(*) into n from public.memberships where user_id = 'aaaaaaaa-0000-0000-0000-000000000006';
+  assert n = 0, 'unconfirmed sign-up must not claim the invitation';
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000006');
+  select public.claim_my_invitations() into n; assert n = 0, 'unconfirmed user cannot claim via the RPC either';
+  select count(*) into n from public.tenants; assert n = 0, 'unconfirmed user sees nothing';
+  perform test.back();
+  update auth.users set email_confirmed_at = now() where id = 'aaaaaaaa-0000-0000-0000-000000000006';
+  select count(*) into n from public.memberships where user_id = 'aaaaaaaa-0000-0000-0000-000000000006';
+  assert n = 1, 'confirming the address claims the invitation';
+  raise notice 'PASS  invitations are claimed only once the mailbox is confirmed';
 
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
