@@ -3,6 +3,11 @@ import type { ReactNode } from "react"
 
 import { isSupabaseConfigured } from "@/lib/supabase/env"
 
+// Per-request, never prerendered: these pages depend on who is signed in, and a
+// missing Supabase setting must not be able to fail the build of the marketing
+// site and the demo that share this deployment.
+export const dynamic = "force-dynamic"
+
 // Everything under /app needs the database. If this deployment has no Supabase
 // settings yet, say so plainly instead of failing on the first query.
 export default function AppLayout({ children }: { children: ReactNode }) {
