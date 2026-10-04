@@ -330,5 +330,5 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
   contacts.sort((a, b) => Date.parse(b.lastContactAt) - Date.parse(a.lastContactAt))
   appointments.sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
 
-  return { tenant, pack, now: nowIso, contacts, appointments, catalog }
+  return { tenant, pack, now: nowIso, basePath: `/crm/${tenant.slug}`, demo: true, contacts, appointments, catalog }
 }

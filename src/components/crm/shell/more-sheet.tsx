@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeftRight, Plus, X, type LucideIcon } from "lucide-react"
+import { ArrowLeftRight, LogOut, Plus, X, type LucideIcon } from "lucide-react"
 import Link from "next/link"
 
 import { IconButton } from "@/components/crm/ui/icon-button"
@@ -12,11 +12,14 @@ export function MoreSheet({
   onClose,
   nav,
   onAdd,
+  signOut,
 }: {
   open: boolean
   onClose: () => void
   nav: { key: string; href: string; label: string; icon: LucideIcon }[]
   onAdd: () => void
+  /** Real workspaces sign out here; the demo links back to the business picker. */
+  signOut?: () => Promise<void>
 }) {
   return (
     <Modal open={open} onClose={onClose} label="עוד" variant="bottom">
@@ -46,10 +49,19 @@ export function MoreSheet({
             </button>
           </li>
           <li>
-            <Link href="/crm" onClick={onClose} className="flex items-center gap-3 rounded-2xl bg-black/[0.05] px-4 py-4 text-sm font-medium">
-              <ArrowLeftRight className="size-5" aria-hidden />
-              החלפת עסק
-            </Link>
+            {signOut ? (
+              <form action={signOut}>
+                <button type="submit" className="flex w-full items-center gap-3 rounded-2xl bg-black/[0.05] px-4 py-4 text-sm font-medium">
+                  <LogOut className="size-5" aria-hidden />
+                  יציאה
+                </button>
+              </form>
+            ) : (
+              <Link href="/crm" onClick={onClose} className="flex items-center gap-3 rounded-2xl bg-black/[0.05] px-4 py-4 text-sm font-medium">
+                <ArrowLeftRight className="size-5" aria-hidden />
+                החלפת עסק
+              </Link>
+            )}
           </li>
         </ul>
       </div>

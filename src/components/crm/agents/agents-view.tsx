@@ -35,7 +35,7 @@ export function AgentsView({ data }: { data: CrmData }) {
   const [tone, setTone] = useState<Record<string, Tone>>({})
   const [hours, setHours] = useState<Record<string, Hours>>({})
   const [rules, setRules] = useState({ price: true, angry: true, owner: true, big: false })
-  const bigDeal = Math.round(Math.max(...contacts.map((c) => c.value)) / 2 / 1000) * 1000
+  const bigDeal = Math.round(Math.max(0, ...contacts.map((c) => c.value)) / 2 / 1000) * 1000
 
   return (
     <div>

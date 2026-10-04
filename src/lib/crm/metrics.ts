@@ -60,7 +60,8 @@ export function computeMetrics(data: CrmData): Metrics {
 
   const upcoming = appointments.filter((a) => Date.parse(a.at) >= nowMs)
   const afterHours = contacts.filter((c) => isAfterHours(c.createdAt)).length
-  const replies = contacts.map((c) => c.firstReplySeconds)
+  // 0 = no agent reply recorded (manual leads); it would drag the average down
+  const replies = contacts.map((c) => c.firstReplySeconds).filter((s) => s > 0)
 
   return {
     closed30,

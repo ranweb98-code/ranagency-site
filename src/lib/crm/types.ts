@@ -4,8 +4,9 @@
 // never a fork of the UI. Tenants point at a pack and layer their own brand on
 // top.
 //
-// None of this is persisted yet: `repository.ts` is the single seam that will
-// swap from generated demo data to Supabase once the first client is live.
+// Two sources fill these shapes: `demo-data.ts` generates the /crm showcase in
+// code, and `live.ts` reads a real business from Supabase for /app. The screens
+// never know which one they got.
 
 export type Channel = "whatsapp" | "instagram" | "voice"
 export type Temperature = "hot" | "warm" | "cold"
@@ -145,6 +146,9 @@ export interface Tenant {
 
 export interface CatalogItem extends CatalogSeed {
   id: string
+  /** Real photos (public URLs, in display order). Demo items have none and show
+   *  generated tiles instead, so `photos` stays the count either way. */
+  photoUrls?: string[]
 }
 
 export interface Message {
@@ -201,6 +205,10 @@ export interface CrmData {
   tenant: Tenant
   pack: IndustryPack
   now: string
+  /** Where this workspace lives in the URL: `/crm/<slug>` (demo) or `/app/<slug>`. */
+  basePath: string
+  /** Demo workspaces are generated and read-only; real ones come from the database. */
+  demo: boolean
   contacts: Contact[]
   appointments: Appointment[]
   catalog: CatalogItem[]

@@ -1,0 +1,20 @@
+<!-- Supabase ← Authentication ← Emails ← Templates.
+     Paste into BOTH "Magic Link" and "Confirm signup" (a first-time address gets
+     the second one).
+
+     Subject suggestion:  הקישור שלכם לכניסה ל-CRM
+
+     Why the link goes to /app/auth/confirm with {{ .TokenHash }} instead of {{ .ConfirmationURL }}:
+     it signs in on whatever device opens the email, even if the login was started on
+     another one. {{ .Token }} is the 6-digit code shown below it, typed into the login screen. -->
+<div dir="rtl" style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111">
+  <h1 style="font-size:22px;margin:0 0 12px">הכניסה שלכם ל-CRM</h1>
+  <p style="font-size:15px;line-height:1.6;margin:0 0 20px">לחצו על הכפתור כדי להיכנס. הקישור תקף לזמן קצר ופועל פעם אחת.</p>
+  <p style="margin:0 0 24px">
+    <a href="{{ .SiteURL }}/app/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+       style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 28px;border-radius:999px;font-size:15px">כניסה למערכת</a>
+  </p>
+  <p style="font-size:14px;line-height:1.6;margin:0 0 6px;color:#444">אפשר גם להקליד במסך הכניסה את הקוד:</p>
+  <p dir="ltr" style="font-size:26px;letter-spacing:6px;font-weight:700;margin:0 0 24px">{{ .Token }}</p>
+  <p style="font-size:12px;line-height:1.6;color:#6f6f6f;margin:0">לא ביקשתם להיכנס? אפשר להתעלם מהמייל.</p>
+</div>

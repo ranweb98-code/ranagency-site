@@ -26,7 +26,7 @@ const STATUS: Record<CatalogItem["status"], { label: string; tone: "ink" | "warm
 
 export function CatalogView({ data }: { data: CrmData }) {
   const { pack, catalog, contacts } = data
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
   const toast = useToast()
   const [tag, setTag] = useState("all")
   const [openId, setOpenId] = useState<string | null>(null)
@@ -64,7 +64,7 @@ export function CatalogView({ data }: { data: CrmData }) {
           <li key={item.id}>
             <button type="button" onClick={() => setOpenId(item.id)} className="group block w-full text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink">
               <Glass className="overflow-hidden p-2.5 transition-transform duration-300 group-hover:-translate-y-1">
-                <MediaTile seed={item.id} icon={pack.catalogIcon} className="aspect-[4/3] rounded-[22px] md:rounded-[26px]">
+                <MediaTile seed={item.id} icon={pack.catalogIcon} imageUrl={item.photoUrls?.[0]} className="aspect-[4/3] rounded-[22px] md:rounded-[26px]">
                   <Pill tone={STATUS[item.status].tone} className="absolute start-3 top-3 bg-white/85 text-crm-ink">
                     {STATUS[item.status].label}
                   </Pill>
@@ -98,21 +98,23 @@ export function CatalogView({ data }: { data: CrmData }) {
             </button>
           </li>
         ))}
+        {data.demo ? (
         <li>
-          <button
-            type="button"
-            onClick={() => toast(`העלאת ${pack.vocab.catalogItem} חדש תופעל עם חיבור למסד הנתונים`)}
-            className="grid h-full min-h-[220px] w-full place-items-center rounded-[34px] border-2 border-dashed border-black/15 p-6 text-center transition-colors hover:border-black/30 hover:bg-white/40"
-          >
-            <span>
-              <span className="mx-auto grid size-12 place-items-center rounded-full bg-black/[0.07]">
-                <Plus className="size-5" aria-hidden />
+            <button
+              type="button"
+              onClick={() => toast(`העלאת ${pack.vocab.catalogItem} חדש תופעל עם חיבור למסד הנתונים`)}
+              className="grid h-full min-h-[220px] w-full place-items-center rounded-[34px] border-2 border-dashed border-black/15 p-6 text-center transition-colors hover:border-black/30 hover:bg-white/40"
+            >
+              <span>
+                <span className="mx-auto grid size-12 place-items-center rounded-full bg-black/[0.07]">
+                  <Plus className="size-5" aria-hidden />
+                </span>
+                <span className="mt-3 block text-sm font-medium">הוספת {pack.vocab.catalogItem}</span>
+                <span className="mt-1 block text-xs text-crm-muted">תמונות, מחיר ופרטים. הסוכן לומד אותם מיד.</span>
               </span>
-              <span className="mt-3 block text-sm font-medium">הוספת {pack.vocab.catalogItem}</span>
-              <span className="mt-1 block text-xs text-crm-muted">תמונות, מחיר ופרטים. הסוכן לומד אותם מיד.</span>
-            </span>
-          </button>
-        </li>
+            </button>
+          </li>
+        ) : null}
       </ul>
 
       <Modal open={Boolean(open)} onClose={() => setOpenId(null)} label={open?.title ?? ""} variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!max-h-[90dvh] md:!w-[min(94vw,46rem)]">
@@ -124,7 +126,7 @@ export function CatalogView({ data }: { data: CrmData }) {
                 <X />
               </IconButton>
             </div>
-            <MediaTile seed={open.id} icon={pack.catalogIcon} className="aspect-[16/9] rounded-[26px]">
+            <MediaTile seed={open.id} icon={pack.catalogIcon} imageUrl={open.photoUrls?.[0]} className="aspect-[16/9] rounded-[26px]">
               {open.photos > 0 ? (
                 <span className="absolute bottom-3 end-3 flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-[11px] text-white backdrop-blur">
                   <ImageIcon className="size-3.5" aria-hidden />

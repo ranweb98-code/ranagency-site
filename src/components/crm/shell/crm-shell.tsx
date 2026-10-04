@@ -28,9 +28,22 @@ import { CommandPalette } from "./command-palette"
 import { NewLeadDialog } from "./new-lead-dialog"
 import { ToastProvider } from "./toast"
 import { MoreSheet } from "./more-sheet"
+import { ShellActionsProvider } from "./shell-actions"
+import type { CreateLead } from "./new-lead-dialog"
+
+/** Present for a signed-in, real workspace; absent for the /crm demo. */
+export interface ShellAccount {
+  email: string
+  signOut: () => Promise<void>
+  createLead: CreateLead
+  /** Only the super admin gets a way back to the list of businesses. */
+  adminHref?: string
+}
 
 export interface ShellProps {
-  slug: string
+  /** URL prefix of this workspace: `/crm/<slug>` (demo) or `/app/<slug>`. */
+  base: string
+  account?: ShellAccount
   businessName: string
   ownerName: string
   industryLabel: string
@@ -50,10 +63,9 @@ interface NavItem {
   badge?: number
 }
 
-export function CrmShell({ children, slug, businessName, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, search }: ShellProps) {
+export function CrmShell({ children, base, account, businessName, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, search }: ShellProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const base = `/crm/${slug}`
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leadOpen, setLeadOpen] = useState(false)
@@ -94,11 +106,13 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
+  const openNewLead = () => setLeadOpen(true)
   const mobilePrimary = nav.filter((n) => ["overview", "inbox", "pipeline", "calendar"].includes(n.key))
   const moreActive = !mobilePrimary.some(isActive)
 
   return (
     <ToastProvider>
+      <ShellActionsProvider openNewLead={openNewLead}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-crm-ink focus:px-5 focus:py-2.5 focus:text-sm focus:font-medium focus:text-white"
@@ -156,11 +170,28 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
           </nav>
 
           <div className="flex items-center justify-end gap-2">
-            <Link href="/crm" className="hidden lg:block" aria-label="חזרה לבחירת עסק לדוגמה">
-              <Pill tone="white" className="px-3 py-1 text-[11px]">
-                הדגמה · {industryLabel}
-              </Pill>
-            </Link>
+            {account?.adminHref ? (
+              <Link href={account.adminHref} className="hidden rounded-full bg-white/80 px-3.5 py-1.5 text-[12px] font-medium text-crm-ink/80 transition-colors hover:bg-white lg:block">
+                ניהול
+              </Link>
+            ) : null}
+            {account ? (
+              <form action={account.signOut} className="hidden lg:block">
+                <button
+                  type="submit"
+                  title={account.email}
+                  className="rounded-full bg-white/80 px-3.5 py-1.5 text-[12px] font-medium text-crm-ink/80 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-crm-ink"
+                >
+                  יציאה
+                </button>
+              </form>
+            ) : (
+              <Link href="/crm" className="hidden lg:block" aria-label="חזרה לבחירת עסק לדוגמה">
+                <Pill tone="white" className="px-3 py-1 text-[11px]">
+                  הדגמה · {industryLabel}
+                </Pill>
+              </Link>
+            )}
             <IconButton label="חיפוש" tone="white" onClick={() => setPaletteOpen(true)} className="md:hidden">
               <Search />
             </IconButton>
@@ -240,8 +271,18 @@ export function CrmShell({ children, slug, businessName, ownerName, industryLabe
           setLeadOpen(true)
         }}
       />
-      <NewLeadDialog open={leadOpen} onClose={() => setLeadOpen(false)} personLabel={peopleLabel} items={itemOptions} />
-      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} nav={nav.filter((n) => !mobilePrimary.includes(n))} onAdd={() => { setMoreOpen(false); setLeadOpen(true) }} />
+      <NewLeadDialog open={leadOpen} onClose={() => setLeadOpen(false)} personLabel={peopleLabel} items={itemOptions} createLead={account?.createLead} />
+      <MoreSheet
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        nav={nav.filter((n) => !mobilePrimary.includes(n))}
+        onAdd={() => {
+          setMoreOpen(false)
+          setLeadOpen(true)
+        }}
+        signOut={account?.signOut}
+      />
+      </ShellActionsProvider>
     </ToastProvider>
   )
 }

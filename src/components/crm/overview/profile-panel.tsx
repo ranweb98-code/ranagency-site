@@ -50,12 +50,16 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
         <Link href={`${base}/inbox?c=${contact.id}`} aria-label="פתיחת השיחה">
           <IconButton label="פתיחת השיחה" tone="glass" tabIndex={-1} className="pointer-events-none"><MessageCircle /></IconButton>
         </Link>
-        <a href={`tel:${contact.phone.replace(/-/g, "")}`} aria-label={`התקשרות ל${contact.name}`}>
-          <IconButton label="התקשרות" tone="glass" tabIndex={-1} className="pointer-events-none"><Phone /></IconButton>
-        </a>
-        <a href={`mailto:${contact.email}`} aria-label="שליחת מייל">
-          <IconButton label="שליחת מייל" tone="glass" tabIndex={-1} className="pointer-events-none"><Mail /></IconButton>
-        </a>
+        {contact.phone ? (
+          <a href={`tel:${contact.phone.replace(/-/g, "")}`} aria-label={`התקשרות ל${contact.name}`}>
+            <IconButton label="התקשרות" tone="glass" tabIndex={-1} className="pointer-events-none"><Phone /></IconButton>
+          </a>
+        ) : null}
+        {contact.email ? (
+          <a href={`mailto:${contact.email}`} aria-label="שליחת מייל">
+            <IconButton label="שליחת מייל" tone="glass" tabIndex={-1} className="pointer-events-none"><Mail /></IconButton>
+          </a>
+        ) : null}
         <Link href={`${base}/calendar`} aria-label="קביעה ביומן">
           <IconButton label="קביעה ביומן" tone="glass" tabIndex={-1} className="pointer-events-none"><CalendarPlus /></IconButton>
         </Link>
@@ -74,8 +78,8 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
 
 export function DetailsCard({ contact, data, base }: { contact: Contact; data: CrmData; base: string }) {
   const rows = [
-    { key: "phone", label: "טלפון", value: contact.phone, dir: "ltr" as const, icon: "phone" as const, href: `tel:${contact.phone.replace(/-/g, "")}`, action: "התקשרות" },
-    { key: "email", label: "מייל", value: contact.email, dir: "ltr" as const, icon: "mail" as const, href: `mailto:${contact.email}`, action: "שליחת מייל" },
+    { key: "phone", label: "טלפון", value: contact.phone, dir: "ltr" as const, icon: "phone" as const, href: contact.phone ? `tel:${contact.phone.replace(/-/g, "")}` : undefined, action: "התקשרות" },
+    { key: "email", label: "מייל", value: contact.email, dir: "ltr" as const, icon: "mail" as const, href: contact.email ? `mailto:${contact.email}` : undefined, action: "שליחת מייל" },
     ...data.pack.fields.map((f) => ({ key: f.key, label: f.label, value: contact.fields[f.key], dir: undefined, icon: f.icon, href: undefined, action: undefined })),
   ]
 
@@ -87,7 +91,7 @@ export function DetailsCard({ contact, data, base }: { contact: Contact; data: C
             <PackIcon name={row.icon} className="size-4 shrink-0 text-crm-muted" />
             <div className="min-w-0 flex-1">
               <p className="text-[11px] text-crm-muted">{row.label}</p>
-              <p className="truncate text-[15px] font-medium">{row.dir ? <bdi dir="ltr">{row.value}</bdi> : row.value}</p>
+              <p className="truncate text-[15px] font-medium">{row.value ? row.dir ? <bdi dir="ltr">{row.value}</bdi> : row.value : "—"}</p>
             </div>
             {row.href ? (
               <a href={row.href} aria-label={row.action} className="grid size-9 shrink-0 place-items-center rounded-full bg-black/[0.06] transition-colors hover:bg-black/10">

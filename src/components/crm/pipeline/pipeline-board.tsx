@@ -2,7 +2,8 @@
 
 import { BarChart3, Bot, ChevronLeft, ChevronRight, Flame, Scale, UserRound, Users } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useMemo, useState, useTransition } from "react"
 
 import { useToast } from "@/components/crm/shell/toast"
 import { Avatar } from "@/components/crm/ui/avatar"
@@ -15,19 +16,29 @@ import { formatMoney, formatMoneyCompact, formatRelative } from "@/lib/crm/forma
 import type { Contact, CrmData } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
 
-export function PipelineBoard({ data }: { data: CrmData }) {
+/** Persists a stage change; given in a real workspace, absent in the demo. */
+export type MoveStage = (contactId: string, stageId: string) => Promise<{ ok: true } | { ok: false; error: string }>
+
+export function PipelineBoard({ data, moveStage }: { data: CrmData; moveStage?: MoveStage }) {
   const { pack, contacts, catalog } = data
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
   const toast = useToast()
-  const [stageOf, setStageOf] = useState<Record<string, string>>(() => Object.fromEntries(contacts.map((c) => [c.id, c.stageId])))
+  const router = useRouter()
+  const [, startTransition] = useTransition()
+  // only the moves made in this session; everything else reads from `contacts`
+  const [stageOf, setStageOf] = useState<Record<string, string>>({})
   const [dragging, setDragging] = useState<string | null>(null)
   const [over, setOver] = useState<string | null>(null)
 
   const itemById = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
   const lastIndex = pack.stages.length - 1
 
+  // A card the board has not moved yet (including one added after first render)
+  // sits where the database says.
+  const stageFor = (c: Contact) => stageOf[c.id] ?? c.stageId
+
   const columns = pack.stages.map((stage, index) => {
-    const cards = contacts.filter((c) => stageOf[c.id] === stage.id).sort((a, b) => b.value - a.value)
+    const cards = contacts.filter((c) => stageFor(c) === stage.id).sort((a, b) => b.value - a.value)
     return { stage, index, cards, total: cards.reduce((s, c) => s + c.value, 0) }
   })
   const open = columns.slice(0, -1)
@@ -36,18 +47,32 @@ export function PipelineBoard({ data }: { data: CrmData }) {
   const openCount = open.reduce((s, c) => s + c.cards.length, 0)
 
   const move = (contact: Contact, stageId: string) => {
-    if (stageOf[contact.id] === stageId) return
+    const previous = stageFor(contact)
+    if (previous === stageId) return
     setStageOf((prev) => ({ ...prev, [contact.id]: stageId }))
     const stage = pack.stages.find((s) => s.id === stageId)
-    toast(
-      stageId === pack.stages[lastIndex].id
-        ? `${contact.name}: נסגר · ${formatMoney(contact.value)} (הדגמה, לא נשמר)`
-        : `${contact.name} הועבר ל״${stage?.label}״ (הדגמה, לא נשמר)`,
-    )
+    const closing = stageId === pack.stages[lastIndex].id
+    const note = moveStage ? "" : " (הדגמה, לא נשמר)"
+    const done = closing ? `${contact.name}: נסגר · ${formatMoney(contact.value)}${note}` : `${contact.name} הועבר ל״${stage?.label}״${note}`
+
+    if (!moveStage) {
+      toast(done)
+      return
+    }
+    startTransition(async () => {
+      const result = await moveStage(contact.id, stageId)
+      if (!result.ok) {
+        setStageOf((prev) => ({ ...prev, [contact.id]: previous }))
+        toast(result.error)
+        return
+      }
+      toast(done)
+      router.refresh()
+    })
   }
 
   const step = (contact: Contact, delta: number) => {
-    const current = pack.stages.findIndex((s) => s.id === stageOf[contact.id])
+    const current = pack.stages.findIndex((s) => s.id === stageFor(contact))
     const next = pack.stages[current + delta]
     if (next) move(contact, next.id)
   }

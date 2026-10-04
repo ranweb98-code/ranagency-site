@@ -22,7 +22,7 @@ const pad = (n: number) => String(n).padStart(2, "0")
 
 export function CalendarView({ data, metrics }: { data: CrmData; metrics: Metrics }) {
   const { pack, appointments, contacts, now } = data
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
   const todayKey = toDayKey(now)
   const [year0, month0] = todayKey.split("-").map(Number)
   const [offset, setOffset] = useState(0)

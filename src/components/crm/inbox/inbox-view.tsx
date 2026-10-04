@@ -102,7 +102,8 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
 
 function ConversationRow({ contact, now, active, onSelect }: { contact: Contact; now: string; active: boolean; onSelect: () => void }) {
   const last = [...contact.messages].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]
-  const who = last.from === "customer" ? "" : last.from === "human" ? "את/ה: " : "הסוכן: "
+  // A lead added by hand has no messages yet: show its summary instead.
+  const who = !last || last.from === "customer" ? "" : last.from === "human" ? "את/ה: " : "הסוכן: "
   return (
     <button
       type="button"
@@ -120,13 +121,13 @@ function ConversationRow({ contact, now, active, onSelect }: { contact: Contact;
             <span className={cn("truncate text-[13.5px]", contact.unread ? "font-semibold" : "font-medium")}>{contact.name}</span>
             {contact.temperature === "hot" ? <Flame className="size-3.5 shrink-0 text-[#ff5b2e]" aria-label="ליד חם" /> : null}
           </span>
-          <span className="shrink-0 text-[10.5px] text-crm-muted">{formatRelative(last.at, now)}</span>
+          <span className="shrink-0 text-[10.5px] text-crm-muted">{formatRelative(last?.at ?? contact.lastContactAt, now)}</span>
         </span>
         <span className="mt-0.5 flex items-center justify-between gap-2">
           <span className={cn("truncate text-xs", contact.unread ? "text-crm-ink" : "text-crm-muted")}>
             {who}
-            {last.attachmentItemId ? "📎 " : ""}
-            {last.text}
+            {last?.attachmentItemId ? "📎 " : ""}
+            {last ? last.text : contact.summary || "עוד אין הודעות"}
           </span>
           {contact.unread ? <span className="grid min-w-4 shrink-0 place-items-center rounded-full bg-crm-accent px-1 text-[10px] leading-4 text-white">{contact.unread}</span> : null}
         </span>

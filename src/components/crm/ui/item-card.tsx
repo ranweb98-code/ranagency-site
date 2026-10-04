@@ -11,7 +11,7 @@ export function ItemCard({ item, icon, compact, label }: { item: CatalogItem; ic
     <div className={cn("overflow-hidden rounded-[20px] bg-white/85 shadow-sm", compact ? "w-[min(260px,100%)]" : "w-full")}>
       {label ? <p className="px-3.5 pt-3 text-[11px] text-crm-muted">{label}</p> : null}
       <div className={label ? "p-2" : undefined}>
-        <MediaTile seed={item.id} icon={icon ?? "tag"} className={cn("rounded-[16px]", compact ? "h-28" : "h-32")}>
+        <MediaTile seed={item.id} icon={icon ?? "tag"} imageUrl={item.photoUrls?.[0]} className={cn("rounded-[16px]", compact ? "h-28" : "h-32")}>
           {item.photos > 0 ? (
             <span className="absolute bottom-2 end-2 flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px] text-white backdrop-blur">
               <ImageIcon className="size-3" aria-hidden />

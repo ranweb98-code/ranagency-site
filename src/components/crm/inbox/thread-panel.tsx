@@ -24,7 +24,10 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
   const { pack } = data
   const item = data.catalog.find((c) => c.id === contact.itemId)
   const itemById = useMemo(() => new Map(data.catalog.map((c) => [c.id, c])), [data.catalog])
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
+  // Sending, and handing a conversation between agent and human, need the
+  // channel connection; until it exists a real workspace shows state, not dials.
+  const live = !data.demo
 
   const [mode, setMode] = useState<Mode>(contact.handledBy)
   const [sent, setSent] = useState<Message[]>([])
@@ -73,18 +76,22 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               <bdi dir="ltr">{contact.phone}</bdi> · {pack.stages[stageIndex]?.label}
             </p>
           </div>
-          <Segmented<Mode>
-            label="מי מנהל את השיחה"
-            value={mode}
-            onChange={(next) => {
-              setMode(next)
-              toast(next === "human" ? "השיחה אצלכם. הסוכן ממתין בצד." : "הסוכן חזר לנהל את השיחה.")
-            }}
-            options={[
-              { value: "agent", label: "סוכן" },
-              { value: "human", label: "אני" },
-            ]}
-          />
+          {live ? (
+            <Pill tone="soft">{contact.handledBy === "human" ? "אצלכם" : "אצל הסוכן"}</Pill>
+          ) : (
+            <Segmented<Mode>
+              label="מי מנהל את השיחה"
+              value={mode}
+              onChange={(next) => {
+                setMode(next)
+                toast(next === "human" ? "השיחה אצלכם. הסוכן ממתין בצד." : "הסוכן חזר לנהל את השיחה.")
+              }}
+              options={[
+                { value: "agent", label: "סוכן" },
+                { value: "human", label: "אני" },
+              ]}
+            />
+          )}
         </header>
 
         {/* messages */}
@@ -94,7 +101,7 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               <Sparkles className="size-3.5" aria-hidden />
               סיכום AI
             </p>
-            <p className="mt-1.5 text-[13px] leading-relaxed">{contact.summary}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed">{contact.summary || "הסיכום יופיע אחרי שתתנהל שיחה."}</p>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               <li><Pill tone="soft">כוונה: {intent}</Pill></li>
               <li><Pill tone="warm">שווי משוער {formatMoney(contact.value)}</Pill></li>
@@ -116,12 +123,18 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               </div>
             )
           })}
+          {messages.length === 0 ? <p className="py-6 text-center text-[13px] text-crm-muted">עוד אין הודעות בשיחה הזו.</p> : null}
           <div ref={bottomRef} />
         </div>
 
         {/* composer */}
         <form onSubmit={submit} className="border-t border-black/[0.06] p-3 md:p-4">
-          {mode === "agent" ? (
+          {live ? (
+            <p className="mb-2 flex items-center gap-1.5 px-2 text-[11px] text-crm-muted">
+              <Bot className="size-3.5" aria-hidden />
+              שליחת הודעות מכאן תיפתח עם חיבור הערוצים.
+            </p>
+          ) : mode === "agent" ? (
             <p className="mb-2 flex items-center gap-1.5 px-2 text-[11px] text-crm-muted">
               <Bot className="size-3.5" aria-hidden />
               הסוכן מטפל בשיחה. עברו ל״אני״ כדי לכתוב בעצמכם.
@@ -131,12 +144,12 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              disabled={mode === "agent"}
+              disabled={live || mode === "agent"}
               aria-label="כתיבת הודעה"
-              placeholder={mode === "agent" ? "הסוכן עונה…" : `הודעה ל${contact.name.split(" ")[0]}…`}
+              placeholder={live ? "שליחה תיפתח עם חיבור הערוצים" : mode === "agent" ? "הסוכן עונה…" : `הודעה ל${contact.name.split(" ")[0]}…`}
               className="min-w-0 flex-1 rounded-full bg-black/[0.06] px-5 py-3 text-sm outline-none transition-colors placeholder:text-crm-muted focus:bg-white disabled:opacity-60"
             />
-            <IconButton label="שליחה" type="submit" tone="ink" size="lg" disabled={mode === "agent" || !draft.trim()}>
+            <IconButton label="שליחה" type="submit" tone="ink" size="lg" disabled={live || mode === "agent" || !draft.trim()}>
               <Send className="rtl:-scale-x-100" />
             </IconButton>
           </div>

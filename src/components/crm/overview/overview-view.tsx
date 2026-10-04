@@ -17,7 +17,7 @@ import { AgentWorkCard, NeedsYouCard, RoiCard } from "./insight-cards"
 import { DetailsCard, ProfileCard } from "./profile-panel"
 
 export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metrics }) {
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
   const { vocab } = data.pack
 
   const deals = useMemo(

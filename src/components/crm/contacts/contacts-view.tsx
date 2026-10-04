@@ -22,7 +22,7 @@ const TEMP_LABEL: Record<Temperature, string> = { hot: "חם", warm: "מתעני
 
 export function ContactsView({ data, initialTemp }: { data: CrmData; initialTemp?: string }) {
   const { pack, catalog } = data
-  const base = `/crm/${data.tenant.slug}`
+  const base = data.basePath
   const itemById = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
 
   const [temp, setTemp] = useState<TempFilter>(initialTemp === "hot" || initialTemp === "warm" || initialTemp === "cold" ? initialTemp : "all")
