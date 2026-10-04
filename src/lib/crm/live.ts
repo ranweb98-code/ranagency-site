@@ -9,6 +9,13 @@ import type { CrmData } from "./types"
 // The real-business side of `repository.ts`: reads one tenant from Supabase as
 // the signed-in user, so row level security decides whether it exists for them
 // at all (no membership → no tenant row → null → 404). Never a service key.
+//
+// Speed notes, because every page here is a server round trip to the database:
+// - Two sequential round trips at most: the tenant (its id filters everything
+//   else), then every table at once.
+// - Conversations (messages, timeline) are the heavy part and only the inbox and
+//   a contact's card show them, so they are a separate load that other screens
+//   never pay for — and when they are needed they run alongside the rest.
 
 const PAGE = 1000 // PostgREST's default max rows per request
 const CAP = 5000 // per table; a busy tenant needs per-thread loading, not more of this
@@ -33,32 +40,72 @@ async function fetchAll<T>(table: string, run: (from: number, to: number) => Pro
 const TENANT_COLUMNS =
   "id, slug, business_name, owner_name, industry, tagline, city, plan_monthly, agents, brand, settings, created_at, archived_at"
 
-export const getLiveCrm = cache(async (slug: string): Promise<CrmData | null> => {
-  const supabase = await createClient()
+type Base = Omit<LiveRows, "messages" | "timeline"> & { now: Date }
 
-  const { data: tenant, error } = await supabase.from("tenants").select(TENANT_COLUMNS).eq("slug", slug).is("archived_at", null).maybeSingle()
+// Shared by the loads below, so a page and its layout look the tenant up once.
+const loadTenant = cache(async (slug: string) => {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("tenants").select(TENANT_COLUMNS).eq("slug", slug).is("archived_at", null).maybeSingle()
   if (error) throw new Error(`Could not load the business: ${error.message}`)
+  return data
+})
+
+const loadBase = cache(async (slug: string): Promise<Base | null> => {
+  const tenant = await loadTenant(slug)
   if (!tenant) return null
 
+  const supabase = await createClient()
   const now = new Date()
   const since = new Date(now.getTime() - 60 * DAY).toISOString()
-  const base = supabaseEnv()?.url ?? ""
   const id = tenant.id
 
-  const [contacts, messages, timeline, appointments, catalog] = await Promise.all([
+  const [contacts, appointments, catalog] = await Promise.all([
     fetchAll("contacts", (a, b) => supabase.from("contacts").select("*").eq("tenant_id", id).order("last_contact_at", { ascending: false }).range(a, b)),
-    fetchAll("messages", (a, b) => supabase.from("messages").select("*").eq("tenant_id", id).order("at", { ascending: false }).range(a, b)),
-    fetchAll("timeline", (a, b) => supabase.from("timeline_events").select("*").eq("tenant_id", id).order("at", { ascending: false }).range(a, b)),
     fetchAll("appointments", (a, b) => supabase.from("appointments").select("*").eq("tenant_id", id).gte("starts_at", since).order("starts_at").range(a, b)),
     fetchAll("catalog", (a, b) => supabase.from("catalog_items").select("*").eq("tenant_id", id).order("position").order("created_at").range(a, b)),
   ])
+  return { tenant, contacts, appointments, catalog, now }
+})
 
-  const rows: LiveRows = { tenant, contacts, messages, timeline, appointments, catalog }
-  return buildCrmData(rows, {
-    now,
-    // `photos` holds paths inside the public `catalog` bucket
-    photoUrl: (path) => `${base}/storage/v1/object/public/catalog/${path.split("/").map(encodeURIComponent).join("/")}`,
-  })
+const loadThreads = cache(async (slug: string) => {
+  const tenant = await loadTenant(slug)
+  if (!tenant) return { messages: [], timeline: [] }
+
+  const supabase = await createClient()
+  const id = tenant.id
+  const [messages, timeline] = await Promise.all([
+    fetchAll("messages", (a, b) => supabase.from("messages").select("*").eq("tenant_id", id).order("at", { ascending: false }).range(a, b)),
+    fetchAll("timeline", (a, b) => supabase.from("timeline_events").select("*").eq("tenant_id", id).order("at", { ascending: false }).range(a, b)),
+  ])
+  return { messages, timeline }
+})
+
+function assemble(base: Base, threads: { messages: LiveRows["messages"]; timeline: LiveRows["timeline"] }): CrmData {
+  const publicUrl = supabaseEnv()?.url ?? ""
+  return buildCrmData(
+    { ...base, ...threads },
+    {
+      now: base.now,
+      // `photos` holds paths inside the public `catalog` bucket
+      photoUrl: (path) => `${publicUrl}/storage/v1/object/public/catalog/${path.split("/").map(encodeURIComponent).join("/")}`,
+    },
+  )
+}
+
+/** The workspace without conversations: every contact has an empty `messages`
+ *  and `timeline`. Enough for the overview, pipeline, calendar, catalog,
+ *  contacts list and agents screens. */
+export const getLiveCrm = cache(async (slug: string): Promise<CrmData | null> => {
+  const base = await loadBase(slug)
+  return base ? assemble(base, { messages: [], timeline: [] }) : null
+})
+
+/** The workspace with every conversation and activity timeline — for the inbox
+ *  and a contact's card, the only screens that show them. */
+export const getLiveCrmWithThreads = cache(async (slug: string): Promise<CrmData | null> => {
+  // both wait on the same cached tenant lookup, then run side by side
+  const [base, threads] = await Promise.all([loadBase(slug), loadThreads(slug)])
+  return base ? assemble(base, threads) : null
 })
 
 export async function getLiveCrmWithMetrics(slug: string) {

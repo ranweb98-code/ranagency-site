@@ -2,13 +2,13 @@ import { notFound } from "next/navigation"
 
 import { InboxEntry } from "@/components/crm/inbox/inbox-entry"
 import { EmptyWorkspace } from "@/components/crm/live/empty-workspace"
-import { getLiveCrm } from "@/lib/crm/live"
+import { getLiveCrmWithThreads } from "@/lib/crm/live"
 
 export const metadata = { title: "שיחות" }
 
 export default async function InboxPage({ params }: { params: Promise<{ tenant: string }> }) {
   const { tenant } = await params
-  const data = await getLiveCrm(tenant)
+  const data = await getLiveCrmWithThreads(tenant)
   if (!data) notFound()
 
   if (data.contacts.length === 0) {
