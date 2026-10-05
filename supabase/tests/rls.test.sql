@@ -204,6 +204,18 @@ begin
   assert n = 1, 'a later password change must be wiped too';
   raise notice 'PASS  password hashes are always empty (magic link / code only)';
 
+  -- the profile an owner edits is bounded in size
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+  update public.tenants set settings = jsonb_build_object('profile', jsonb_build_object('about', repeat('x', 1000)))
+    where id = '11111111-1111-1111-1111-111111111111';
+  get diagnostics n = row_count; assert n = 1, 'an owner can save a normal profile';
+  ok := test.rejected($q$update public.tenants set settings = jsonb_build_object('blob', repeat('x', 70000)) where id = '11111111-1111-1111-1111-111111111111'$q$);
+  assert ok, 'an oversized settings document is rejected';
+  ok := test.rejected($q$update public.tenants set brand = jsonb_build_object('blob', repeat('x', 5000)) where id = '11111111-1111-1111-1111-111111111111'$q$);
+  assert ok, 'an oversized brand document is rejected';
+  perform test.back();
+  raise notice 'PASS  settings and brand have a size ceiling';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';

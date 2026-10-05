@@ -1,6 +1,7 @@
 import type { Json } from "@/lib/supabase/database.types"
 import type { Tables } from "@/lib/supabase/rows"
 import { PACKS } from "./industries"
+import { parseProfile } from "./profile"
 import type {
   Appointment,
   BrandTheme,
@@ -175,6 +176,7 @@ export function buildCrmData(rows: LiveRows, ctx: { now: Date; photoUrl: (path: 
     contacts,
     appointments,
     catalog,
+    profile: parseProfile(isRecord(t.settings) ? t.settings.profile : undefined),
   }
 }
 

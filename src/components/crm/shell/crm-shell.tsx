@@ -3,6 +3,7 @@
 import {
   Bell,
   Bot,
+  Building2,
   CalendarDays,
   Flame,
   Images,
@@ -80,6 +81,8 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
     { key: "contacts", href: `${base}/contacts`, label: peopleLabel, icon: Users },
     { key: "catalog", href: `${base}/catalog`, label: catalogLabel, icon: Images },
     { key: "agents", href: `${base}/agents`, label: "סוכנים", icon: Bot },
+    // what the agents are told about the business: only a real workspace has one
+    ...(account ? [{ key: "profile", href: `${base}/profile`, label: "פרופיל", icon: Building2 }] : []),
   ]
 
   const isActive = (item: NavItem) =>

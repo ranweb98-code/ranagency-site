@@ -6,3 +6,7 @@ export const fieldClass =
 
 export const primaryButtonClass =
   "flex items-center justify-center gap-2 rounded-full bg-crm-ink px-6 py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink disabled:opacity-60"
+
+/** Multi-line text: a pill cannot hold several lines, so it takes the same
+ *  soft corners as the cards instead. */
+export const areaClass = `${fieldClass.replace("rounded-full", "rounded-[26px]")} min-h-24 resize-y leading-relaxed`

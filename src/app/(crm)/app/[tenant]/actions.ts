@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache"
 import { formatMoney } from "@/lib/crm/format"
 import { resolvePack } from "@/lib/crm/live-mapper"
 import { normalizePhone } from "@/lib/crm/phone"
+import { validateProfile } from "@/lib/crm/profile"
 import { requireSession } from "@/lib/crm/session"
 import type { Channel } from "@/lib/crm/types"
+import type { Json } from "@/lib/supabase/database.types"
 import { createClient } from "@/lib/supabase/server"
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -105,6 +107,44 @@ export async function moveStage(slug: string, contactId: string, stageId: string
     { tenant_id: tenant.id, contact_id: contact.id, kind: "stage", text: `הועבר לשלב ״${stage.label}״` },
     ...(closing ? [{ tenant_id: tenant.id, contact_id: contact.id, kind: "money", text: `העסקה נסגרה · ${formatMoney(Number(contact.value))}` }] : []),
   ])
+
+  revalidatePath(`/app/${slug}`, "layout")
+  return { ok: true }
+}
+
+/** Saves the business profile (the details the agents are built from) together
+ *  with the few identity fields that live on the business row. Owners and the
+ *  super admin only: row level security refuses the update for anyone else, and
+ *  an update that matches no row is reported rather than passed off as saved. */
+export async function saveProfile(slug: string, input: unknown): Promise<Result> {
+  await requireSession()
+  const checked = validateProfile(input)
+  if (!checked.ok) return checked
+  const { identity, profile } = checked.value
+
+  const supabase = await createClient()
+  const { data: tenant } = await supabase.from("tenants").select("id, settings").eq("slug", slug).is("archived_at", null).maybeSingle()
+  if (!tenant) return { ok: false, error: "העסק לא נמצא" }
+
+  const current = typeof tenant.settings === "object" && tenant.settings !== null && !Array.isArray(tenant.settings) ? tenant.settings : {}
+  const { data, error } = await supabase
+    .from("tenants")
+    .update({
+      business_name: identity.businessName,
+      owner_name: identity.ownerName || null,
+      tagline: identity.tagline || null,
+      city: identity.city || null,
+      settings: { ...current, profile: profile as unknown as Json },
+    })
+    .eq("id", tenant.id)
+    .select("id")
+
+  if (error) {
+    if (error.code === "42501") return { ok: false, error: "רק בעלי העסק יכולים לערוך את הפרופיל" }
+    if (error.code === "23514") return { ok: false, error: "הפרופיל גדול מדי. קצרו חלק מהטקסטים." }
+    return { ok: false, error: "לא הצלחנו לשמור. נסו שוב." }
+  }
+  if (!data || data.length === 0) return { ok: false, error: "רק בעלי העסק יכולים לערוך את הפרופיל" }
 
   revalidatePath(`/app/${slug}`, "layout")
   return { ok: true }

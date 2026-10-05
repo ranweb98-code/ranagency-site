@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { supabaseEnv } from "@/lib/supabase/env"
 import { buildCrmData, type LiveRows } from "./live-mapper"
 import { computeMetrics } from "./metrics"
+import { getSession } from "./session"
 import type { CrmData } from "./types"
 
 // The real-business side of `repository.ts`: reads one tenant from Supabase as
@@ -112,3 +113,16 @@ export async function getLiveCrmWithMetrics(slug: string) {
   const data = await getLiveCrm(slug)
   return data ? { data, metrics: computeMetrics(data) } : null
 }
+
+/** Whether the signed-in person may edit this business's profile: its owners and
+ *  the super admin. (Row level security enforces the same on the update; this
+ *  only decides whether the form is editable or read-only.) */
+export const getProfileAccess = cache(async (slug: string): Promise<{ canEdit: boolean }> => {
+  const [tenant, session] = await Promise.all([loadTenant(slug), getSession()])
+  if (!tenant || !session) return { canEdit: false }
+  if (session.isSuperAdmin) return { canEdit: true }
+
+  const supabase = await createClient()
+  const { data } = await supabase.from("memberships").select("role").eq("tenant_id", tenant.id).eq("user_id", session.id).maybeSingle()
+  return { canEdit: data?.role === "owner" }
+})

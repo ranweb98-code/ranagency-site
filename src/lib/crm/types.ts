@@ -4,6 +4,8 @@
 // never a fork of the UI. Tenants point at a pack and layer their own brand on
 // top.
 //
+import type { BusinessProfile } from "./profile"
+
 // Two sources fill these shapes: `demo-data.ts` generates the /crm showcase in
 // code, and `live.ts` reads a real business from Supabase for /app. The screens
 // never know which one they got.
@@ -212,4 +214,6 @@ export interface CrmData {
   contacts: Contact[]
   appointments: Appointment[]
   catalog: CatalogItem[]
+  /** What the agents are told about the business. Real workspaces only. */
+  profile?: BusinessProfile
 }
