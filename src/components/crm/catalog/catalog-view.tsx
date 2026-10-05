@@ -2,10 +2,11 @@
 
 import { ImageIcon, Images, Layers, Plus, Send, X } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useState, type FormEvent } from "react"
 
 import { useToast } from "@/components/crm/shell/toast"
 import { Avatar } from "@/components/crm/ui/avatar"
+import { fieldClass, primaryButtonClass } from "@/components/crm/ui/field"
 import { Glass } from "@/components/crm/ui/glass"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { MediaTile } from "@/components/crm/ui/media-tile"
@@ -25,13 +26,31 @@ const STATUS: Record<CatalogItem["status"], { label: string; tone: "ink" | "warm
 }
 
 export function CatalogView({ data }: { data: CrmData }) {
-  const { pack, catalog, contacts } = data
+  const { pack, contacts } = data
   const base = data.basePath
   const toast = useToast()
   const [tag, setTag] = useState("all")
   const [openId, setOpenId] = useState<string | null>(null)
+  // Items added in this session only: the demo has nowhere to keep them.
+  const [extra, setExtra] = useState<CatalogItem[]>([])
+  const [adding, setAdding] = useState(false)
+  const catalog = [...data.catalog, ...extra]
 
-  const tags = useMemo(() => [...new Set(catalog.flatMap((c) => c.tags))], [catalog])
+  const addItem = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const title = String(form.get("title") ?? "").trim().slice(0, 60)
+    const price = Number(String(form.get("price") ?? "").replace(/\D/g, ""))
+    if (!title) return
+    setExtra((list) => [
+      ...list,
+      { id: `local-${list.length + 1}`, title, subtitle: String(form.get("subtitle") ?? "").trim().slice(0, 80), price, tags: [], meta: [], photos: 0, status: "available", sent: 0 },
+    ])
+    setAdding(false)
+    toast(`${pack.vocab.catalogItem} נוסף. בהדגמה הוא נשמר רק עד לרענון הדף.`)
+  }
+
+  const tags = [...new Set(catalog.flatMap((c) => c.tags))]
   const shown = catalog.filter((c) => tag === "all" || c.tags.includes(tag))
   const open = catalog.find((c) => c.id === openId)
   const interested = (id: string) => contacts.filter((c) => c.itemId === id)
@@ -102,7 +121,7 @@ export function CatalogView({ data }: { data: CrmData }) {
         <li>
             <button
               type="button"
-              onClick={() => toast(`העלאת ${pack.vocab.catalogItem} חדש תופעל עם חיבור למסד הנתונים`)}
+              onClick={() => setAdding(true)}
               className="grid h-full min-h-[220px] w-full place-items-center rounded-[34px] border-2 border-dashed border-black/15 p-6 text-center transition-colors hover:border-black/30 hover:bg-white/40"
             >
               <span>
@@ -116,6 +135,25 @@ export function CatalogView({ data }: { data: CrmData }) {
           </li>
         ) : null}
       </ul>
+
+      <Modal open={adding} onClose={() => setAdding(false)} label={`הוספת ${pack.vocab.catalogItem}`} variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!w-[min(92vw,30rem)]">
+        <form onSubmit={addItem} className="crm-panel rounded-t-[32px] p-6 md:rounded-[32px]">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-medium">{pack.vocab.catalogItem} חדש</h2>
+            <IconButton label="סגירה" size="sm" onClick={() => setAdding(false)}>
+              <X />
+            </IconButton>
+          </div>
+          <div className="space-y-3">
+            <input name="title" required maxLength={60} autoComplete="off" placeholder="שם" aria-label="שם" className={fieldClass} />
+            <input name="subtitle" maxLength={80} autoComplete="off" placeholder="תיאור קצר (לא חובה)" aria-label="תיאור קצר" className={fieldClass} />
+            <input name="price" required inputMode="numeric" autoComplete="off" placeholder="מחיר בשקלים" aria-label="מחיר" className={fieldClass} />
+          </div>
+          <button type="submit" className={`${primaryButtonClass} mt-6 w-full`}>
+            הוספה
+          </button>
+        </form>
+      </Modal>
 
       <Modal open={Boolean(open)} onClose={() => setOpenId(null)} label={open?.title ?? ""} variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!max-h-[90dvh] md:!w-[min(94vw,46rem)]">
         {open ? (

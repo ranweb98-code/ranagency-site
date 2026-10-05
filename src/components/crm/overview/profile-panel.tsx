@@ -28,7 +28,9 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
   return (
     <Glass className="relative p-5 text-center">
       <div className="mb-1 flex items-center justify-between">
-        <ChannelDot channel={contact.channel} className="size-9 [&_svg]:size-4" />
+        <Link href={`${base}/inbox?c=${contact.id}`} aria-label={`פתיחת השיחה ב${CHANNELS[contact.channel].label}`} className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink">
+          <ChannelDot channel={contact.channel} className="size-9 [&_svg]:size-4" />
+        </Link>
         <Link href={`${base}/contacts/${contact.id}`} aria-label="פתיחת הכרטיס המלא">
           <IconButton label="פתיחת הכרטיס המלא" tabIndex={-1} className="pointer-events-none">
             <ArrowUpLeft />

@@ -22,7 +22,13 @@ export function AgentWorkCard({ data, metrics }: { data: CrmData; metrics: Metri
   ]
 
   return (
-    <SectionCard title="מה הסוכנים עשו">
+    <SectionCard
+      title="מה הסוכנים עשו"
+      menu={[
+        { label: "מסך הסוכנים", href: `${data.basePath}/agents` },
+        { label: "השיחות", href: `${data.basePath}/inbox` },
+      ]}
+    >
       <ul className="grid grid-cols-3 gap-2">
         {stats.map(({ icon: Icon, value, label }) => (
           <li key={label} className="rounded-2xl bg-black/[0.045] p-3">

@@ -1,11 +1,14 @@
 "use client"
 
-import { Check, Info, Plus } from "lucide-react"
-import { useState } from "react"
+import { Check, Info, Plus, X } from "lucide-react"
+import { useState, type FormEvent } from "react"
 
 import { useToast } from "@/components/crm/shell/toast"
 import { CHANNELS } from "@/components/crm/ui/channel"
+import { fieldClass, primaryButtonClass } from "@/components/crm/ui/field"
 import { Glass } from "@/components/crm/ui/glass"
+import { IconButton } from "@/components/crm/ui/icon-button"
+import { Modal } from "@/components/crm/ui/modal"
 import { PageHeader } from "@/components/crm/ui/page-header"
 import { Pill } from "@/components/crm/ui/pill"
 import { SectionCard } from "@/components/crm/ui/section-card"
@@ -35,6 +38,19 @@ export function AgentsView({ data }: { data: CrmData }) {
   const [tone, setTone] = useState<Record<string, Tone>>({})
   const [hours, setHours] = useState<Record<string, Hours>>({})
   const [rules, setRules] = useState({ price: true, angry: true, owner: true, big: false })
+  // Knowledge sources added in this session only: the demo has nowhere to keep them.
+  const [extraKnowledge, setExtraKnowledge] = useState<string[]>([])
+  const [adding, setAdding] = useState(false)
+  const sources = [...pack.knowledge, ...extraKnowledge]
+
+  const addSource = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const name = String(new FormData(event.currentTarget).get("source") ?? "").trim().slice(0, 60)
+    if (!name) return
+    setExtraKnowledge((list) => [...list, name])
+    setAdding(false)
+    toast("המקור נוסף. בהדגמה הוא נשמר רק עד לרענון הדף.")
+  }
   const bigDeal = Math.round(Math.max(0, ...contacts.map((c) => c.value)) / 2 / 1000) * 1000
 
   return (
@@ -126,16 +142,16 @@ export function AgentsView({ data }: { data: CrmData }) {
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:gap-4 lg:col-span-4 lg:content-start">
-          <SectionCard title="מה הסוכנים יודעים" actions={<Pill tone="soft">{pack.knowledge.length} מקורות</Pill>}>
+          <SectionCard title="מה הסוכנים יודעים" actions={<Pill tone="soft">{sources.length} מקורות</Pill>}>
             <ul className="space-y-1.5">
-              {pack.knowledge.map((k) => (
+              {sources.map((k) => (
                 <li key={k} className="flex items-center gap-2.5 rounded-2xl bg-black/[0.045] px-3.5 py-2.5 text-[13px]">
                   <Check className="size-4 shrink-0" aria-hidden />
                   {k}
                 </li>
               ))}
               <li>
-                <button type="button" onClick={() => toast("הוספת מקורות ידע תופעל עם חיבור למסד הנתונים")} className="flex w-full items-center gap-2.5 rounded-2xl border border-dashed border-black/20 px-3.5 py-2.5 text-[13px] text-crm-ink/70 transition-colors hover:bg-white/50">
+                <button type="button" onClick={() => setAdding(true)} className="flex w-full items-center gap-2.5 rounded-2xl border border-dashed border-black/20 px-3.5 py-2.5 text-[13px] text-crm-ink/70 transition-colors hover:bg-white/50">
                   <Plus className="size-4" aria-hidden />
                   הוספת מקור ידע
                 </button>
@@ -143,7 +159,7 @@ export function AgentsView({ data }: { data: CrmData }) {
             </ul>
           </SectionCard>
 
-          <SectionCard title="מתי הסוכן קורא לך">
+          <SectionCard title="מתי הסוכן קורא לך" actions={<Pill tone="soft">4 כללים</Pill>}>
             <ul className="space-y-2.5">
               {[
                 { key: "price" as const, label: "שאלה על מחיר חריג או הנחה" },
@@ -171,6 +187,21 @@ export function AgentsView({ data }: { data: CrmData }) {
           </SectionCard>
         </div>
       </div>
+
+      <Modal open={adding} onClose={() => setAdding(false)} label="הוספת מקור ידע" variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!w-[min(92vw,30rem)]">
+        <form onSubmit={addSource} className="crm-panel rounded-t-[32px] p-6 md:rounded-[32px]">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-medium">מקור ידע חדש</h2>
+            <IconButton label="סגירה" size="sm" onClick={() => setAdding(false)}>
+              <X />
+            </IconButton>
+          </div>
+          <input name="source" required maxLength={60} autoComplete="off" placeholder="למשל: מדיניות החזרים" aria-label="שם המקור" className={fieldClass} />
+          <button type="submit" className={`${primaryButtonClass} mt-6 w-full`}>
+            הוספה
+          </button>
+        </form>
+      </Modal>
     </div>
   )
 }

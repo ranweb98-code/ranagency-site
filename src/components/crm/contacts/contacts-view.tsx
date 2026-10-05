@@ -21,15 +21,15 @@ type Sort = "recent" | "value"
 
 const TEMP_LABEL: Record<Temperature, string> = { hot: "חם", warm: "מתעניין", cold: "קר" }
 
-export function ContactsView({ data, initialTemp }: { data: CrmData; initialTemp?: string }) {
+export function ContactsView({ data, initialTemp, initialStage, initialSort }: { data: CrmData; initialTemp?: string; initialStage?: string; initialSort?: string }) {
   const { pack, catalog } = data
   const base = data.basePath
   const itemById = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog])
 
   const [temp, setTemp] = useState<TempFilter>(initialTemp === "hot" || initialTemp === "warm" || initialTemp === "cold" ? initialTemp : "all")
-  const [stage, setStage] = useState("all")
+  const [stage, setStage] = useState(initialStage && pack.stages.some((s) => s.id === initialStage) ? initialStage : "all")
   const [channel, setChannel] = useState<Channel | "all">("all")
-  const [sort, setSort] = useState<Sort>("recent")
+  const [sort, setSort] = useState<Sort>(initialSort === "value" ? "value" : "recent")
   const [query, setQuery] = useState("")
 
   const rows = useMemo(() => {
@@ -40,14 +40,21 @@ export function ContactsView({ data, initialTemp }: { data: CrmData; initialTemp
       .sort((a, b) => (sort === "value" ? b.value - a.value : Date.parse(b.lastContactAt) - Date.parse(a.lastContactAt)))
   }, [data.contacts, temp, stage, channel, sort, query])
 
+  const resetFilters = () => {
+    setTemp("all")
+    setStage("all")
+    setChannel("all")
+    setQuery("")
+  }
+
   const hot = data.contacts.filter((c) => c.temperature === "hot").length
   const sum = rows.reduce((s, c) => s + c.value, 0)
 
   return (
     <div>
       <PageHeader title={pack.vocab.people} eyebrow={`${data.contacts.length} ${pack.vocab.people} · כולם נאספו אוטומטית מהשיחות`}>
-        <StatTile icon={Users} value={String(data.contacts.length)} label={`${pack.vocab.people}\nבסך הכול`} />
-        <StatTile icon={Flame} value={String(hot)} label={"לידים חמים\nמחכים לך"} badge="חם" />
+        <StatTile onClick={resetFilters} icon={Users} value={String(data.contacts.length)} label={`${pack.vocab.people}\nבסך הכול`} />
+        <StatTile onClick={() => setTemp("hot")} icon={Flame} value={String(hot)} label={"לידים חמים\nמחכים לך"} badge="חם" />
         <StatTile icon={Wallet} value={formatMoneyCompact(sum)} label={`שווי בתצוגה\n${rows.length} רשומות`} badgeTone="soft" />
       </PageHeader>
 

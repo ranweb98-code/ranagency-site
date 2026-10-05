@@ -40,13 +40,14 @@ export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metric
     <div>
       <PageHeader title="סקירה" eyebrow={`${data.tenant.businessName} · ${data.pack.label}`}>
         <StatTile
+          href={`${base}/pipeline`}
           icon={BarChart3}
           value={formatMoneyCompact(metrics.closed30)}
           label={`${vocab.revenue}\n${metrics.closedCount30} עסקאות ב־30 יום`}
           badge={delta === null ? undefined : <><Ltr>{delta > 0 ? "+" : ""}{delta}%</Ltr> חודש</>}
         />
-        <StatTile icon={UserPlus} value={<Ltr>+{metrics.newLeads7}</Ltr>} label={"פניות חדשות\nב־7 ימים אחרונים"} badge={<><Ltr>+{metrics.newLeadsToday}</Ltr> היום</>} badgeTone="accent" />
-        <StatTile icon={CalendarCheck} value={String(metrics.upcoming7)} label={`${vocab.bookings} קרובים\nב־7 ימים`} badge={`${metrics.upcomingToday} היום`} badgeTone="soft" />
+        <StatTile href={`${base}/contacts`} icon={UserPlus} value={<Ltr>+{metrics.newLeads7}</Ltr>} label={"פניות חדשות\nב־7 ימים אחרונים"} badge={<><Ltr>+{metrics.newLeadsToday}</Ltr> היום</>} badgeTone="accent" />
+        <StatTile href={`${base}/calendar`} icon={CalendarCheck} value={String(metrics.upcoming7)} label={`${vocab.bookings} קרובים\nב־7 ימים`} badge={`${metrics.upcomingToday} היום`} badgeTone="soft" />
       </PageHeader>
 
       {/* On a phone the two column groups dissolve (`contents`) so their cards
@@ -54,11 +55,19 @@ export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metric
           cards that select it, instead of five scrolls further down. */}
       <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12">
         <div className="contents lg:col-span-8 lg:grid lg:grid-cols-2 lg:content-start lg:gap-4">
-          <SectionCard title={vocab.dealsTitle} className="order-1 lg:order-none lg:col-span-2">
+          <SectionCard
+            title={vocab.dealsTitle}
+            className="order-1 lg:order-none lg:col-span-2"
+            menu={[
+              { label: `כל ה${vocab.people}`, href: `${base}/contacts` },
+              { label: "צינור המכירות", href: `${base}/pipeline` },
+              { label: "היומן", href: `${base}/calendar` },
+            ]}
+          >
             <DealCards deals={deals} catalog={data.catalog} stages={data.pack.stages} detailBase={`${base}/contacts`} selectedId={selected.id} onSelect={setSelectedId} />
           </SectionCard>
           <CalendarCard className="order-4 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
-          <FunnelCard className="order-5 lg:order-none" metrics={metrics} />
+          <FunnelCard className="order-5 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
         </div>
 
         <div className="contents lg:col-span-4 lg:grid lg:content-start lg:gap-4">

@@ -1,9 +1,9 @@
 "use client"
 
-import { Maximize2 } from "lucide-react"
+import { ArrowUpLeft } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 
-import { IconButton } from "@/components/crm/ui/icon-button"
 import { Segmented } from "@/components/crm/ui/segmented"
 import { SectionCard } from "@/components/crm/ui/section-card"
 import { formatMoney, formatMoneyCompact } from "@/lib/crm/format"
@@ -11,13 +11,20 @@ import type { Metrics } from "@/lib/crm/metrics"
 
 type Mode = "weighted" | "total"
 
-export function FunnelCard({ metrics, className }: { metrics: Metrics; className?: string }) {
+export function FunnelCard({ metrics, base, peopleLabel, className }: { metrics: Metrics; base: string; peopleLabel: string; className?: string }) {
   const [mode, setMode] = useState<Mode>("weighted")
   const rows = metrics.funnel
   const headline = mode === "weighted" ? metrics.pipelineWeighted : metrics.pipelineTotal
 
   return (
-    <SectionCard title="משפך מכירות" className={className}>
+    <SectionCard
+      title="משפך מכירות"
+      className={className}
+      menu={[
+        { label: "צינור המכירות", href: `${base}/pipeline` },
+        { label: `${peopleLabel} חמים`, href: `${base}/contacts?temp=hot` },
+      ]}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="text-[22px] font-medium leading-none tabular-nums">{formatMoney(headline)}</p>
@@ -49,9 +56,14 @@ export function FunnelCard({ metrics, className }: { metrics: Metrics; className
                   </p>
                   <p className="text-[17px] font-medium leading-tight tabular-nums">{formatMoneyCompact(amount)}</p>
                 </div>
-                <IconButton label={`הרחבת ${row.stage.label}`} size="sm" tone="glass" className="shrink-0">
-                  <Maximize2 />
-                </IconButton>
+                <Link
+                  href={`${base}/contacts?stage=${row.stage.id}`}
+                  aria-label={`הצגת ${peopleLabel} בשלב ${row.stage.label}`}
+                  title={`הצגת ${peopleLabel} בשלב ${row.stage.label}`}
+                  className="relative inline-grid size-8 shrink-0 place-items-center rounded-full bg-black/[0.06] transition-colors hover:bg-black/[0.11] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
+                >
+                  <ArrowUpLeft className="size-[45%]" aria-hidden />
+                </Link>
               </div>
             </li>
           )

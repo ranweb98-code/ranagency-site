@@ -59,7 +59,7 @@ export function ContactDetail({ data, contact }: { data: CrmData; contact: Conta
           </SectionCard>
 
           {item ? (
-            <SectionCard title={`${pack.vocab.catalogItem} שמעניין`}>
+            <SectionCard title={`${pack.vocab.catalogItem} שמעניין`} actions={<Link href={`${base}/catalog`} className="text-xs font-medium text-crm-ink/70 underline-offset-4 hover:underline">לקטלוג</Link>}>
               <ItemCard item={item} icon={pack.catalogIcon} />
             </SectionCard>
           ) : null}

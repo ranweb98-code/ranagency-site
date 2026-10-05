@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react"
+import type { ButtonHTMLAttributes, Ref } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -13,6 +13,7 @@ const TONES = {
 } as const
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+  ref?: Ref<HTMLButtonElement>
   /** Required — these are icon-only, so the label is the accessible name. */
   label: string
   size?: keyof typeof SIZES

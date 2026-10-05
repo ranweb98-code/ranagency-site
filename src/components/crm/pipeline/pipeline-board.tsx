@@ -80,9 +80,9 @@ export function PipelineBoard({ data, moveStage }: { data: CrmData; moveStage?: 
   return (
     <div>
       <PageHeader title="צינור מכירות" eyebrow="גררו כרטיס בין שלבים, או השתמשו בחצים">
-        <StatTile icon={BarChart3} value={formatMoneyCompact(pipelineTotal)} label={"ערך פתוח בצינור\nהערכה"} />
-        <StatTile icon={Scale} value={formatMoneyCompact(weighted)} label={"צפי משוקלל\nלפי הסתברות שלב"} badge="הערכה" badgeTone="warm" />
-        <StatTile icon={Users} value={String(openCount)} label={`${pack.vocab.people} פתוחים\nבצינור`} />
+        <StatTile href={`${base}/contacts?sort=value`} icon={BarChart3} value={formatMoneyCompact(pipelineTotal)} label={"ערך פתוח בצינור\nהערכה"} />
+        <StatTile href={`${base}/contacts?sort=value`} icon={Scale} value={formatMoneyCompact(weighted)} label={"צפי משוקלל\nלפי הסתברות שלב"} badge="הערכה" badgeTone="warm" />
+        <StatTile href={`${base}/contacts`} icon={Users} value={String(openCount)} label={`${pack.vocab.people} פתוחים\nבצינור`} />
       </PageHeader>
 
       <div className="crm-scroll -mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-4 sm:-mx-5 sm:px-5 md:mx-0 md:px-0">

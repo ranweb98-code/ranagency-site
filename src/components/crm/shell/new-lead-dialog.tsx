@@ -50,7 +50,7 @@ export function NewLeadDialog({
     event.preventDefault()
     if (!createLead) {
       // Demo build: the toast says so rather than pretending the lead exists.
-      toast("בגרסת ההדגמה הליד לא נשמר. עם חיבור למסד הנתונים הוא יופיע כאן.")
+      toast("בגרסת ההדגמה הליד לא נשמר. בעסק אמיתי הוא נשמר ומופיע בכל המסכים.")
       onClose()
       return
     }
