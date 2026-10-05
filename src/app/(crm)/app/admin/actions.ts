@@ -126,3 +126,46 @@ export async function revokeInvitation(formData: FormData): Promise<void> {
   await supabase.from("invitations").delete().eq("id", id).is("accepted_at", null)
   revalidatePath("/app/admin")
 }
+
+/** Permanently deletes a business and everything under it (leads, conversations,
+ *  catalog, team, invitations — the foreign keys cascade). Irreversible, so the
+ *  caller has to type the business's address exactly, and it is checked here, not
+ *  only in the form. Photos live in storage, which the cascade does not reach, so
+ *  they are removed first (best effort). */
+export async function deleteBusiness(_prev: AdminState, formData: FormData): Promise<AdminState> {
+  await requireSuperAdmin()
+
+  const id = text(formData, "tenant_id", 40)
+  const confirm = text(formData, "confirm", 60).toLowerCase()
+  if (!UUID.test(id)) return { ok: false, error: "העסק לא נמצא" }
+
+  const supabase = await createClient()
+  const { data: tenant } = await supabase.from("tenants").select("id, slug, business_name").eq("id", id).maybeSingle()
+  if (!tenant) return { ok: false, error: "העסק כבר לא קיים" }
+  if (confirm !== tenant.slug) return { ok: false, error: "כתבו את כתובת העסק בדיוק כמו שהיא כתובה, כדי לאשר" }
+
+  try {
+    const { data: files } = await supabase.storage.from("catalog").list(tenant.id, { limit: 1000 })
+    if (files?.length) await supabase.storage.from("catalog").remove(files.map((f) => `${tenant.id}/${f.name}`))
+  } catch {
+    // nothing to clean, or storage is unreachable: the rows are what matter
+  }
+
+  const { data, error } = await supabase.from("tenants").delete().eq("id", tenant.id).select("id")
+  if (error || !data?.length) return { ok: false, error: "לא הצלחנו למחוק. נסו שוב." }
+
+  revalidatePath("/app/admin")
+  return { ok: true, message: `העסק ״${tenant.business_name}״ נמחק` }
+}
+
+/** The reversible version of "remove this business": it disappears for its team
+ *  and stops loading, but nothing is deleted, and it can be restored. */
+export async function setBusinessArchived(formData: FormData): Promise<void> {
+  await requireSuperAdmin()
+  const id = text(formData, "id", 40)
+  if (!UUID.test(id)) return
+  const archive = text(formData, "archive", 5) === "1"
+  const supabase = await createClient()
+  await supabase.from("tenants").update({ archived_at: archive ? new Date().toISOString() : null }).eq("id", id)
+  revalidatePath("/app/admin")
+}

@@ -9,6 +9,7 @@ import type { Channel, IndustryId } from "@/lib/crm/types"
 import { signOut } from "../actions"
 import { revokeInvitation } from "./actions"
 import { InviteForm, NewBusinessForm } from "./forms"
+import { ManageBusiness } from "./manage-business"
 
 const ROLE = { owner: "בעלים", staff: "צוות" } as const
 const channelOf = (a: string): a is Channel => a === "whatsapp" || a === "instagram" || a === "voice"
@@ -140,6 +141,8 @@ export function AdminView({ email, tenants, memberships, profiles, invitations }
                       <InviteForm tenantId={t.id} />
                     </div>
                   </div>
+
+                  <ManageBusiness tenantId={t.id} slug={t.slug} name={t.business_name} leads={leads} archived={Boolean(t.archived_at)} />
                 </Glass>
               </li>
             )

@@ -216,6 +216,31 @@ begin
   perform test.back();
   raise notice 'PASS  settings and brand have a size ceiling';
 
+  -- deleting a business: only the super admin, and everything under it goes too
+  insert into public.tenants (id, slug, business_name, industry) values ('33333333-3333-3333-3333-333333333333', 'doomed-biz', 'Doomed', 'generic');
+  insert into public.catalog_items (id, tenant_id, title) values ('c3333333-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'Item');
+  insert into public.contacts (id, tenant_id, name, channel, stage_id) values ('d3333333-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'Lead', 'whatsapp', 'new');
+  insert into public.messages (tenant_id, contact_id, author, body) values ('33333333-3333-3333-3333-333333333333', 'd3333333-0000-0000-0000-000000000001', 'customer', 'hi');
+  insert into public.memberships (tenant_id, user_id, role) values ('33333333-3333-3333-3333-333333333333', 'aaaaaaaa-0000-0000-0000-000000000004', 'owner');
+  insert into public.invitations (tenant_id, email, role) values ('33333333-3333-3333-3333-333333333333', 'x@doomed.test', 'staff');
+  -- an owner of that business cannot delete it (the statement matches no row)
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000004');
+  delete from public.tenants where id = '33333333-3333-3333-3333-333333333333';
+  get diagnostics n = row_count; assert n = 0, 'an owner must not be able to delete their business';
+  perform test.back();
+  select count(*) into n from public.tenants where id = '33333333-3333-3333-3333-333333333333'; assert n = 1, 'the business survived the owner';
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000005');
+  delete from public.tenants where id = '33333333-3333-3333-3333-333333333333';
+  get diagnostics n = row_count; assert n = 1, 'the super admin can delete a business';
+  perform test.back();
+  select count(*) into n from public.contacts where tenant_id = '33333333-3333-3333-3333-333333333333'; assert n = 0, 'its contacts are gone';
+  select count(*) into n from public.messages where tenant_id = '33333333-3333-3333-3333-333333333333'; assert n = 0, 'its messages are gone';
+  select count(*) into n from public.catalog_items where tenant_id = '33333333-3333-3333-3333-333333333333'; assert n = 0, 'its catalog is gone';
+  select count(*) into n from public.memberships where tenant_id = '33333333-3333-3333-3333-333333333333'; assert n = 0, 'its team is gone';
+  select count(*) into n from public.invitations where tenant_id = '33333333-3333-3333-3333-333333333333'; assert n = 0, 'its invitations are gone';
+  select count(*) into n from public.tenants; assert n = 2, 'the other businesses are untouched';
+  raise notice 'PASS  only the super admin can delete a business, and everything under it goes with it';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';
