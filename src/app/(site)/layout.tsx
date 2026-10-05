@@ -35,6 +35,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  // One address per page, whichever domain it was reached through (the project
+  // also answers on ranagency.online and *.vercel.app): tells search engines
+  // which copy to rank.
+  alternates: { canonical: "/" },
+  applicationName: "נפוץ'",
   openGraph: {
     type: "website",
     siteName: "נפוץ'",
@@ -58,6 +63,42 @@ export const metadata: Metadata = {
    lands before the curtain markup below is even parsed, so the returning
    visitor never sees a frame of white. Keep the key in sync with
    SESSION_KEY in src/components/motion/curtain-loader.tsx. */
+// Facts only — everything here is already on the page. It lets search engines
+// tie the brand name to the site (the name is also an everyday Hebrew word, so
+// without this the name alone says little).
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "נפוץ'",
+      alternateName: ["Napuch", "נפוץ סוכני AI"],
+      url: SITE_URL,
+      logo: `${SITE_URL}/apple-icon.png`,
+      description: SITE_DESCRIPTION,
+      areaServed: "IL",
+      knowsLanguage: "he",
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: "hello@napuch.co.il",
+        telephone: "+972-50-361-0061",
+        availableLanguage: "he",
+        areaServed: "IL",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: "נפוץ'",
+      inLanguage: "he-IL",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+}
+
 const CURTAIN_SESSION_SCRIPT = `try{if(sessionStorage.getItem("napuch:curtain-seen")==="1"){document.documentElement.dataset.curtain="skip"}}catch(e){}`;
 
 export default function RootLayout({
@@ -73,6 +114,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <script dangerouslySetInnerHTML={{ __html: CURTAIN_SESSION_SCRIPT }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
         {/* Keyboard/screen-reader users otherwise have to tab through the
             entire floating nav pill on every single page before reaching
             real content — this jumps straight to #main-content. Hidden

@@ -5,6 +5,7 @@ import { Footer } from "@/components/site/footer"
 import { SectionContainer } from "@/components/site/section-container"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/accessibility" },
   title: "הצהרת נגישות — נפוץ'",
   description: "הצהרת הנגישות של נפוץ' — התאמות הנגישות שבוצעו באתר וכיצד ניתן לפנות בנושא.",
 }

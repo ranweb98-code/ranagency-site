@@ -5,6 +5,7 @@ import { Footer } from "@/components/site/footer"
 import { SectionContainer } from "@/components/site/section-container"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "תנאי שימוש — נפוץ'",
   description: "תנאי השימוש באתר נפוץ' — הזכויות, המגבלות והכללים שחלים על השימוש באתר.",
 }

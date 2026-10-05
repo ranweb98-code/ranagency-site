@@ -281,6 +281,7 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
           setLeadOpen(true)
         }}
         signOut={account?.signOut}
+        adminHref={account?.adminHref}
       />
       </ShellActionsProvider>
     </ToastProvider>

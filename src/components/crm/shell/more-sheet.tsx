@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeftRight, LogOut, Plus, X, type LucideIcon } from "lucide-react"
+import { ArrowLeftRight, LayoutList, LogOut, Plus, X, type LucideIcon } from "lucide-react"
 import Link from "next/link"
 
 import { IconButton } from "@/components/crm/ui/icon-button"
@@ -13,6 +13,7 @@ export function MoreSheet({
   nav,
   onAdd,
   signOut,
+  adminHref,
 }: {
   open: boolean
   onClose: () => void
@@ -20,6 +21,8 @@ export function MoreSheet({
   onAdd: () => void
   /** Real workspaces sign out here; the demo links back to the business picker. */
   signOut?: () => Promise<void>
+  /** The super admin's way back to the list of businesses (phones have no header link). */
+  adminHref?: string
 }) {
   return (
     <Modal open={open} onClose={onClose} label="עוד" variant="bottom">
@@ -48,6 +51,14 @@ export function MoreSheet({
               ליד חדש
             </button>
           </li>
+          {adminHref ? (
+            <li>
+              <Link href={adminHref} onClick={onClose} className="flex items-center gap-3 rounded-2xl bg-black/[0.05] px-4 py-4 text-sm font-medium">
+                <LayoutList className="size-5" aria-hidden />
+                ניהול עסקים
+              </Link>
+            </li>
+          ) : null}
           <li>
             {signOut ? (
               <form action={signOut}>

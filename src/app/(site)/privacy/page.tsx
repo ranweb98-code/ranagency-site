@@ -5,6 +5,7 @@ import { Footer } from "@/components/site/footer"
 import { SectionContainer } from "@/components/site/section-container"
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "מדיניות פרטיות ועוגיות — נפוץ'",
   description: "מדיניות הפרטיות והעוגיות של נפוץ' — אילו פרטים אנחנו אוספים, למה, ואיך אפשר לממש את הזכויות שלך.",
 }
