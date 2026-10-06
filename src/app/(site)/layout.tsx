@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Geist_Mono, Rubik } from "next/font/google";
 import { CurtainLoader } from "@/components/motion/curtain-loader";
 import { LenisProvider } from "@/components/motion/lenis-provider";
+import { PrivacyNotice } from "@/components/site/privacy-notice";
 import "../globals.css";
 
 const rubik = Rubik({
@@ -130,6 +131,7 @@ export default function RootLayout({
           <CurtainLoader />
           {children}
         </LenisProvider>
+        <PrivacyNotice />
       </body>
     </html>
   );
