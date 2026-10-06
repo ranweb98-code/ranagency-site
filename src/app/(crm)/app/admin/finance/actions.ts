@@ -20,8 +20,8 @@ export async function saveExpense(id: string | null, input: unknown): Promise<Re
   await requireSuperAdmin()
   const checked = validateExpense(input)
   if (!checked.ok) return checked
-  const { name, category, amount, currency, period, tenantId, url, note } = checked.value
-  const row = { name, category, amount, currency, period, tenant_id: tenantId, url, note }
+  const { name, category, amount, currency, period, kind, spentOn, percent, tenantId, url, note } = checked.value
+  const row = { name, category, amount, currency, period, kind, spent_on: spentOn, percent, tenant_id: tenantId, url, note }
 
   const supabase = await createClient()
   if (id === null) {

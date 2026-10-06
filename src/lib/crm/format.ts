@@ -33,6 +33,8 @@ const weekdayLong = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "l
 const monthLong = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, month: "long", year: "numeric" })
 const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" })
 
+/** Today's date in Israel as `YYYY-MM-DD`, whatever the server's own clock zone is. */
+export const todayInJerusalem = (now: Date = new Date()): string => dayKey.format(now)
 export const formatTime = (iso: string) => time.format(new Date(iso))
 export const formatDayShort = (iso: string) => dayShort.format(new Date(iso))
 /** "14 באוק׳". */

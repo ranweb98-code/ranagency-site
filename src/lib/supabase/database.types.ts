@@ -17,9 +17,12 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          kind: string
           name: string
           note: string | null
+          percent: number | null
           period: string
+          spent_on: string | null
           tenant_id: string | null
           url: string | null
         }
@@ -30,9 +33,12 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          kind?: string
           name: string
           note?: string | null
+          percent?: number | null
           period?: string
+          spent_on?: string | null
           tenant_id?: string | null
           url?: string | null
         }
@@ -43,9 +49,12 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          kind?: string
           name?: string
           note?: string | null
+          percent?: number | null
           period?: string
+          spent_on?: string | null
           tenant_id?: string | null
           url?: string | null
         }

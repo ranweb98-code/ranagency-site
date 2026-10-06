@@ -301,6 +301,25 @@ begin
   perform test.back();
   select count(*) into n from public.admin_expenses; assert n = 3, 'the owner attempts changed nothing';
   raise notice 'PASS  the operator''s books are visible to the super admin only';
+  -- one-off spending: dated and priced; a percentage fee only on a standing cost
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000005');
+  insert into public.admin_expenses (name, kind, spent_on, amount) values ('Ad bought on Tuesday', 'once', '2026-10-06', 250);
+  insert into public.admin_expenses (name, percent, amount) values ('Clearing fee', 1.5, null);
+  select count(*) into n from public.admin_expenses where kind = 'once'; assert n = 1, 'a one-off can be recorded with a date';
+  ok := test.rejected($q$insert into public.admin_expenses (name, kind, amount) values ('x', 'once', 5)$q$);
+  assert ok, 'a one-off without a date is rejected';
+  ok := test.rejected($q$insert into public.admin_expenses (name, kind, spent_on) values ('x', 'once', '2026-10-06')$q$);
+  assert ok, 'a one-off without a price is rejected';
+  ok := test.rejected($q$insert into public.admin_expenses (name, spent_on, amount) values ('x', '2026-10-06', 5)$q$);
+  assert ok, 'a standing cost cannot carry a date';
+  ok := test.rejected($q$insert into public.admin_expenses (name, kind, spent_on, amount, percent) values ('x', 'once', '2026-10-06', 5, 2)$q$);
+  assert ok, 'a one-off cannot be a percentage';
+  ok := test.rejected($q$insert into public.admin_expenses (name, percent) values ('x', 101)$q$);
+  assert ok, 'a percentage above 100 is rejected';
+  ok := test.rejected($q$insert into public.admin_expenses (name, kind, spent_on, amount) values ('x', 'once', '1999-01-01', 5)$q$);
+  assert ok, 'an absurd date is rejected';
+  perform test.back();
+  raise notice 'PASS  one-off spending and percentage fees are bounded';
 
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);

@@ -1,3 +1,4 @@
+import { todayInJerusalem } from "@/lib/crm/format"
 import { CATEGORY_LABEL, type Client, type Expense, type ExpenseCategory } from "@/lib/crm/finance"
 import { requireSuperAdmin } from "@/lib/crm/session"
 import { createClient } from "@/lib/supabase/server"
@@ -26,6 +27,9 @@ export default async function FinancePage() {
     amount: e.amount === null ? null : Number(e.amount),
     currency: e.currency === "USD" ? "USD" : "ILS",
     period: e.period === "yearly" ? "yearly" : "monthly",
+    kind: e.kind === "once" ? "once" : "recurring",
+    spentOn: e.spent_on,
+    percent: e.percent === null ? null : Number(e.percent),
     tenantId: e.tenant_id,
     url: e.url,
     note: e.note,
@@ -40,5 +44,5 @@ export default async function FinancePage() {
     archived: t.archived_at !== null,
   }))
 
-  return <FinanceView expenses={rows} clients={clients} usdIls={Number(settings.data?.usd_ils ?? 3.7)} actions={{ saveExpense, setExpenseActive, deleteExpense, saveRate }} />
+  return <FinanceView expenses={rows} clients={clients} usdIls={Number(settings.data?.usd_ils ?? 3.7)} today={todayInJerusalem()} actions={{ saveExpense, setExpenseActive, deleteExpense, saveRate }} />
 }
