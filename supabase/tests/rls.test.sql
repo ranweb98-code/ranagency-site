@@ -266,6 +266,42 @@ begin
   perform test.back();
   raise notice 'PASS  a person edits only their own profile and photo';
 
+  -- the operator's books: super admin only, and bounded
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000005');
+  insert into public.admin_expenses (name, category, amount, currency, period) values ('Claude', 'ai', 100, 'USD', 'monthly');
+  insert into public.admin_expenses (name, category, amount, tenant_id) values ('Per-client tool', 'tools', 20, '11111111-1111-1111-1111-111111111111');
+  insert into public.admin_expenses (name) values ('Amount not entered yet');
+  update public.admin_settings set usd_ils = 3.6;
+  get diagnostics n = row_count; assert n = 1, 'the super admin can change the dollar rate';
+  select count(*) into n from public.admin_expenses; assert n = 3, 'the super admin sees every expense';
+  ok := test.rejected($q$insert into public.admin_expenses (name, amount) values ('x', -5)$q$);
+  assert ok, 'a negative amount is rejected';
+  ok := test.rejected($q$insert into public.admin_expenses (name, currency) values ('x', 'EUR')$q$);
+  assert ok, 'an unknown currency is rejected';
+  ok := test.rejected($q$insert into public.admin_expenses (name, url) values ('x', 'javascript:alert(1)')$q$);
+  assert ok, 'a non-https link is rejected';
+  ok := test.rejected($q$update public.admin_settings set usd_ils = 0$q$);
+  assert ok, 'an impossible dollar rate is rejected';
+  ok := test.rejected($q$insert into public.admin_settings (id, usd_ils) values (false, 3)$q$);
+  assert ok, 'the settings table keeps a single row';
+  perform test.back();
+  -- an owner of a business, and a team member, see and change nothing
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+  select count(*) into n from public.admin_expenses; assert n = 0, 'an owner cannot read the operator expenses';
+  select count(*) into n from public.admin_settings; assert n = 0, 'an owner cannot read the operator settings';
+  ok := test.rejected($q$insert into public.admin_expenses (name, amount) values ('sneaky', 1)$q$);
+  assert ok, 'an owner cannot write an expense';
+  update public.admin_settings set usd_ils = 9;
+  get diagnostics n = row_count; assert n = 0, 'an owner cannot change the dollar rate';
+  delete from public.admin_expenses;
+  get diagnostics n = row_count; assert n = 0, 'an owner cannot delete expenses';
+  perform test.back();
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000002');
+  select count(*) into n from public.admin_expenses; assert n = 0, 'a team member cannot read the operator expenses';
+  perform test.back();
+  select count(*) into n from public.admin_expenses; assert n = 3, 'the owner attempts changed nothing';
+  raise notice 'PASS  the operator''s books are visible to the super admin only';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';

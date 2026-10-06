@@ -9,6 +9,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_expenses: {
+        Row: {
+          active: boolean
+          amount: number | null
+          category: string
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          note: string | null
+          period: string
+          tenant_id: string | null
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          amount?: number | null
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name: string
+          note?: string | null
+          period?: string
+          tenant_id?: string | null
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          amount?: number | null
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          note?: string | null
+          period?: string
+          tenant_id?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_expenses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_settings: {
+        Row: {
+          id: boolean
+          usd_ils: number
+        }
+        Insert: {
+          id?: boolean
+          usd_ils?: number
+        }
+        Update: {
+          id?: boolean
+          usd_ils?: number
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           contact_id: string

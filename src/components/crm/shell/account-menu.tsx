@@ -1,6 +1,6 @@
 "use client"
 
-import { Building2, LayoutList, LogOut, UserRound, type LucideIcon } from "lucide-react"
+import { Building2, LayoutList, LogOut, UserRound, Wallet, type LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react"
 import { createPortal } from "react-dom"
@@ -27,6 +27,7 @@ export function AccountMenu({
   accountHref,
   businessHref,
   adminHref,
+  financeHref,
   signOut,
 }: {
   name: string
@@ -36,6 +37,7 @@ export function AccountMenu({
   accountHref: string
   businessHref: string
   adminHref?: string
+  financeHref?: string
   signOut: () => Promise<void>
 }) {
   const id = useId()
@@ -140,6 +142,7 @@ export function AccountMenu({
               {link(accountHref, "הפרופיל שלי", UserRound)}
               {link(businessHref, "פרופיל העסק", Building2)}
               {adminHref ? link(adminHref, "כל העסקים", LayoutList) : null}
+              {financeHref ? link(financeHref, "הכספים שלי", Wallet) : null}
               <div role="separator" className="mx-3 my-1.5 h-px bg-black/10" />
               <form action={signOut}>
                 <button type="submit" role="menuitem" className={itemClass}>

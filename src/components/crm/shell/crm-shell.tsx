@@ -40,6 +40,8 @@ export interface ShellAccount {
   createLead: CreateLead
   /** Only the super admin gets a way back to the list of businesses. */
   adminHref?: string
+  /** The super admin's own books (what the tools cost against what clients pay). */
+  financeHref?: string
   /** Who is signed in: the header avatar opens a menu with these. */
   name: string
   jobTitle?: string | null
@@ -216,6 +218,7 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
                 accountHref={account.accountHref}
                 businessHref={account.profileHref}
                 adminHref={account.adminHref}
+                financeHref={account.financeHref}
                 signOut={account.signOut}
               />
             ) : (
@@ -299,6 +302,7 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
         }}
         signOut={account?.signOut}
         adminHref={account?.adminHref}
+        financeHref={account?.financeHref}
         accountHref={account?.accountHref}
       />
       </ShellActionsProvider>

@@ -48,6 +48,9 @@ export function AdminView({ email, tenants, memberships, profiles, invitations }
             <h1 className="mt-1 text-[34px] font-medium leading-tight tracking-tight md:text-[44px]">העסקים</h1>
           </div>
           <div className="flex items-center gap-2 text-[13px]">
+            <Link href="/app/admin/finance" className="rounded-full bg-crm-ink px-4 py-2 font-medium text-white transition-opacity hover:opacity-90">
+              הכספים שלי
+            </Link>
             <Link href="/crm" className="rounded-full bg-white/80 px-4 py-2 font-medium transition-colors hover:bg-white">
               הדגמה
             </Link>
