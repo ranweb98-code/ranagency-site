@@ -1,4 +1,5 @@
 import { requireSuperAdmin } from "@/lib/crm/session"
+import { isInternal } from "@/lib/crm/tenant-flags"
 import { createClient } from "@/lib/supabase/server"
 import { AdminView } from "./admin-view"
 
@@ -11,7 +12,7 @@ export default async function AdminPage() {
   const [tenants, memberships, profiles, invitations] = await Promise.all([
     supabase
       .from("tenants")
-      .select("id, slug, business_name, industry, city, agents, plan_monthly, created_at, archived_at, contacts(count)")
+      .select("id, slug, business_name, industry, city, agents, plan_monthly, created_at, archived_at, settings, contacts(count)")
       .order("created_at", { ascending: false }),
     supabase.from("memberships").select("tenant_id, user_id, role"),
     supabase.from("profiles").select("id, email"),
@@ -22,7 +23,8 @@ export default async function AdminPage() {
   return (
     <AdminView
       email={session.email}
-      tenants={tenants.data ?? []}
+      // `settings` can hold a long business profile: only the flag goes to the browser
+      tenants={(tenants.data ?? []).map(({ settings, ...rest }) => ({ ...rest, internal: isInternal(settings) }))}
       memberships={memberships.data ?? []}
       profiles={profiles.data ?? []}
       invitations={invitations.data ?? []}

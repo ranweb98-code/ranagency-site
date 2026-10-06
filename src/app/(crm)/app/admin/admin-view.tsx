@@ -23,6 +23,8 @@ export interface AdminTenant {
   agents: string[]
   plan_monthly: number
   archived_at: string | null
+  /** The operator's own business: not a client, takes no part in the finance sums. */
+  internal: boolean
   contacts: { count: number }[]
 }
 
@@ -93,6 +95,7 @@ export function AdminView({ email, tenants, memberships, profiles, invitations }
                         {t.agents.filter(channelOf).map((a) => (
                           <ChannelDot key={a} channel={a} />
                         ))}
+                        {t.internal ? <Pill tone="ink">העסק שלי</Pill> : null}
                         {t.archived_at ? <Pill tone="soft">בארכיון</Pill> : null}
                       </div>
                     </div>
