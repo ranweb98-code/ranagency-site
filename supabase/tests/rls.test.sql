@@ -241,6 +241,31 @@ begin
   select count(*) into n from public.tenants; assert n = 2, 'the other businesses are untouched';
   raise notice 'PASS  only the super admin can delete a business, and everything under it goes with it';
 
+  -- a person's own profile: editable by them, within bounds, and nothing more
+  perform test.as_user('aaaaaaaa-0000-0000-0000-000000000001');
+  update public.profiles set full_name = 'Alice A', phone = '050-123-4567', job_title = 'Owner'
+    where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+  get diagnostics n = row_count; assert n = 1, 'a person can edit their own name, phone and title';
+  update public.profiles set avatar_path = 'aaaaaaaa-0000-0000-0000-000000000001/avatar-1.webp'
+    where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+  get diagnostics n = row_count; assert n = 1, 'a person can point their photo at their own folder';
+  ok := test.rejected($q$update public.profiles set avatar_path = 'aaaaaaaa-0000-0000-0000-000000000002/avatar-1.webp' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$);
+  assert ok, 'a photo path in someone else''s folder is rejected';
+  ok := test.rejected($q$update public.profiles set avatar_path = '../catalog/x.jpg' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$);
+  assert ok, 'a traversal path is rejected';
+  ok := test.rejected($q$update public.profiles set email = 'stolen@evil.test' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$);
+  assert ok, 'the email cannot be changed through the API';
+  ok := test.rejected($q$update public.profiles set job_title = repeat('x', 61) where id = 'aaaaaaaa-0000-0000-0000-000000000001'$q$);
+  assert ok, 'an over-long title is rejected';
+  update public.profiles set phone = 'hijack' where id = 'aaaaaaaa-0000-0000-0000-000000000002';
+  get diagnostics n = row_count; assert n = 0, 'nobody can edit another person''s profile';
+  ok := test.rejected($q$insert into storage.objects (bucket_id, name) values ('avatars','aaaaaaaa-0000-0000-0000-000000000001/avatar-1.webp')$q$);
+  assert not ok, 'a person can upload into their own avatar folder';
+  ok := test.rejected($q$insert into storage.objects (bucket_id, name) values ('avatars','aaaaaaaa-0000-0000-0000-000000000002/avatar-1.webp')$q$);
+  assert ok, 'a person cannot upload into another person''s folder';
+  perform test.back();
+  raise notice 'PASS  a person edits only their own profile and photo';
+
   -- slugs are validated
   ok := test.rejected($q$insert into public.tenants (slug, business_name, industry) values ('Bad Slug!', 'x', 'dental')$q$);
   assert ok, 'invalid slug rejected';

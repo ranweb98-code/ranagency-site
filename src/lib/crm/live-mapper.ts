@@ -77,6 +77,12 @@ function parseMeta(raw: Json): { label: string; value: string }[] {
   return meta
 }
 
+/** The logo is a file in the business's own folder of the catalog bucket. */
+export function logoPath(tenantId: string, brand: Json): string | null {
+  if (!isRecord(brand) || typeof brand.logo !== "string") return null
+  return brand.logo.startsWith(`${tenantId}/logo-`) && /^[0-9a-f-]{36}\/logo-[A-Za-z0-9._-]{1,80}$/.test(brand.logo) ? brand.logo : null
+}
+
 export function resolvePack(industry: string, brand: Json): IndustryPack {
   const base = PACKS[industry as IndustryId] ?? PACKS.generic
   return { ...base, brand: { ...base.brand, ...parseBrand(brand) } }
@@ -97,6 +103,7 @@ export function buildCrmData(rows: LiveRows, ctx: { now: Date; photoUrl: (path: 
     city: t.city ?? "",
     planMonthly: t.plan_monthly,
     agents: t.agents.filter((a): a is Channel => (CHANNELS as readonly string[]).includes(a)),
+    logoUrl: logoPath(t.id, t.brand) ? ctx.photoUrl(logoPath(t.id, t.brand) as string) : undefined,
   }
 
   const catalog: CatalogItem[] = rows.catalog.map((c) => ({

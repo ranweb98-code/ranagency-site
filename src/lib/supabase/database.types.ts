@@ -370,6 +370,9 @@ export type Database = {
           full_name: string | null
           id: string
           is_super_admin: boolean
+          phone: string | null
+          job_title: string | null
+          avatar_path: string | null
         }
         Insert: {
           created_at?: string
@@ -377,6 +380,9 @@ export type Database = {
           full_name?: string | null
           id: string
           is_super_admin?: boolean
+          phone?: string | null
+          job_title?: string | null
+          avatar_path?: string | null
         }
         Update: {
           created_at?: string
@@ -384,6 +390,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_super_admin?: boolean
+          phone?: string | null
+          job_title?: string | null
+          avatar_path?: string | null
         }
         Relationships: []
       }

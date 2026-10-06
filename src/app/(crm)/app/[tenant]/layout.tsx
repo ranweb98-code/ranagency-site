@@ -35,8 +35,14 @@ export default async function LiveTenantLayout({ children, params }: Params & { 
           signOut,
           createLead: createLead.bind(null, data.tenant.slug),
           adminHref: session.isSuperAdmin ? "/app/admin" : undefined,
+          name: session.fullName ?? (data.tenant.ownerName || session.email),
+          jobTitle: session.jobTitle,
+          avatarUrl: session.avatarUrl,
+          accountHref: `${data.basePath}/account`,
+          profileHref: `${data.basePath}/profile`,
         }}
         businessName={data.tenant.businessName}
+        logoUrl={data.tenant.logoUrl}
         ownerName={session.fullName ?? (data.tenant.ownerName || session.email)}
         industryLabel={data.pack.label}
         peopleLabel={data.pack.vocab.people}

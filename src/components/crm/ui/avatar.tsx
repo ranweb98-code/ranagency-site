@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 
-// No photos in the demo, so avatars are initials on a gradient picked from the
-// name — stable per person, varied across the list, and the exact slot a real
-// profile photo drops into later.
+// Without a photo (always, in the demo) an avatar is initials on a gradient
+// picked from the name — stable per person, varied across the list. A person's
+// own uploaded photo takes the same slot through `src`.
 const GRADIENTS = [
   ["#ffb199", "#ff0844"],
   ["#a1c4fd", "#c2e9fb"],
@@ -34,15 +34,20 @@ function gradientFor(name: string) {
 }
 
 /** `decorative` for avatars inside a control whose own name already says who it is. */
-export function Avatar({ name, size = "md", className, decorative }: { name: string; size?: keyof typeof SIZES; className?: string; decorative?: boolean }) {
+export function Avatar({ name, size = "md", className, decorative, src }: { name: string; size?: keyof typeof SIZES; className?: string; decorative?: boolean; src?: string | null }) {
   const [from, to] = gradientFor(name)
   return (
     <span
       {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": name })}
-      className={cn("inline-grid shrink-0 select-none place-items-center rounded-full font-semibold text-black/70", SIZES[size], className)}
+      className={cn("relative inline-grid shrink-0 select-none place-items-center overflow-hidden rounded-full font-semibold text-black/70", SIZES[size], className)}
       style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
     >
-      {decorative ? null : initials(name)}
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a person's uploaded photo, from storage
+        <img src={src} alt="" className="absolute inset-0 size-full object-cover" />
+      ) : decorative ? null : (
+        initials(name)
+      )}
     </span>
   )
 }

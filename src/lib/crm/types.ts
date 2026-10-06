@@ -144,6 +144,8 @@ export interface Tenant {
   city: string
   planMonthly: number
   agents: Channel[]
+  /** The business's own logo, shown in the header instead of an initial. */
+  logoUrl?: string
 }
 
 export interface CatalogItem extends CatalogSeed {

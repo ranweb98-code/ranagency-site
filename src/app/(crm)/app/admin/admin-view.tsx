@@ -93,13 +93,21 @@ export function AdminView({ email, tenants, memberships, profiles, invitations }
                         {t.archived_at ? <Pill tone="soft">בארכיון</Pill> : null}
                       </div>
                     </div>
-                    <Link
-                      href={`/app/${t.slug}`}
-                      className="flex items-center gap-1.5 rounded-full bg-crm-ink px-5 py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
-                    >
-                      פתיחת ה-CRM
-                      <ArrowUpLeft className="size-4" aria-hidden />
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/app/${t.slug}/account`}
+                        className="rounded-full bg-black/[0.06] px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-black/[0.11]"
+                      >
+                        פרופיל ומיתוג
+                      </Link>
+                      <Link
+                        href={`/app/${t.slug}`}
+                        className="flex items-center gap-1.5 rounded-full bg-crm-ink px-5 py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                      >
+                        פתיחת ה-CRM
+                        <ArrowUpLeft className="size-4" aria-hidden />
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="mt-5 grid gap-5 md:grid-cols-2">

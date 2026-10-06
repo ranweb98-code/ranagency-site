@@ -25,6 +25,7 @@ import { Avatar } from "@/components/crm/ui/avatar"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { Pill } from "@/components/crm/ui/pill"
 import { cn } from "@/lib/utils"
+import { AccountMenu } from "./account-menu"
 import { CommandPalette } from "./command-palette"
 import { NewLeadDialog } from "./new-lead-dialog"
 import { ToastProvider } from "./toast"
@@ -39,6 +40,12 @@ export interface ShellAccount {
   createLead: CreateLead
   /** Only the super admin gets a way back to the list of businesses. */
   adminHref?: string
+  /** Who is signed in: the header avatar opens a menu with these. */
+  name: string
+  jobTitle?: string | null
+  avatarUrl?: string | null
+  accountHref: string
+  profileHref: string
 }
 
 export interface ShellProps {
@@ -46,6 +53,8 @@ export interface ShellProps {
   base: string
   account?: ShellAccount
   businessName: string
+  /** The business's own logo; without one the header shows its first letter. */
+  logoUrl?: string
   ownerName: string
   industryLabel: string
   peopleLabel: string
@@ -64,7 +73,7 @@ interface NavItem {
   badge?: number
 }
 
-export function CrmShell({ children, base, account, businessName, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, search }: ShellProps) {
+export function CrmShell({ children, base, account, businessName, logoUrl, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, search }: ShellProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -132,9 +141,16 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
         >
           <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-3 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:ps-[88px] md:py-4">
           <Link href={base} className="flex min-w-0 items-center gap-2.5">
-            <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-crm-ink text-base font-semibold text-white">
-              {businessName.replace(/[^\p{L}]/gu, "").slice(0, 1)}
-            </span>
+            {logoUrl ? (
+              <span aria-hidden className="relative size-10 shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-black/10">
+                {/* eslint-disable-next-line @next/next/no-img-element -- the business's own uploaded logo, from storage */}
+                <img src={logoUrl} alt="" className="size-full object-contain p-1" />
+              </span>
+            ) : (
+              <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-crm-ink text-base font-semibold text-white">
+                {businessName.replace(/[^\p{L}]/gu, "").slice(0, 1)}
+              </span>
+            )}
             <span className="truncate text-lg font-medium tracking-tight">{businessName}</span>
           </Link>
 
@@ -173,22 +189,7 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
           </nav>
 
           <div className="flex items-center justify-end gap-2">
-            {account?.adminHref ? (
-              <Link href={account.adminHref} className="hidden rounded-full bg-white/80 px-3.5 py-1.5 text-[12px] font-medium text-crm-ink/80 transition-colors hover:bg-white lg:block">
-                ניהול
-              </Link>
-            ) : null}
-            {account ? (
-              <form action={account.signOut} className="hidden lg:block">
-                <button
-                  type="submit"
-                  title={account.email}
-                  className="rounded-full bg-white/80 px-3.5 py-1.5 text-[12px] font-medium text-crm-ink/80 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-crm-ink"
-                >
-                  יציאה
-                </button>
-              </form>
-            ) : (
+            {account ? null : (
               <Link href="/crm" className="hidden lg:block" aria-label="חזרה לבחירת עסק לדוגמה">
                 <Pill tone="white" className="px-3 py-1 text-[11px]">
                   הדגמה · {industryLabel}
@@ -206,7 +207,20 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
               <Bell />
               {unread ? <span className="absolute end-2.5 top-2.5 size-2 rounded-full bg-[#ff4d2e] ring-2 ring-white" /> : null}
             </IconButton>
-            <Avatar name={ownerName} size="md" className="ring-2 ring-white/90" />
+            {account ? (
+              <AccountMenu
+                name={account.name}
+                email={account.email}
+                subtitle={account.jobTitle}
+                avatarUrl={account.avatarUrl}
+                accountHref={account.accountHref}
+                businessHref={account.profileHref}
+                adminHref={account.adminHref}
+                signOut={account.signOut}
+              />
+            ) : (
+              <Avatar name={ownerName} size="md" className="ring-2 ring-white/90" />
+            )}
           </div>
           </div>
         </header>
@@ -285,6 +299,7 @@ export function CrmShell({ children, base, account, businessName, ownerName, ind
         }}
         signOut={account?.signOut}
         adminHref={account?.adminHref}
+        accountHref={account?.accountHref}
       />
       </ShellActionsProvider>
     </ToastProvider>

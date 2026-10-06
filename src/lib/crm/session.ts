@@ -2,11 +2,15 @@ import { redirect } from "next/navigation"
 import { cache } from "react"
 
 import { createClient } from "@/lib/supabase/server"
+import { AVATAR_PATH, publicStorageUrl } from "./storage-url"
 
 export interface Session {
   id: string
   email: string
   fullName: string | null
+  phone: string | null
+  jobTitle: string | null
+  avatarUrl: string | null
   isSuperAdmin: boolean
 }
 
@@ -18,11 +22,14 @@ export const getSession = cache(async (): Promise<Session | null> => {
   const claims = data?.claims
   if (!claims?.sub) return null
 
-  const { data: profile } = await supabase.from("profiles").select("email, full_name, is_super_admin").eq("id", claims.sub).maybeSingle()
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", claims.sub).maybeSingle()
   return {
     id: claims.sub,
     email: profile?.email ?? (typeof claims.email === "string" ? claims.email : ""),
     fullName: profile?.full_name ?? null,
+    phone: profile?.phone ?? null,
+    jobTitle: profile?.job_title ?? null,
+    avatarUrl: profile?.avatar_path && AVATAR_PATH.test(profile.avatar_path) ? (publicStorageUrl("avatars", profile.avatar_path) ?? null) : null,
     isSuperAdmin: profile?.is_super_admin === true,
   }
 })
