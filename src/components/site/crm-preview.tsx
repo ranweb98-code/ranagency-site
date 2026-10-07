@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { AnimatePresence, animate, motion, useInView, useReducedMotion } from "motion/react"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { memo, useEffect, useRef, useState } from "react"
 
 import { Avatar } from "@/components/crm/ui/avatar"
 import { ChannelDot, CHANNELS } from "@/components/crm/ui/channel"
@@ -51,6 +51,11 @@ interface NavTab {
   label: string
   badge?: number
 }
+
+// Neither card reads the selected customer, so the new-lead loop (a re-render
+// every few seconds) has no reason to rebuild a 31-day calendar and a funnel.
+const StaticCalendarCard = memo(CalendarCard)
+const StaticFunnelCard = memo(FunnelCard)
 
 /** How long a new-lead notice stays up, and how often the next one arrives. */
 const TOAST_MS = 3600
@@ -143,15 +148,12 @@ export function CrmPreview({
   const delta = stats.closedDelta
 
   return (
-    <motion.div
-      // Opacity and a rise only — never a filter: a filter that lingers on this
-      // wrapper after the entrance would make it the containing block for the
-      // CRM's own fixed-position popovers and misplace them.
-      initial={{ opacity: 0, y: 36 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-    >
+    // No entrance animation on the window itself. Animating a transform on a
+    // 1100×860 subtree of glass, gradients and shadows promotes it to one big
+    // layer that has to be rasterised in a single go the moment it first
+    // scrolls in. As ordinary page content it is rastered in tiles ahead of the
+    // viewport instead; the section heading above it already carries the reveal.
+    <div>
       <div
         ref={frameRef}
         role="region"
@@ -159,7 +161,7 @@ export function CrmPreview({
         onPointerEnter={() => {
           handsOffUntil.current = Date.now() + HANDS_OFF_MS / 2
         }}
-        className="crm-embed relative h-[680px] rounded-[30px] shadow-[0_50px_100px_-40px_rgba(17,17,17,0.45)] ring-1 ring-black/10 md:h-[860px] md:rounded-[40px]"
+        className="crm-embed relative h-[680px] rounded-[30px] shadow-[0_28px_56px_-28px_rgba(17,17,17,0.4)] ring-1 ring-black/10 md:h-[860px] md:rounded-[40px]"
         style={themeStyle(data.pack.brand)}
       >
         <div className="relative z-10">
@@ -173,7 +175,7 @@ export function CrmPreview({
             </div>
 
             <nav aria-label="ניווט בהדגמה" className="hidden md:block">
-              <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1 backdrop-blur-xl">
+              <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1">
                 {nav.map((item, i) => (
                   <li key={item.key} className="relative">
                     <Link
@@ -262,8 +264,8 @@ export function CrmPreview({
               >
                 <DealCards deals={deals} catalog={data.catalog} stages={data.pack.stages} detailBase={`${base}/contacts`} selectedId={selected.id} onSelect={pick} />
               </SectionCard>
-              <CalendarCard className="order-4 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
-              <FunnelCard className="order-5 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
+              <StaticCalendarCard className="order-4 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
+              <StaticFunnelCard className="order-5 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
             </div>
 
             <div className="contents lg:col-span-4 lg:grid lg:content-start lg:gap-4">
@@ -320,7 +322,7 @@ export function CrmPreview({
           </AnimatePresence>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
