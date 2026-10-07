@@ -80,11 +80,21 @@ export function ProcessSection() {
             style={{ scaleX: lineScale }}
           />
 
-          <RevealGroup className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+          {/* Each step spans four shared rows (circle, "step N", title, text) via
+              subgrid, so the same row is the same height in every column. With
+              plain stacked blocks a one-line title ("עולים לאוויר") next to
+              two-line ones pulled its text up and left that column sitting
+              higher than its neighbours. The gap between step-rows is bottom
+              padding rather than `gap-y`, because a row gap would also open up
+              inside every step's four rows. */}
+          <RevealGroup className="relative grid gap-x-8 sm:grid-cols-2 lg:grid-cols-5">
             {STEPS.map((step, index) => {
               const Icon = step.icon
               return (
-                <RevealItem key={step.title} className="relative text-center">
+                <RevealItem
+                  key={step.title}
+                  className="relative row-span-4 grid grid-rows-subgrid pb-8 text-center lg:pb-0"
+                >
                   <div className="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ran-surface-light-raised shadow-[0_2px_16px_-6px_rgba(17,17,17,0.2)]">
                     <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light">
                       <Icon className="h-5 w-5" />

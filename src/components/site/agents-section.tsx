@@ -187,7 +187,13 @@ const AGENTS: Agent[] = [
 
 const TYPING_MS = 1100
 const OUTCOME_HOLD_MS = 3000
-const SWITCH_GAP_MS = 500
+/** Beat of silence after a new customer message lands, before the agent
+ *  starts typing. */
+const REPLY_LAG_MS = 350
+/** Beats already on screen when the page loads: the question and the reply. A
+ *  phone that begins empty and fills in only once someone scrolls to it looks
+ *  like there is nothing there. */
+const PRELOADED_BEATS = 2
 
 export function AgentsSection() {
   return (
@@ -228,58 +234,66 @@ export function AgentsSection() {
 
 function AgentCard({ agent, startDelay }: { agent: Agent; startDelay: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
-  // Playback restarts whenever the card comes back into view rather than
-  // running once — but it never runs off-screen, the same discipline the
-  // growth chart's ping already follows.
-  const inView = useInView(cardRef, { amount: 0.35 })
+  const inView = useInView(cardRef, { amount: 0.1 })
   const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
 
-  const [convIndex, setConvIndex] = useState(0)
-  const [step, setStep] = useState(0)
+  // Which conversation, and how many of its beats have landed (script.length + 1
+  // means the outcome chip too). One state object, so moving on to the next
+  // conversation can never render the new script against the old beat count —
+  // which flashed the whole finished thread for a frame.
+  const [pos, setPos] = useState({ conv: 0, step: PRELOADED_BEATS })
   const [typing, setTyping] = useState(false)
+  // Beats already showing when the current conversation's timeline begins.
+  // Written only at the moment a conversation hands over, never inside the
+  // effect, so a double-invoked effect (StrictMode) plays the same timeline.
+  const startStep = useRef(PRELOADED_BEATS)
 
-  const conversation = agent.conversations[convIndex]
+  const { conv } = pos
+  const conversation = agent.conversations[conv]
   const script = conversation.script
 
+  // The conversation never waits for the visitor to scroll here: it runs from
+  // the moment the page loads, so wherever someone arrives it is already
+  // mid-exchange. Only the purely decorative loops below follow `inView`.
   useEffect(() => {
-    if (!inView || prefersReducedMotion) return
+    if (prefersReducedMotion) return
 
     const timers: number[] = []
     const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms))
 
-    // Scheduled rather than called inline: a synchronous setState in an
-    // effect body costs a cascading render, and the thread's own crossfade
-    // already covers this tick.
-    at(0, () => {
-      setStep(0)
-      setTyping(false)
-    })
+    const from = startStep.current
+    // The first conversation spreads the three phones apart; every later one
+    // opens on the customer's message and has the agent reply almost at once.
+    let clock = conv === 0 && from === PRELOADED_BEATS ? startDelay + script[from - 1].hold : REPLY_LAG_MS
 
-    // Only the first conversation waits out the cross-card stagger; after
-    // that the phones have already drifted apart on their own.
-    let clock = convIndex === 0 ? startDelay : SWITCH_GAP_MS
-
-    script.forEach((beat, i) => {
+    for (let i = from; i < script.length; i++) {
+      const beat = script[i]
       if (beat.from === "agent") {
         at(clock, () => setTyping(true))
         clock += TYPING_MS
         at(clock, () => setTyping(false))
       }
-      at(clock, () => setStep(i + 1))
+      at(clock, () => setPos((p) => ({ ...p, step: i + 1 })))
       clock += beat.hold
+    }
+
+    at(clock, () => setPos((p) => ({ ...p, step: script.length + 1 })))
+    clock += OUTCOME_HOLD_MS
+    at(clock, () => {
+      startStep.current = 1
+      setPos({ conv: (conv + 1) % agent.conversations.length, step: 1 })
     })
 
-    at(clock, () => setStep(script.length + 1))
-    clock += OUTCOME_HOLD_MS
-    at(clock, () => setConvIndex((i) => (i + 1) % agent.conversations.length))
-
     return () => timers.forEach(window.clearTimeout)
-  }, [convIndex, inView, prefersReducedMotion, script, agent.conversations.length, startDelay])
+  }, [conv, prefersReducedMotion, script, agent.conversations.length, startDelay])
 
-  // Off-screen or reduced motion: the finished conversation, no playback.
-  const settled = prefersReducedMotion || !inView
-  const visibleBeats = settled ? script : script.slice(0, step)
-  const showOutcome = settled || step > script.length
+  // Reduced motion: the finished conversation, no playback.
+  const settled = prefersReducedMotion
+  const visibleBeats = settled ? script : script.slice(0, pos.step)
+  const showOutcome = settled || pos.step > script.length
+  // Endless decorative loops (waveform, ping) have no business running while
+  // the phone is off-screen; the conversation itself does.
+  const animating = !prefersReducedMotion && inView
 
   const Icon = agent.icon
 
@@ -320,17 +334,17 @@ function AgentCard({ agent, startDelay }: { agent: Agent; startDelay: number }) 
               <p className="truncate text-[13px] font-bold text-ran-text-on-light">נפוץ&apos;</p>
               <p className="truncate text-[10.5px] text-ran-text-on-light-muted">
                 {agent.isCall ? (
-                  <CallStatus key={convIndex} label={agent.status} running={!settled} />
+                  <CallStatus key={conv} label={agent.status} running={!settled} />
                 ) : (
                   agent.status
                 )}
               </p>
             </div>
             {agent.isCall ? (
-              <Waveform accent={agent.accent} active={!settled} />
+              <Waveform accent={agent.accent} active={animating} />
             ) : (
               <span className="relative flex h-2 w-2 shrink-0">
-                {!settled && (
+                {animating && (
                   <span
                     className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
                     style={{ backgroundColor: agent.accent }}
@@ -354,9 +368,18 @@ function AgentCard({ agent, startDelay }: { agent: Agent; startDelay: number }) 
               background: `radial-gradient(120% 120% at 80% 0%, color-mix(in srgb, ${agent.accent} 10%, var(--surface-subtle)) 0%, var(--surface-subtle) 70%)`,
             }}
           >
-            <AnimatePresence mode="wait">
+            {/* A fixed "today" chip so the top of the thread is never bare
+                glass while a short exchange is still filling in. */}
+            <span className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-ran-surface-light-raised/80 px-2.5 py-1 text-[10px] font-medium text-ran-text-on-light-muted shadow-[0_1px_6px_-2px_rgba(17,17,17,0.15)]">
+              היום
+            </span>
+
+            {/* initial={false}: the page loads with the first conversation
+                already on the phone, so it must be in the server HTML and not
+                fade up from nothing. Every later swap still crossfades. */}
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={convIndex}
+                key={conv}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -369,7 +392,7 @@ function AgentCard({ agent, startDelay }: { agent: Agent; startDelay: number }) 
               >
                 {visibleBeats.map((beat, i) => (
                   <Bubble
-                    key={`${agent.uid}-${convIndex}-${i}`}
+                    key={`${agent.uid}-${conv}-${i}`}
                     beat={beat}
                     accent={agent.accent}
                     isCall={agent.isCall}
