@@ -437,6 +437,80 @@ export type Database = {
           },
         ]
       }
+      notification_seen: {
+        Row: {
+          seen_at: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          seen_at?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          seen_at?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_seen_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          tenant_id: string
+          title: string
+          urgent: boolean
+        }
+        Insert: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          tenant_id: string
+          title: string
+          urgent?: boolean
+        }
+        Update: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          tenant_id?: string
+          title?: string
+          urgent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
