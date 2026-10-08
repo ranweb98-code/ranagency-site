@@ -343,7 +343,7 @@ export function FoundingOfferSection() {
           </MagneticButton>
 
           <p className="text-center text-xs text-ran-text-on-light-muted">
-            כל המחירים לפני מע״מ · מחיר המייסדים מותנה בהתחייבות ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
+            המחירים סופיים, לא מתווסף מע״מ ·מחיר המייסדים מותנה בהתחייבות ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
           </p>
         </Reveal>
       </SectionContainer>
