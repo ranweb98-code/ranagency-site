@@ -245,6 +245,21 @@ export function FoundingOfferSection() {
                     במקום <s>{plan.monthlyList}₪</s>
                   </p>
 
+                  <p
+                    className={cn(
+                      "mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                      plan.featured
+                        ? "bg-ran-text-on-dark/10 text-ran-text-on-dark"
+                        : "bg-ran-text-on-light/[0.06] text-ran-text-on-light"
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="size-1.5 rounded-full bg-current opacity-60"
+                    />
+                    התשלום החודשי משתנה לפי גודל העסק
+                  </p>
+
                   {/* Setup gets its own labelled row. Run together with the
                       monthly price on one line, the two "was" figures sit
                       next to two current ones and bidi reordering leaves the
