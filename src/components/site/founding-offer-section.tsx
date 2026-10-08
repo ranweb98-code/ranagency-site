@@ -45,6 +45,7 @@ const SINGLE_CHANNEL: Record<ChannelId, Omit<Plan, "name" | "featured" | "choosa
     setupList: "3,900",
     includes: [
       "מענה תוך שניות, 24/7",
+      "מערכת CRM מלאה כלולה בחבילה",
       "עברית טבעית, לא תשובות רובוטיות",
       "איסוף פרטי לידים אוטומטי",
       "תזכורת תור יזומה יום לפני",
@@ -59,6 +60,7 @@ const SINGLE_CHANNEL: Record<ChannelId, Omit<Plan, "name" | "featured" | "choosa
     setupList: "3,400",
     includes: [
       "מענה תוך שניות, 24/7",
+      "מערכת CRM מלאה כלולה בחבילה",
       "עברית טבעית, לא תשובות רובוטיות",
       "איסוף פרטי לידים אוטומטי",
       "מענה להודעות פרטיות ולתגובות",
@@ -74,7 +76,7 @@ const PLANS: Plan[] = [
     ...SINGLE_CHANNEL.whatsapp,
   },
   {
-    name: "שני ערוצים + CRM",
+    name: "שני ערוצים",
     channels: "וואטסאפ + אינסטגרם",
     monthly: "890",
     monthlyList: "1,190",
@@ -84,7 +86,7 @@ const PLANS: Plan[] = [
     includes: [
       "כל מה שבחבילת ערוץ אחד",
       "סוכן אינסטגרם להודעות פרטיות",
-      "דשבורד CRM אחד לכל הערוצים",
+      "כל הערוצים מתנקזים ל-CRM אחד",
       "סיווג ליד חם/קר וסיכום שיחה",
       "קביעת תורים אוטומטית ביומן",
     ],
