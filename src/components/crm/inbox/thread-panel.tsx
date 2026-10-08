@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
 import { useToast } from "@/components/crm/shell/toast"
 import { Avatar } from "@/components/crm/ui/avatar"
-import { CHANNELS, ChannelDot } from "@/components/crm/ui/channel"
+import { CHANNELS, ChannelTag } from "@/components/crm/ui/channel"
 import { Glass } from "@/components/crm/ui/glass"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { ItemCard } from "@/components/crm/ui/item-card"
@@ -70,7 +70,7 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               <Link href={`${base}/contacts/${contact.id}`} className="truncate text-[15px] font-medium hover:underline">
                 {contact.name}
               </Link>
-              <ChannelDot channel={contact.channel} className="size-5 [&_svg]:size-3" />
+              <ChannelTag channel={contact.channel} />
             </div>
             <p className="truncate text-xs text-crm-muted">
               <bdi dir="ltr">{contact.phone}</bdi> · {pack.stages[stageIndex]?.label}

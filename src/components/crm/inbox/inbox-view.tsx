@@ -4,15 +4,15 @@ import { Flame, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { Avatar } from "@/components/crm/ui/avatar"
-import { ChannelDot } from "@/components/crm/ui/channel"
+import { CHANNELS, ChannelDot, ChannelTag } from "@/components/crm/ui/channel"
 import { Glass } from "@/components/crm/ui/glass"
 import { PageHeader } from "@/components/crm/ui/page-header"
 import { formatRelative } from "@/lib/crm/format"
-import type { Contact, CrmData } from "@/lib/crm/types"
+import type { Channel, Contact, CrmData } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
 import { ThreadPanel } from "./thread-panel"
 
-type Filter = "all" | "unread" | "mine" | "hot"
+type Filter = "all" | "unread" | "mine" | "hot" | Channel
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "הכול" },
@@ -26,6 +26,8 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
   // Conversations about deals that already closed are history, not inbox.
   const threads = useMemo(() => data.contacts.filter((c) => c.stageId !== lastStage), [data.contacts, lastStage])
 
+  // One chip per channel the business actually runs, and only when there is more than one to tell apart.
+  const channelFilters: { value: Filter; label: string }[] = data.tenant.agents.length > 1 ? data.tenant.agents.map((a) => ({ value: a, label: CHANNELS[a].label })) : []
   const [filter, setFilter] = useState<Filter>("all")
   const [query, setQuery] = useState("")
   const [selectedId, setSelectedId] = useState(() => (threads.some((c) => c.id === initialId) ? (initialId as string) : threads[0]?.id))
@@ -35,6 +37,7 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
     if (filter === "unread" && !c.unread) return false
     if (filter === "mine" && c.handledBy !== "human") return false
     if (filter === "hot" && c.temperature !== "hot") return false
+    if (filter in CHANNELS && c.channel !== filter) return false
     const q = query.trim()
     return !q || c.name.includes(q) || c.phone.replace(/-/g, "").includes(q.replace(/-/g, ""))
   })
@@ -59,7 +62,7 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
             />
           </label>
           <div role="radiogroup" aria-label="סינון שיחות" className="crm-hide-scrollbar mb-2.5 flex gap-1.5 overflow-x-auto">
-            {FILTERS.map((f) => (
+            {[...FILTERS, ...channelFilters].map((f) => (
               <button
                 key={f.value}
                 type="button"
@@ -122,6 +125,9 @@ function ConversationRow({ contact, now, active, onSelect }: { contact: Contact;
             {contact.temperature === "hot" ? <Flame className="size-3.5 shrink-0 text-[#ff5b2e]" aria-label="ליד חם" /> : null}
           </span>
           <span className="shrink-0 text-[10.5px] text-crm-muted">{formatRelative(last?.at ?? contact.lastContactAt, now)}</span>
+        </span>
+        <span className="mt-1 flex items-center gap-1.5">
+          <ChannelTag channel={contact.channel} className="py-0 text-[10px]" />
         </span>
         <span className="mt-0.5 flex items-center justify-between gap-2">
           <span className={cn("truncate text-xs", contact.unread ? "text-crm-ink" : "text-crm-muted")}>
