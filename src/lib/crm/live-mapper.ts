@@ -116,6 +116,7 @@ export function buildCrmData(rows: LiveRows, ctx: { now: Date; photoUrl: (path: 
     meta: parseMeta(c.meta),
     photos: c.photos.length,
     photoUrls: c.photos.map(ctx.photoUrl),
+    photoPaths: c.photos,
     status: oneOf(c.status, ITEM_STATUS, "available"),
     sent: c.sent_count,
     dealValue: c.deal_value === null ? undefined : Number(c.deal_value),
