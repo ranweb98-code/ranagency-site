@@ -51,41 +51,40 @@ export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metric
         <StatTile href={`${base}/calendar`} icon={CalendarCheck} value={String(metrics.upcoming7)} label={`${vocab.bookings} קרובים\nב־7 ימים`} badge={`${metrics.upcomingToday} היום`} badgeTone="soft" />
       </PageHeader>
 
-      {/* On a phone the two column groups dissolve (`contents`) so their cards
-          can be re-ordered as one list: the profile sits right under the deal
-          cards that select it, instead of five scrolls further down. */}
+      {/* One 12-column grid, laid out in rows that end together so the page
+          has no hollow corners: deals + profile, revenue + details, calendar +
+          funnel + (agent work over ROI), then the needs-you strip across the page.
+          On a phone the grouping wrappers dissolve (`contents`) and `order-*`
+          puts the profile right under the deal cards that select it. */}
       <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-12">
-        <div className="contents lg:col-span-8 lg:grid lg:grid-cols-2 lg:content-start lg:gap-4">
-          <SectionCard
-            title={vocab.dealsTitle}
-            className="order-1 lg:order-none lg:col-span-2"
-            menu={[
-              { label: `כל ה${vocab.people}`, href: `${base}/contacts` },
-              { label: "צינור המכירות", href: `${base}/pipeline` },
-              { label: "היומן", href: `${base}/calendar` },
-            ]}
-          >
-            <DealCards deals={deals} catalog={data.catalog} stages={data.pack.stages} detailBase={`${base}/contacts`} selectedId={selected.id} onSelect={setSelectedId} />
-          </SectionCard>
-          <RevenueCard className="order-4 lg:order-none lg:col-span-2" data={data} base={base} />
-          <CalendarCard className="order-5 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
-          <FunnelCard className="order-6 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
+        <SectionCard
+          title={vocab.dealsTitle}
+          className="order-1 lg:order-none lg:col-span-8"
+          menu={[
+            { label: `כל ה${vocab.people}`, href: `${base}/contacts` },
+            { label: "צינור המכירות", href: `${base}/pipeline` },
+            { label: "היומן", href: `${base}/calendar` },
+          ]}
+        >
+          <DealCards deals={deals} catalog={data.catalog} stages={data.pack.stages} detailBase={`${base}/contacts`} selectedId={selected.id} onSelect={setSelectedId} />
+        </SectionCard>
+        <div className="order-2 lg:order-none lg:col-span-4 [&>*]:h-full">
+          <ProfileCard contact={selected} data={data} base={base} />
         </div>
 
-        <div className="contents lg:col-span-4 lg:grid lg:content-start lg:gap-4">
-          <div className="order-2 lg:order-none">
-            <ProfileCard contact={selected} data={data} base={base} />
-          </div>
-          <div className="order-3 lg:order-none">
-            <DetailsCard contact={selected} data={data} base={base} />
-          </div>
+        <RevenueCard className="order-4 lg:order-none lg:col-span-8" data={data} base={base} />
+        <div className="order-3 lg:order-none lg:col-span-4 [&>*]:h-full">
+          <DetailsCard contact={selected} data={data} base={base} />
         </div>
 
-        <div className="order-7 grid grid-cols-1 gap-3 md:gap-4 lg:order-none lg:col-span-12 lg:grid-cols-3">
-          <AgentWorkCard data={data} metrics={metrics} />
-          <RoiCard data={data} metrics={metrics} />
-          <NeedsYouCard data={data} metrics={metrics} base={base} />
+        <CalendarCard className="order-5 lg:order-none lg:col-span-4" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
+        <FunnelCard className="order-6 lg:order-none lg:col-span-4" metrics={metrics} base={base} peopleLabel={vocab.people} />
+        <div className="contents lg:col-span-4 lg:flex lg:flex-col lg:gap-4 lg:[&>*:last-child]:flex-1">
+          <AgentWorkCard className="order-7 lg:order-none" data={data} metrics={metrics} />
+          <RoiCard className="order-8 lg:order-none" data={data} metrics={metrics} />
         </div>
+
+        <NeedsYouCard className="order-9 lg:order-none lg:col-span-12" wide data={data} metrics={metrics} base={base} />
       </div>
     </div>
   )

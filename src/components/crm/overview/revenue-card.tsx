@@ -11,7 +11,6 @@ import { REVENUE_RANGES, niceScale, revenueSeries, shortDay, type RevenueBucket,
 import type { CrmData } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
 
-const PLOT = "h-[168px] md:h-[200px]"
 /** A jump of more than 5× is a comparison with an almost empty period, not news worth a badge. */
 const DELTA_CEILING = 500
 const MONTH_LONG = new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric", timeZone: "UTC" })
@@ -21,7 +20,10 @@ const dayAsDate = (day: string) => new Date(`${day}T00:00:00Z`)
 /** Axis numbers carry no currency sign: the figure above them says ₪. */
 const tick = (value: number) => (value === 0 ? "0" : value >= 1000 ? `${Number((value / 1000).toFixed(1))}K` : String(value))
 
+const TIME = new Intl.DateTimeFormat("he-IL", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+
 function describe(bucket: RevenueBucket, kind: RevenueSeries["kind"]): string {
+  if (kind === "hour") return `${bucket.dayTag}, ${TIME.format(new Date(bucket.from))}–${TIME.format(new Date(bucket.to))}`
   if (kind === "day") return `${WEEKDAY.format(dayAsDate(bucket.from))}, ${shortDay(bucket.from)}`
   if (kind === "week") return `${shortDay(bucket.from)} עד ${shortDay(bucket.to)}`
   return bucket.partial ? `${MONTH_LONG.format(dayAsDate(bucket.from))} (עד היום)` : MONTH_LONG.format(dayAsDate(bucket.from))
@@ -46,6 +48,9 @@ export function RevenueCard({ data, className, base }: { data: CrmData; classNam
         { label: `כל ה${vocab.people}`, href: `${base}/contacts` },
       ]}
     >
+      {/* The card can be stretched by the row it sits in (next to a taller card):
+          the chart takes whatever height is left instead of leaving a hollow. */}
+      <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -61,14 +66,15 @@ export function RevenueCard({ data, className, base }: { data: CrmData; classNam
             ) : null}
           </div>
           <p className="mt-1.5 text-[12px] text-crm-muted">
-            {vocab.revenue} · {deals(series.count)}
+            {vocab.revenue} · {REVENUE_RANGES.find((r) => r.id === range)?.window} · {deals(series.count)}
             {series.count > 0 ? ` · ממוצע ${formatMoney(series.average)} לעסקה` : ""}
           </p>
         </div>
-        <Segmented<RevenueRange> label="טווח הזמן" value={range} onChange={setRange} options={REVENUE_RANGES.map((r) => ({ value: r.id, label: r.label }))} />
+        <Segmented<RevenueRange> label="טווח הזמן" className="max-w-full overflow-x-auto crm-hide-scrollbar" value={range} onChange={setRange} options={REVENUE_RANGES.map((r) => ({ value: r.id, label: r.label }))} />
       </div>
 
-      <RevenueChart series={series} emptyHint={data.demo ? undefined : `כשעסקה תסומן כנסגרה היא תופיע כאן.`} />
+      <RevenueChart key={range} series={series} emptyHint={data.demo ? undefined : `כשעסקה תסומן כנסגרה היא תופיע כאן.`} />
+      </div>
     </SectionCard>
   )
 }
@@ -81,8 +87,8 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
   const scale = useMemo(() => niceScale(Math.max(0, ...buckets.map((b) => b.total))), [buckets])
   const empty = series.total === 0
 
-  // Label roughly six places along the axis, always including the newest.
-  const every = Math.ceil(n / 6)
+  // Label roughly six places along the axis (all of a short one), always including the newest.
+  const every = n <= 8 ? 1 : Math.ceil(n / 6)
   const labelled = (i: number) => (n - 1 - i) % every === 0
 
   const activeBucket = active === null ? null : buckets[active]
@@ -99,14 +105,14 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
   }
 
   return (
-    <figure className="mt-5">
+    <figure className="mt-5 flex flex-1 flex-col">
       <figcaption className="sr-only">
-        הכנסות שנסגרו, {kind === "day" ? "לפי יום" : kind === "week" ? "לפי שבוע" : "לפי חודש"}. חצים ימינה ושמאלה עוברים בין התקופות.
+        הכנסות שנסגרו, {kind === "hour" ? "לפי שעה" : kind === "day" ? "לפי יום" : kind === "week" ? "לפי שבוע" : "לפי חודש"}. חצים ימינה ושמאלה עוברים בין התקופות.
       </figcaption>
 
-      <div className="flex gap-2">
+      <div className="grid flex-1 grid-cols-[2rem_minmax(0,1fr)] grid-rows-[minmax(168px,1fr)_auto] gap-x-2 md:grid-rows-[minmax(200px,1fr)_auto]">
         {/* y axis: the numbers the gridlines stand for */}
-        <div aria-hidden className={cn("relative w-8 shrink-0 text-[10.5px] text-crm-muted tabular-nums", PLOT)}>
+        <div aria-hidden className="relative text-[10.5px] text-crm-muted tabular-nums">
           {[0, 1, 2, 3].map((k) => (
             <span key={k} className="absolute end-0 -translate-y-1/2 leading-none" style={{ bottom: `${(k / 3) * 100}%` }}>
               {tick(scale.step * k)}
@@ -114,7 +120,7 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
           ))}
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="contents">
           <div
             role="group"
             aria-label="גרף הכנסות"
@@ -124,7 +130,7 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
             onBlur={() => setActive(null)}
             // a finger lifting fires "leave" at once; only a mouse leaving should hide the readout
             onPointerLeave={(event) => event.pointerType !== "touch" && setActive(null)}
-            className={cn("relative rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-crm-ink/25", PLOT)}
+            className="relative rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-crm-ink/25"
           >
             {[0, 1, 2, 3].map((k) => (
               <span key={k} aria-hidden className="absolute inset-x-0 h-px bg-black/[0.07]" style={{ bottom: `${(k / 3) * 100}%` }} />
@@ -168,7 +174,7 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
           </div>
 
           {/* x axis */}
-          <div aria-hidden className="mt-2 flex text-[10.5px] text-crm-muted">
+          <div aria-hidden className="col-start-2 mt-2 flex text-[10.5px] text-crm-muted">
             {buckets.map((bucket, i) => (
               <div key={bucket.from} className="flex min-w-0 flex-1 justify-center">
                 {labelled(i) ? <span className={cn("shrink-0 whitespace-nowrap leading-none", bucket.current && "font-medium text-crm-ink")}>{bucket.label}</span> : null}

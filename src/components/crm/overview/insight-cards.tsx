@@ -6,11 +6,12 @@ import { CHANNELS } from "@/components/crm/ui/channel"
 import { Ltr } from "@/components/crm/ui/ltr"
 import { SectionCard } from "@/components/crm/ui/section-card"
 import { formatMoney, formatRelative } from "@/lib/crm/format"
+import { cn } from "@/lib/utils"
 import type { Metrics } from "@/lib/crm/metrics"
 import type { Channel, CrmData } from "@/lib/crm/types"
 
 /** What the agents did while the owner was busy — the "why am I paying" card. */
-export function AgentWorkCard({ data, metrics }: { data: CrmData; metrics: Metrics }) {
+export function AgentWorkCard({ data, metrics, className }: { data: CrmData; metrics: Metrics; className?: string }) {
   const counts = new Map<Channel, number>()
   for (const c of data.contacts) counts.set(c.channel, (counts.get(c.channel) ?? 0) + 1)
   const total = data.contacts.length || 1
@@ -24,6 +25,7 @@ export function AgentWorkCard({ data, metrics }: { data: CrmData; metrics: Metri
   return (
     <SectionCard
       title="מה הסוכנים עשו"
+      className={className}
       menu={[
         { label: "מסך הסוכנים", href: `${data.basePath}/agents` },
         { label: "השיחות", href: `${data.basePath}/inbox` },
@@ -60,9 +62,9 @@ export function AgentWorkCard({ data, metrics }: { data: CrmData; metrics: Metri
 }
 
 /** Closed revenue against the subscription — the number that keeps a client. */
-export function RoiCard({ data, metrics }: { data: CrmData; metrics: Metrics }) {
+export function RoiCard({ data, metrics, className }: { data: CrmData; metrics: Metrics; className?: string }) {
   return (
-    <div className="relative flex flex-col justify-between overflow-hidden rounded-[28px] bg-crm-accent p-5 text-white shadow-[0_24px_48px_-28px_rgba(24,32,64,0.5)] md:rounded-[34px]">
+    <div className={cn("relative flex flex-col justify-between gap-6 overflow-hidden rounded-[28px] bg-crm-accent p-5 text-white shadow-[0_24px_48px_-28px_rgba(24,32,64,0.5)] md:rounded-[34px]", className)}>
       <span aria-hidden className="absolute -start-10 -top-12 size-48 rounded-full bg-white/[0.05]" />
       <span aria-hidden className="absolute -bottom-16 end-6 size-40 rounded-full bg-black/10" />
       <div className="relative">
@@ -78,7 +80,7 @@ export function RoiCard({ data, metrics }: { data: CrmData; metrics: Metrics }) 
 }
 
 /** Who is waiting on a human — the short list worth opening the app for. */
-export function NeedsYouCard({ data, metrics, base }: { data: CrmData; metrics: Metrics; base: string }) {
+export function NeedsYouCard({ data, metrics, base, className, wide }: { data: CrmData; metrics: Metrics; base: string; className?: string; /** Spans the page: the people sit side by side instead of in a list. */ wide?: boolean }) {
   const waiting = data.contacts
     .filter((c) => c.stageId !== data.pack.stages[data.pack.stages.length - 1].id && (c.handledBy === "human" || c.unread > 0))
     .slice(0, 4)
@@ -86,6 +88,7 @@ export function NeedsYouCard({ data, metrics, base }: { data: CrmData; metrics: 
   return (
     <SectionCard
       title={`דורש אתכם${metrics.needsHuman ? ` · ${metrics.needsHuman}` : ""}`}
+      className={className}
       actions={
         <Link href={`${base}/inbox`} className="text-xs font-medium text-crm-ink/70 underline-offset-4 hover:underline">
           לכל השיחות
@@ -95,7 +98,7 @@ export function NeedsYouCard({ data, metrics, base }: { data: CrmData; metrics: 
       {waiting.length === 0 ? (
         <p className="rounded-2xl bg-black/[0.045] px-4 py-6 text-center text-sm text-crm-muted">הכול מטופל. הסוכנים מחזיקים את החזית.</p>
       ) : (
-        <ul className="space-y-1.5">
+        <ul className={cn("space-y-1.5", wide && "lg:grid lg:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] lg:gap-2 lg:space-y-0")}>
           {waiting.map((c) => (
             <li key={c.id}>
               <Link href={`${base}/inbox?c=${c.id}`} className="group flex items-center gap-3 rounded-2xl bg-black/[0.045] px-3 py-2.5 transition-colors hover:bg-black/[0.08]">

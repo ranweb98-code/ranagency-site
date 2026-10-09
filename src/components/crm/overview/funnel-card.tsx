@@ -20,6 +20,7 @@ export function FunnelCard({ metrics, base, peopleLabel, className }: { metrics:
     <SectionCard
       title="משפך מכירות"
       className={className}
+      bodyClassName="flex flex-col"
       menu={[
         { label: "צינור המכירות", href: `${base}/pipeline` },
         { label: `${peopleLabel} חמים`, href: `${base}/contacts?temp=hot` },
@@ -41,7 +42,7 @@ export function FunnelCard({ metrics, base, peopleLabel, className }: { metrics:
         />
       </div>
 
-      <ol className="flex flex-col items-center gap-2">
+      <ol className="flex flex-1 flex-col items-center justify-between gap-2">
         {rows.map((row, i) => {
           const amount = mode === "weighted" ? row.weighted : row.total
           // A funnel silhouette: each step narrower than the last. The figure

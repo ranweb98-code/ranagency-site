@@ -77,6 +77,7 @@ export function NotificationsMenu({
   }
 
   const cutoff = highlightFrom ? Date.parse(highlightFrom) : 0
+  const freshCount = feed.items.filter((n) => Date.parse(n.at) > cutoff).length
   const urgentOpen = feed.items.some((n) => n.urgent && Date.parse(n.at) > (seenAt ? Date.parse(seenAt) : 0))
 
   return (
@@ -90,7 +91,10 @@ export function NotificationsMenu({
 
       {open ? (
         <div id={id} role="dialog" aria-label="התראות" className="crm-menu crm-pop fixed inset-x-3 top-20 z-[200] max-h-[70dvh] overflow-y-auto rounded-[28px] p-2 sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-[380px]">
-          <h2 className="px-3 pb-1.5 pt-2 text-[13px] font-medium text-crm-muted">התראות</h2>
+          <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-2">
+            <h2 className="text-[15px] font-medium">התראות</h2>
+            {freshCount > 0 ? <span className="rounded-full bg-crm-accent px-2.5 py-0.5 text-[11px] font-medium text-white">{freshCount} חדשות</span> : null}
+          </div>
           {feed.items.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm leading-relaxed text-crm-muted">
               אין התראות עדיין.
@@ -98,14 +102,24 @@ export function NotificationsMenu({
               כשיגיע ליד חדש, ייקבע תור או שהסוכן יצטרך אתכם, זה יופיע כאן.
             </p>
           ) : (
-            <ul>
+            <ul className="space-y-1 pb-1">
               {feed.items.map((n) => {
                 const { icon: Icon, label } = KIND[n.kind]
                 const fresh = Date.parse(n.at) > cutoff
                 return (
                   <li key={n.id}>
-                    <Link href={noticeHref(base, n)} onClick={() => setOpen(false)} className={cn("flex items-start gap-3 rounded-[22px] p-3 transition-colors hover:bg-black/[0.06] focus-visible:bg-black/[0.06] focus-visible:outline-none", fresh && "bg-black/[0.04]")}>
-                      <span className={cn("mt-0.5 grid size-9 shrink-0 place-items-center rounded-full", n.urgent ? "bg-[#ff4d2e] text-white" : "bg-crm-ink text-white")}>
+                    <Link href={noticeHref(base, n)} onClick={() => setOpen(false)} className={cn(
+                        // No grey blocks on the white panel: what is new wears a wash of the
+                        // brand colour (warm for "the agent needs you"), what was seen stays plain.
+                        "flex items-start gap-3 rounded-[22px] p-3 transition-colors focus-visible:outline-none",
+                        fresh
+                          ? n.urgent
+                            ? "bg-[#fff0eb] hover:bg-[#ffe5dd] focus-visible:bg-[#ffe5dd]"
+                            : "bg-[color-mix(in_oklab,var(--crm-accent)_9%,white)] hover:bg-[color-mix(in_oklab,var(--crm-accent)_14%,white)] focus-visible:bg-[color-mix(in_oklab,var(--crm-accent)_14%,white)]"
+                          : "hover:bg-[color-mix(in_oklab,var(--crm-accent)_6%,white)] focus-visible:bg-[color-mix(in_oklab,var(--crm-accent)_6%,white)]",
+                      )}
+                    >
+                      <span className={cn("mt-0.5 grid size-9 shrink-0 place-items-center rounded-full text-white", n.urgent ? "bg-[#ff4d2e]" : "bg-crm-accent")}>
                         <Icon className="size-4" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">

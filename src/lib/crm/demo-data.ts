@@ -204,7 +204,12 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
       lastMs = closedMs
     } else if (won === "recent") {
       createdMs = nowMs - (30 + rand() * 25) * DAY
-      closedMs = nowMs - (1 + rand() * 25) * DAY
+      // One closed this morning, one in the last few days, one this week: a live
+      // business has closings today and this week, and the revenue chart's "today"
+      // and "this week" views would otherwise be empty. (Still one `rand()` call.)
+      const r = rand()
+      const age = [0.12 + r * 0.25, 1.4 + r * 1.6, 4 + r * 2, 1 + r * 25][recentSeen - 1]
+      closedMs = nowMs - age * DAY
       lastMs = closedMs
     } else if (index === 0) {
       // Fresh leads: the first two are minutes old so the inbox feels alive.

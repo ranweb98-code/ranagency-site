@@ -64,6 +64,7 @@ export function CalendarCard({
     <SectionCard
       title={title}
       className={className}
+      bodyClassName="flex flex-col"
       actions={
         <Link href={`${base}/calendar`} aria-label="פתיחת היומן המלא">
           <IconButton label="פתיחת היומן המלא" size="sm" tabIndex={-1} className="pointer-events-none">
@@ -124,7 +125,7 @@ export function CalendarCard({
         })}
       </div>
 
-      <ul className="mt-3 space-y-1.5" aria-live="polite">
+      <ul className="mt-auto space-y-1.5 pt-3" aria-live="polite">
         {agenda.length === 0 ? (
           <li className="rounded-2xl bg-black/[0.04] px-3 py-2.5 text-xs text-crm-muted">אין אירועים ביום שנבחר</li>
         ) : (
