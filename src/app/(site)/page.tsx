@@ -12,6 +12,11 @@ import { FoundingOfferSection } from "@/components/site/founding-offer-section";
 import { CtaFaqSection } from "@/components/site/cta-faq-section";
 import { Footer } from "@/components/site/footer";
 
+// The CRM preview is generated demo data stamped with "now"; without this the
+// page is frozen at the deploy and its dates age. Same hourly refresh the demo
+// workspace itself uses.
+export const revalidate = 3600;
+
 export default function Home() {
   return (
     <main id="main-content" className="flex min-h-screen flex-col">

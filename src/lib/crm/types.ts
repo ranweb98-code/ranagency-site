@@ -153,6 +153,8 @@ export interface CatalogItem extends CatalogSeed {
   /** Real photos (public URLs, in display order). Demo items have none and show
    *  generated tiles instead, so `photos` stays the count either way. */
   photoUrls?: string[]
+  /** Storage paths of the real photos, same order as `photoUrls` (live items only). */
+  photoPaths?: string[]
 }
 
 export interface Message {

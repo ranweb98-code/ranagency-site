@@ -25,3 +25,18 @@ export function ChannelDot({ channel, className }: { channel: Channel; className
     </span>
   )
 }
+
+/* The dot says "which channel" only to someone who already knows the colours.
+   The tag spells it out, so a conversation never has to be decoded. */
+export function ChannelTag({ channel, className }: { channel: Channel; className?: string }) {
+  const { icon: Icon, color, label } = CHANNELS[channel]
+  return (
+    <span
+      className={cn("inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pe-2 ps-1.5 text-[11px] font-semibold leading-4", className)}
+      style={{ color, backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)` }}
+    >
+      <Icon className="size-3" aria-hidden />
+      {label}
+    </span>
+  )
+}

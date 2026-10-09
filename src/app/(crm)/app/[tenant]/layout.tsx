@@ -4,10 +4,11 @@ import type { ReactNode } from "react"
 
 import { CrmShell } from "@/components/crm/shell/crm-shell"
 import { getLiveCrm } from "@/lib/crm/live"
+import { loadNotifications } from "@/lib/crm/notifications-server"
 import { requireSession } from "@/lib/crm/session"
 import { themeStyle } from "@/lib/crm/theme"
 import { signOut } from "../actions"
-import { createLead } from "./actions"
+import { createLead, markNotificationsSeen, sendTestNotification } from "./actions"
 
 type Params = { params: Promise<{ tenant: string }> }
 
@@ -23,7 +24,7 @@ export default async function LiveTenantLayout({ children, params }: Params & { 
   // Row level security answers "may this person see this business at all":
   // no membership means no row, which is a plain 404 (it doesn't confirm that
   // the business exists).
-  const data = await getLiveCrm(tenant)
+  const [data, notifications] = await Promise.all([getLiveCrm(tenant), loadNotifications(tenant)])
   if (!data) notFound()
 
   return (
@@ -50,6 +51,9 @@ export default async function LiveTenantLayout({ children, params }: Params & { 
         catalogLabel={data.pack.vocab.catalog}
         itemOptions={data.catalog.map((c) => ({ id: c.id, title: c.title }))}
         unread={data.contacts.reduce((sum, c) => sum + c.unread, 0)}
+        notifications={notifications}
+        markNotificationsSeen={markNotificationsSeen.bind(null, data.tenant.slug)}
+        sendTestNotification={session.isSuperAdmin ? sendTestNotification.bind(null, data.tenant.slug) : undefined}
         search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
       >
         {children}

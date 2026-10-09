@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
 
 import { CrmShell } from "@/components/crm/shell/crm-shell"
+import { demoNotifications } from "@/lib/crm/notifications"
 import { getCrm, listTenants } from "@/lib/crm/repository"
 import { themeStyle } from "@/lib/crm/theme"
 
@@ -36,6 +37,7 @@ export default async function TenantLayout({ children, params }: Params & { chil
         catalogLabel={data.pack.vocab.catalog}
         itemOptions={data.catalog.map((c) => ({ id: c.id, title: c.title }))}
         unread={data.contacts.reduce((sum, c) => sum + c.unread, 0)}
+        notifications={demoNotifications(data)}
         search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
       >
         {children}

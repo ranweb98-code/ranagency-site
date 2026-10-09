@@ -45,6 +45,7 @@ const SINGLE_CHANNEL: Record<ChannelId, Omit<Plan, "name" | "featured" | "choosa
     setupList: "3,900",
     includes: [
       "מענה תוך שניות, 24/7",
+      "מערכת CRM מלאה כלולה בחבילה",
       "עברית טבעית, לא תשובות רובוטיות",
       "איסוף פרטי לידים אוטומטי",
       "תזכורת תור יזומה יום לפני",
@@ -59,6 +60,7 @@ const SINGLE_CHANNEL: Record<ChannelId, Omit<Plan, "name" | "featured" | "choosa
     setupList: "3,400",
     includes: [
       "מענה תוך שניות, 24/7",
+      "מערכת CRM מלאה כלולה בחבילה",
       "עברית טבעית, לא תשובות רובוטיות",
       "איסוף פרטי לידים אוטומטי",
       "מענה להודעות פרטיות ולתגובות",
@@ -74,7 +76,7 @@ const PLANS: Plan[] = [
     ...SINGLE_CHANNEL.whatsapp,
   },
   {
-    name: "שני ערוצים + CRM",
+    name: "שני ערוצים",
     channels: "וואטסאפ + אינסטגרם",
     monthly: "890",
     monthlyList: "1,190",
@@ -84,7 +86,7 @@ const PLANS: Plan[] = [
     includes: [
       "כל מה שבחבילת ערוץ אחד",
       "סוכן אינסטגרם להודעות פרטיות",
-      "דשבורד CRM אחד לכל הערוצים",
+      "כל הערוצים מתנקזים ל-CRM אחד",
       "סיווג ליד חם/קר וסיכום שיחה",
       "קביעת תורים אוטומטית ביומן",
     ],
@@ -245,6 +247,21 @@ export function FoundingOfferSection() {
                     במקום <s>{plan.monthlyList}₪</s>
                   </p>
 
+                  <p
+                    className={cn(
+                      "mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                      plan.featured
+                        ? "bg-ran-text-on-dark/10 text-ran-text-on-dark"
+                        : "bg-ran-text-on-light/[0.06] text-ran-text-on-light"
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="size-1.5 rounded-full bg-current opacity-60"
+                    />
+                    התשלום החודשי משתנה לפי גודל העסק
+                  </p>
+
                   {/* Setup gets its own labelled row. Run together with the
                       monthly price on one line, the two "was" figures sit
                       next to two current ones and bidi reordering leaves the
@@ -328,7 +345,7 @@ export function FoundingOfferSection() {
           </MagneticButton>
 
           <p className="text-center text-xs text-ran-text-on-light-muted">
-            כל המחירים לפני מע״מ · מחיר המייסדים מותנה בהתחייבות ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
+            המחירים סופיים, לא מתווסף מע״מ ·מחיר המייסדים מותנה בהתחייבות ל-12 חודשים · בתשלום שנתי מראש חודש נוסף חינם
           </p>
         </Reveal>
       </SectionContainer>

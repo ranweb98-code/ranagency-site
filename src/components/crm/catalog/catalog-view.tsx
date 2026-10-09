@@ -1,6 +1,6 @@
 "use client"
 
-import { ImageIcon, Images, Layers, Plus, Send, X } from "lucide-react"
+import { ImageIcon, ImagePlus, Images, Layers, Pencil, Plus, Send, X } from "lucide-react"
 import Link from "next/link"
 import { useState, type FormEvent } from "react"
 
@@ -17,6 +17,7 @@ import { StatTile } from "@/components/crm/ui/stat-tile"
 import { formatPrice } from "@/lib/crm/format"
 import type { CatalogItem, CrmData } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
+import { ItemEditor, type CatalogActions } from "./item-editor"
 
 const STATUS: Record<CatalogItem["status"], { label: string; tone: "ink" | "warm" | "soft" | "accent" }> = {
   available: { label: "זמין", tone: "soft" },
@@ -25,7 +26,9 @@ const STATUS: Record<CatalogItem["status"], { label: string; tone: "ink" | "warm
   sold: { label: "נמכר", tone: "ink" },
 }
 
-export function CatalogView({ data }: { data: CrmData }) {
+/** `actions` is only passed to someone who may edit a real workspace; without it
+ *  the page is read-only (or, in the demo, a sandbox that forgets on refresh). */
+export function CatalogView({ data, actions }: { data: CrmData; actions?: CatalogActions }) {
   const { pack, contacts } = data
   const base = data.basePath
   const toast = useToast()
@@ -34,6 +37,8 @@ export function CatalogView({ data }: { data: CrmData }) {
   // Items added in this session only: the demo has nowhere to keep them.
   const [extra, setExtra] = useState<CatalogItem[]>([])
   const [adding, setAdding] = useState(false)
+  // A live item being edited, or `"new"`. Keyed by id so the page's fresh data (after a save) shows up in the form.
+  const [editing, setEditing] = useState<string | "new" | null>(null)
   const catalog = [...data.catalog, ...extra]
 
   const addItem = (event: FormEvent<HTMLFormElement>) => {
@@ -53,6 +58,7 @@ export function CatalogView({ data }: { data: CrmData }) {
   const tags = [...new Set(catalog.flatMap((c) => c.tags))]
   const shown = catalog.filter((c) => tag === "all" || c.tags.includes(tag))
   const open = catalog.find((c) => c.id === openId)
+  const editedItem = editing && editing !== "new" ? (catalog.find((c) => c.id === editing) ?? null) : null
   const interested = (id: string) => contacts.filter((c) => c.itemId === id)
 
   return (
@@ -78,7 +84,23 @@ export function CatalogView({ data }: { data: CrmData }) {
         ))}
       </div>
 
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
+      {actions && catalog.length === 0 ? (
+        <Glass className="mx-auto mb-4 flex max-w-xl flex-col items-center px-6 py-10 text-center md:py-14">
+          <span className="mb-5 grid size-14 place-items-center rounded-full bg-crm-ink text-white">
+            <ImagePlus className="size-6" aria-hidden />
+          </span>
+          <h2 className="text-[22px] font-medium leading-tight tracking-tight">הוסיפו את ה{pack.vocab.catalogItem} הראשון</h2>
+          <p className="mt-2 max-w-md text-[14.5px] leading-relaxed text-crm-ink/70">
+            שם, מחיר ותמונות. הסוכנים שולחים אותם ללקוחות בשיחה, ועונים עליהם בלי שתצטרכו להקליד.
+          </p>
+          <button type="button" onClick={() => setEditing("new")} className={`${primaryButtonClass} mt-6`}>
+            <Plus className="size-4" aria-hidden />
+            הוספת {pack.vocab.catalogItem}
+          </button>
+        </Glass>
+      ) : null}
+
+      <ul className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3", actions && catalog.length === 0 && "hidden")}>
         {shown.map((item) => (
           <li key={item.id}>
             <button type="button" onClick={() => setOpenId(item.id)} className="group block w-full text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink">
@@ -117,11 +139,11 @@ export function CatalogView({ data }: { data: CrmData }) {
             </button>
           </li>
         ))}
-        {data.demo ? (
-        <li>
+        {data.demo || actions ? (
+          <li>
             <button
               type="button"
-              onClick={() => setAdding(true)}
+              onClick={() => (actions ? setEditing("new") : setAdding(true))}
               className="grid h-full min-h-[220px] w-full place-items-center rounded-[34px] border-2 border-dashed border-black/15 p-6 text-center transition-colors hover:border-black/30 hover:bg-white/40"
             >
               <span>
@@ -155,14 +177,35 @@ export function CatalogView({ data }: { data: CrmData }) {
         </form>
       </Modal>
 
+      {actions ? (
+        <Modal open={editing !== null} onClose={() => setEditing(null)} label={editing === "new" ? `${pack.vocab.catalogItem} חדש` : `עריכת ${pack.vocab.catalogItem}`} variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!max-h-[92dvh] md:!w-[min(94vw,40rem)]">
+          {editing !== null ? <ItemEditor key={editing} item={editedItem} noun={pack.vocab.catalogItem} actions={actions} onClose={() => setEditing(null)} /> : null}
+        </Modal>
+      ) : null}
+
       <Modal open={Boolean(open)} onClose={() => setOpenId(null)} label={open?.title ?? ""} variant="bottom" className="md:!fixed md:!inset-0 md:!m-auto md:!h-fit md:!max-h-[90dvh] md:!w-[min(94vw,46rem)]">
         {open ? (
           <div className="crm-panel max-h-[90dvh] overflow-y-auto rounded-t-[32px] p-4 md:rounded-[32px] md:p-5">
             <div className="mb-3 flex items-center justify-between px-1">
               <Pill tone="soft">{STATUS[open.status].label}</Pill>
-              <IconButton label="סגירה" size="sm" onClick={() => setOpenId(null)}>
-                <X />
-              </IconButton>
+              <div className="flex items-center gap-1.5">
+                {actions ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(open.id)
+                      setOpenId(null)
+                    }}
+                    className="flex items-center gap-1.5 rounded-full bg-black/[0.06] px-3.5 py-2 text-[12px] font-medium transition-colors hover:bg-black/[0.11]"
+                  >
+                    <Pencil className="size-3.5" aria-hidden />
+                    עריכה
+                  </button>
+                ) : null}
+                <IconButton label="סגירה" size="sm" onClick={() => setOpenId(null)}>
+                  <X />
+                </IconButton>
+              </div>
             </div>
             <MediaTile seed={open.id} icon={pack.catalogIcon} imageUrl={open.photoUrls?.[0]} className="aspect-[16/9] rounded-[26px]">
               {open.photos > 0 ? (
@@ -172,6 +215,16 @@ export function CatalogView({ data }: { data: CrmData }) {
                 </span>
               ) : null}
             </MediaTile>
+            {(open.photoUrls?.length ?? 0) > 1 ? (
+              <ul className="crm-hide-scrollbar mt-2 flex gap-2 overflow-x-auto">
+                {open.photoUrls?.slice(1).map((url) => (
+                  <li key={url} className="size-20 shrink-0 overflow-hidden rounded-2xl bg-black/[0.06]">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- tenant uploads come from storage */}
+                    <img src={url} alt="" className="size-full object-cover" />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <div className="px-1 pt-4">
               <div className="flex items-start justify-between gap-4">
                 <div>

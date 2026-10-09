@@ -686,7 +686,11 @@ html[data-curtain="skip"] .liquid-curtain {
   --color-crm-muted: var(--crm-muted);
 }
 
-.crm-root {
+/* .crm-embed is the same field for the CRM preview on the marketing site: the
+   colours and background come from one rule so the two can't drift apart, but
+   it is a contained box rather than the whole page (see its own rules below). */
+.crm-root,
+.crm-embed {
   --crm-accent: #2f4bff;
   --crm-accent-2: #3f8f9e;
   --crm-warm: #f2e24a;
@@ -695,7 +699,6 @@ html[data-curtain="skip"] .liquid-curtain {
   --crm-bg-to: #e3efdc;
   --crm-muted: rgba(17, 17, 17, 0.64);
   position: relative;
-  min-height: 100dvh;
   color: #111;
   background: linear-gradient(
     120deg,
@@ -703,6 +706,10 @@ html[data-curtain="skip"] .liquid-curtain {
     color-mix(in oklab, var(--crm-bg-from) 45%, var(--crm-bg-to)) 48%,
     var(--crm-bg-to) 100%
   );
+}
+
+.crm-root {
+  min-height: 100dvh;
 }
 
 /* Two slow-set highlights behind everything: it is what makes the glass
@@ -716,6 +723,26 @@ html[data-curtain="skip"] .liquid-curtain {
   background:
     radial-gradient(60rem 40rem at 85% -10%, rgba(255, 255, 255, 0.55), transparent 60%),
     radial-gradient(50rem 36rem at 0% 110%, rgba(255, 255, 255, 0.45), transparent 60%);
+}
+
+/* Embedded in the marketing page the highlights are pinned to the box, not the
+   viewport — `fixed` would lay them over the whole site — and the box clips
+   its own corners. Deliberately no transform/filter/contain here: any of those
+   would turn the box into the containing block for the CRM's `position: fixed`
+   popovers and misplace them. */
+.crm-embed {
+  isolation: isolate;
+  overflow: hidden;
+}
+.crm-embed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(44rem 28rem at 85% -10%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(36rem 26rem at 0% 110%, rgba(255, 255, 255, 0.45), transparent 60%);
 }
 
 /* NOTE: these are plain (unlayered) rules, so they outrank Tailwind utilities:
@@ -765,11 +792,13 @@ html:has(.crm-root) {
 }
 
 /* Native form chrome that would break the rounded look. */
-.crm-root {
+.crm-root,
+.crm-embed {
   color-scheme: light;
   accent-color: var(--crm-ink);
 }
-.crm-root ::selection {
+.crm-root ::selection,
+.crm-embed ::selection {
   background: color-mix(in oklab, var(--crm-accent) 28%, white);
 }
 .crm-root input[type="number"] {
@@ -841,6 +870,27 @@ html:has(.crm-root) {
 
 @media (prefers-reduced-motion: reduce) {
   .crm-live-dot {
+    animation: none;
+  }
+}
+
+/* The profile beside the deal cards is remounted per customer; this is the
+   entrance that plays on each swap, so a change of customer reads as a change. */
+@keyframes crm-swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.crm-swap-in {
+  animation: crm-swap-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crm-swap-in {
     animation: none;
   }
 }

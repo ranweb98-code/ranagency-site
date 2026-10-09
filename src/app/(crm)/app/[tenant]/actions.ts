@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { formatMoney } from "@/lib/crm/format"
+import { sendNotificationEmail } from "@/lib/crm/notification-email"
 import { resolvePack } from "@/lib/crm/live-mapper"
 import { normalizePhone } from "@/lib/crm/phone"
 import { validateProfile } from "@/lib/crm/profile"
@@ -148,4 +149,38 @@ export async function saveProfile(slug: string, input: unknown): Promise<Result>
 
   revalidatePath(`/app/${slug}`, "layout")
   return { ok: true }
+}
+
+/** Everything up to now counts as seen, for this person in this business. */
+export async function markNotificationsSeen(slug: string): Promise<Result> {
+  const session = await requireSession()
+  const supabase = await createClient()
+  const { data: tenant } = await supabase.from("tenants").select("id").eq("slug", slug).is("archived_at", null).maybeSingle()
+  if (!tenant) return { ok: false, error: "העסק לא נמצא" }
+
+  const { error } = await supabase.from("notification_seen").upsert({ user_id: session.id, tenant_id: tenant.id, seen_at: new Date().toISOString() })
+  return error ? { ok: false, error: "לא הצלחנו לשמור" } : { ok: true }
+}
+
+/** Adds a sample "the agent needs you" notification and emails it to the super
+ *  admin who pressed the button, so the whole path can be seen working before
+ *  any real agent is connected. Row level security already limits inserts to
+ *  the super admin; the check here only gives a clear message. */
+export async function sendTestNotification(slug: string): Promise<{ ok: true; emailed: boolean } | { ok: false; error: string }> {
+  const session = await requireSession()
+  if (!session.isSuperAdmin) return { ok: false, error: "זמין למנהל הראשי בלבד" }
+
+  const supabase = await createClient()
+  const { data: tenant } = await supabase.from("tenants").select("id, business_name").eq("slug", slug).is("archived_at", null).maybeSingle()
+  if (!tenant) return { ok: false, error: "העסק לא נמצא" }
+
+  const title = "התראת בדיקה: לקוח מחכה לתשובה שלכם"
+  const body = "כך תראו כשהסוכן לא ידע לענות ויעביר אליכם שיחה."
+  const { error } = await supabase.from("notifications").insert({ tenant_id: tenant.id, kind: "needs_human", urgent: true, title, body })
+  if (error) return { ok: false, error: "לא הצלחנו להוסיף. ייתכן שהמיגרציה של ההתראות עוד לא הופעלה." }
+
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://napuch.co.il"
+  const emailed = session.email ? await sendNotificationEmail({ to: session.email, businessName: tenant.business_name, title, body, urgent: true, url: `${origin}/app/${slug}` }) : false
+  revalidatePath(`/app/${slug}`, "layout")
+  return { ok: true, emailed }
 }

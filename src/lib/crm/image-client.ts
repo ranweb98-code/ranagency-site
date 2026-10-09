@@ -54,6 +54,45 @@ export async function prepareImage(file: File, mode: "cover" | "contain", max = 
   return { ok: true, blob }
 }
 
+/** A catalog photo keeps its own shape (a square crop would cut off half a
+ *  dish or a smile): scaled so the long side is at most `max`, never upscaled. */
+export async function prepareCatalogPhoto(file: File, max = 1400): Promise<PrepareResult> {
+  if (!ACCEPTED.includes(file.type)) return { ok: false, error: "בחרו תמונה בפורמט JPG, PNG או WebP" }
+  if (file.size > 25_000_000) return { ok: false, error: "הקובץ גדול מדי. בחרו תמונה עד 25MB." }
+
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" })
+  } catch {
+    return { ok: false, error: "לא הצלחנו לקרוא את התמונה. נסו קובץ אחר." }
+  }
+
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height))
+  const width = Math.max(1, Math.round(bitmap.width * scale))
+  const height = Math.max(1, Math.round(bitmap.height * scale))
+  const canvas = document.createElement("canvas")
+  canvas.width = width
+  canvas.height = height
+  const context = canvas.getContext("2d")
+  if (!context) {
+    bitmap.close()
+    return { ok: false, error: "הדפדפן לא מאפשר עיבוד תמונה. נסו דפדפן אחר." }
+  }
+  // Flat white behind it: a transparent PNG would otherwise turn black as a JPEG.
+  context.fillStyle = "#fff"
+  context.fillRect(0, 0, width, height)
+  context.imageSmoothingQuality = "high"
+  context.drawImage(bitmap, 0, 0, width, height)
+  bitmap.close()
+
+  // Step the quality down until it fits the upload limit, rather than refuse a big photo.
+  for (const [type, quality] of [["image/webp", 0.82], ["image/webp", 0.7], ["image/jpeg", 0.8], ["image/jpeg", 0.65]] as const) {
+    const blob = await toBlob(canvas, type, quality)
+    if (blob && blob.type === type && blob.size <= MAX_IMAGE_BYTES) return { ok: true, blob }
+  }
+  return { ok: false, error: "התמונה כבדה מדי גם אחרי הקטנה. נסו תמונה פשוטה יותר." }
+}
+
 function toBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
 }

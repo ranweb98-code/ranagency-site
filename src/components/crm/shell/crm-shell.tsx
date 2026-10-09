@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  Bell,
   Bot,
   Building2,
   CalendarDays,
@@ -24,12 +23,14 @@ import { useEffect, useState, type ReactNode } from "react"
 import { Avatar } from "@/components/crm/ui/avatar"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { Pill } from "@/components/crm/ui/pill"
+import type { NotificationFeed } from "@/lib/crm/notifications"
 import { cn } from "@/lib/utils"
 import { AccountMenu } from "./account-menu"
 import { CommandPalette } from "./command-palette"
 import { NewLeadDialog } from "./new-lead-dialog"
 import { ToastProvider } from "./toast"
 import { MoreSheet } from "./more-sheet"
+import { NotificationsMenu } from "./notifications-menu"
 import { ShellActionsProvider } from "./shell-actions"
 import type { CreateLead } from "./new-lead-dialog"
 
@@ -63,6 +64,10 @@ export interface ShellProps {
   catalogLabel: string
   itemOptions: { id: string; title: string }[]
   unread: number
+  /** What the bell lists. */
+  notifications: NotificationFeed
+  markNotificationsSeen?: () => Promise<unknown>
+  sendTestNotification?: () => Promise<{ ok: true; emailed: boolean } | { ok: false; error: string }>
   search: { id: string; name: string; phone: string }[]
   children: ReactNode
 }
@@ -75,7 +80,7 @@ interface NavItem {
   badge?: number
 }
 
-export function CrmShell({ children, base, account, businessName, logoUrl, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, search }: ShellProps) {
+export function CrmShell({ children, base, account, businessName, logoUrl, ownerName, industryLabel, peopleLabel, catalogLabel, itemOptions, unread, notifications, markNotificationsSeen, sendTestNotification, search }: ShellProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -205,10 +210,7 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
               <Mail />
               {unread ? <span className="absolute end-2.5 top-2.5 size-2 rounded-full bg-crm-accent ring-2 ring-white" /> : null}
             </IconButton>
-            <IconButton label="התראות" tone="white" onClick={() => router.push(`${base}/inbox`)}>
-              <Bell />
-              {unread ? <span className="absolute end-2.5 top-2.5 size-2 rounded-full bg-[#ff4d2e] ring-2 ring-white" /> : null}
-            </IconButton>
+            <NotificationsMenu feed={notifications} base={base} markSeen={markNotificationsSeen} sendTest={sendTestNotification} />
             {account ? (
               <AccountMenu
                 name={account.name}
