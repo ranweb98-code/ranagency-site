@@ -15,6 +15,7 @@ import { DealCards } from "./deal-cards"
 import { FunnelCard } from "./funnel-card"
 import { AgentWorkCard, NeedsYouCard, RoiCard } from "./insight-cards"
 import { DetailsCard, ProfileCard } from "./profile-panel"
+import { RevenueCard } from "./revenue-card"
 
 export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metrics }) {
   const base = data.basePath
@@ -66,8 +67,9 @@ export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metric
           >
             <DealCards deals={deals} catalog={data.catalog} stages={data.pack.stages} detailBase={`${base}/contacts`} selectedId={selected.id} onSelect={setSelectedId} />
           </SectionCard>
-          <CalendarCard className="order-4 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
-          <FunnelCard className="order-5 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
+          <RevenueCard className="order-4 lg:order-none lg:col-span-2" data={data} base={base} />
+          <CalendarCard className="order-5 lg:order-none" appointments={data.appointments} contacts={data.contacts} now={data.now} base={base} title={vocab.upcoming} />
+          <FunnelCard className="order-6 lg:order-none" metrics={metrics} base={base} peopleLabel={vocab.people} />
         </div>
 
         <div className="contents lg:col-span-4 lg:grid lg:content-start lg:gap-4">
@@ -79,7 +81,7 @@ export function OverviewView({ data, metrics }: { data: CrmData; metrics: Metric
           </div>
         </div>
 
-        <div className="order-6 grid grid-cols-1 gap-3 md:gap-4 lg:order-none lg:col-span-12 lg:grid-cols-3">
+        <div className="order-7 grid grid-cols-1 gap-3 md:gap-4 lg:order-none lg:col-span-12 lg:grid-cols-3">
           <AgentWorkCard data={data} metrics={metrics} />
           <RoiCard data={data} metrics={metrics} />
           <NeedsYouCard data={data} metrics={metrics} base={base} />

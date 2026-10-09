@@ -122,15 +122,24 @@ function fill(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => vars[key] ?? "")
 }
 
-function stagePlan(pack: IndustryPack): { index: number; won: "recent" | "older" | null }[] {
+type Won = "recent" | "older" | "history" | null
+
+/** How long ago the "history" deals closed, in days: a business that has been
+ *  running for months, so the revenue chart has a real shape to show. They are
+ *  appended last so every earlier contact keeps exactly the values it had. */
+const HISTORY_DAYS = [64, 76, 90, 103, 118, 131, 145, 156, 164, 172]
+const HISTORY_RANKS = [3, 4, 3, 4, 4, 3, 4, 4, 3, 4]
+
+function stagePlan(pack: IndustryPack): { index: number; won: Won }[] {
   const last = pack.stages.length - 1
   const counts = [4, 3, 2, 1, 1, 1].slice(0, last)
-  const plan: { index: number; won: "recent" | "older" | null }[] = []
+  const plan: { index: number; won: Won }[] = []
   counts.forEach((count, index) => {
     for (let i = 0; i < count; i++) plan.push({ index, won: null })
   })
   for (let i = 0; i < 4; i++) plan.push({ index: last, won: "recent" })
   for (let i = 0; i < 3; i++) plan.push({ index: last, won: "older" })
+  for (let i = 0; i < HISTORY_DAYS.length; i++) plan.push({ index: last, won: "history" })
   return plan
 }
 
@@ -150,6 +159,7 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
   const byPrice = [...catalog].sort((a, b) => (b.dealValue ?? b.price) - (a.dealValue ?? a.price))
   let recentSeen = 0
   let olderSeen = 0
+  let historySeen = 0
   const NAMES = FEMALE_ONLY.has(pack.id) ? FEMALE_NAMES : MIXED_NAMES
   const nameOffset = hash(tenant.slug) % NAMES.length
   const contacts: Contact[] = []
@@ -166,9 +176,11 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     // month's revenue is representative of the business (not a lucky or unlucky
     // roll) and recent vs. older months compare sensibly. Open deals rotate
     // through the catalog so no two neighbours ask about the same thing.
-    const wonRank = won === "recent" ? [1, 3, 2, 4][recentSeen] : won === "older" ? [1, 2, 4][olderSeen] : -1
+    const wonRank = won === "recent" ? [1, 3, 2, 4][recentSeen] : won === "older" ? [1, 2, 4][olderSeen] : won === "history" ? HISTORY_RANKS[historySeen] : -1
     if (won === "recent") recentSeen++
     if (won === "older") olderSeen++
+    const historyDays = won === "history" ? HISTORY_DAYS[historySeen] : 0
+    if (won === "history") historySeen++
     const item = isWon ? byPrice[wonRank % byPrice.length] : openCatalog[(i + nameOffset) % openCatalog.length]
 
     const fields: Record<string, string> = {}
@@ -182,7 +194,11 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     let createdMs: number
     let lastMs: number
     let closedMs: number | undefined
-    if (won === "older") {
+    if (won === "history") {
+      closedMs = nowMs - (historyDays + (rand() - 0.5) * 6) * DAY
+      createdMs = closedMs - (8 + rand() * 18) * DAY
+      lastMs = closedMs
+    } else if (won === "older") {
       createdMs = nowMs - (62 + rand() * 18) * DAY
       closedMs = nowMs - (35 + rand() * 23) * DAY
       lastMs = closedMs
