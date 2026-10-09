@@ -60,8 +60,9 @@ export function revenueSeries(data: CrmData, range: RevenueRange): RevenueSeries
   const lastStage = data.pack.stages[data.pack.stages.length - 1].id
   const days = new Map<string, { total: number; count: number }>()
   const closings: { at: number; value: number }[] = []
-  for (const c of data.contacts) {
-    if (c.stageId !== lastStage || !c.closedAt) continue
+  // Demo only: older deals that exist for the chart alone (see CrmData.history).
+  const settled = [...data.contacts.filter((c) => c.stageId === lastStage && c.closedAt).map((c) => ({ closedAt: c.closedAt as string, value: c.value })), ...(data.history ?? [])]
+  for (const c of settled) {
     closings.push({ at: Date.parse(c.closedAt), value: c.value })
     const day = toDayKey(c.closedAt)
     const entry = days.get(day) ?? { total: 0, count: 0 }

@@ -220,4 +220,7 @@ export interface CrmData {
   catalog: CatalogItem[]
   /** What the agents are told about the business. Real workspaces only. */
   profile?: BusinessProfile
+  /** Demo only: deals closed longer ago than the contact list reaches back (more
+   *  than two months). They feed the revenue chart's longer ranges and nothing else. */
+  history?: { closedAt: string; value: number }[]
 }

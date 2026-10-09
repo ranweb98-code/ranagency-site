@@ -122,13 +122,28 @@ function fill(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => vars[key] ?? "")
 }
 
-type Won = "recent" | "older" | "history" | null
+type Won = "recent" | "older" | null
 
-/** How long ago the "history" deals closed, in days: a business that has been
- *  running for months, so the revenue chart has a real shape to show. They are
- *  appended last so every earlier contact keeps exactly the values it had. */
-const HISTORY_DAYS = [64, 76, 90, 103, 118, 131, 145, 156, 164, 172]
-const HISTORY_RANKS = [3, 4, 3, 4, 4, 3, 4, 4, 3, 4]
+// A business that has been running for months and is growing: more deals closed in
+// the last 30 days than in the 30 before, spread so that no week is empty. How long
+// ago each contact deal closed, in days (a little jitter is added), and how big it was
+// next to the business's typical deal (the catalog item closest to that size is used).
+const RECENT_AGES = [0.15, 1.5, 3, 5, 8, 11.5, 16, 21, 26]
+const RECENT_SIZES = [1.0, 1.4, 0.7, 1.2, 0.9, 1.3, 0.8, 1.1, 1.0]
+const OLDER_AGES = [32, 36, 41, 46, 51, 56]
+const OLDER_SIZES = [1.0, 0.8, 1.1, 0.9, 1.0, 0.8]
+
+/** Closed longer ago than the contact list reaches (60+ days): lightweight rows that
+ *  only the revenue chart reads, so the demo does not carry dozens of extra contacts.
+ *  `[days ago, size of the deal as a share of a typical recent one]`: smaller and
+ *  rarer the further back, so the line climbs towards today. */
+const HISTORY: [number, number][] = [
+  [63, 1.2], [67, 0.9],
+  [73, 0.8], [79, 1.1], [85, 0.7], [91, 1.0], [97, 0.9],
+  [104, 0.8], [112, 0.6], [119, 0.9], [127, 0.7],
+  [134, 0.6], [146, 0.8], [157, 0.5],
+  [166, 0.5], [178, 0.6], [190, 0.4], [205, 0.5], [222, 0.4], [240, 0.5], [260, 0.4],
+]
 
 function stagePlan(pack: IndustryPack): { index: number; won: Won }[] {
   const last = pack.stages.length - 1
@@ -137,9 +152,8 @@ function stagePlan(pack: IndustryPack): { index: number; won: Won }[] {
   counts.forEach((count, index) => {
     for (let i = 0; i < count; i++) plan.push({ index, won: null })
   })
-  for (let i = 0; i < 4; i++) plan.push({ index: last, won: "recent" })
-  for (let i = 0; i < 3; i++) plan.push({ index: last, won: "older" })
-  for (let i = 0; i < HISTORY_DAYS.length; i++) plan.push({ index: last, won: "history" })
+  for (let i = 0; i < RECENT_AGES.length; i++) plan.push({ index: last, won: "recent" })
+  for (let i = 0; i < OLDER_AGES.length; i++) plan.push({ index: last, won: "older" })
   return plan
 }
 
@@ -156,10 +170,13 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
   const firstName = tenant.ownerName.replace(/^ד״ר\s+/, "").split(" ")[0]
 
   const plan = stagePlan(pack)
-  const byPrice = [...catalog].sort((a, b) => (b.dealValue ?? b.price) - (a.dealValue ?? a.price))
+  // What a catalog item is worth when it is sold (a per-person price counts a typical party of 19).
+  const worth = (c: CatalogItem) => (c.dealValue ?? c.price * pack.valueFactor) * (pack.valueByField && c.priceSuffix === "לסועד" ? 19 : 1)
+  const sortedWorth = catalog.map(worth).sort((x, y) => x - y)
+  const typicalDeal = sortedWorth[Math.floor(sortedWorth.length / 2)]
+  const closestTo = (target: number) => catalog.reduce((best, c) => (Math.abs(worth(c) - target) < Math.abs(worth(best) - target) ? c : best), catalog[0])
   let recentSeen = 0
   let olderSeen = 0
-  let historySeen = 0
   const NAMES = FEMALE_ONLY.has(pack.id) ? FEMALE_NAMES : MIXED_NAMES
   const nameOffset = hash(tenant.slug) % NAMES.length
   const contacts: Contact[] = []
@@ -176,12 +193,14 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     // month's revenue is representative of the business (not a lucky or unlucky
     // roll) and recent vs. older months compare sensibly. Open deals rotate
     // through the catalog so no two neighbours ask about the same thing.
-    const wonRank = won === "recent" ? [1, 3, 2, 4][recentSeen] : won === "older" ? [1, 2, 4][olderSeen] : won === "history" ? HISTORY_RANKS[historySeen] : -1
+    const wonSize = won === "recent" ? RECENT_SIZES[recentSeen] : won === "older" ? OLDER_SIZES[olderSeen] : 0
     if (won === "recent") recentSeen++
     if (won === "older") olderSeen++
-    const historyDays = won === "history" ? HISTORY_DAYS[historySeen] : 0
-    if (won === "history") historySeen++
-    const item = isWon ? byPrice[wonRank % byPrice.length] : openCatalog[(i + nameOffset) % openCatalog.length]
+    // Won deals are the catalog items nearest in size to the business's typical deal, so
+    // the month's revenue is representative (not a lucky or unlucky roll) and recent vs.
+    // older months compare sensibly. Open deals rotate through the catalog so no two
+    // neighbours ask about the same thing.
+    const item = isWon ? closestTo(typicalDeal * wonSize) : openCatalog[(i + nameOffset) % openCatalog.length]
 
     const fields: Record<string, string> = {}
     for (const field of pack.fields) fields[field.key] = pick(field.options)
@@ -194,22 +213,17 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     let createdMs: number
     let lastMs: number
     let closedMs: number | undefined
-    if (won === "history") {
-      closedMs = nowMs - (historyDays + (rand() - 0.5) * 6) * DAY
-      createdMs = closedMs - (8 + rand() * 18) * DAY
-      lastMs = closedMs
-    } else if (won === "older") {
+    if (won === "older") {
       createdMs = nowMs - (62 + rand() * 18) * DAY
-      closedMs = nowMs - (35 + rand() * 23) * DAY
+      // 31–58 days ago: the previous 30 days of the "closed in 30 days" comparison
+      closedMs = nowMs - (OLDER_AGES[olderSeen - 1] + rand() * 1.4) * DAY
       lastMs = closedMs
     } else if (won === "recent") {
       createdMs = nowMs - (30 + rand() * 25) * DAY
-      // One closed this morning, one in the last few days, one this week: a live
-      // business has closings today and this week, and the revenue chart's "today"
-      // and "this week" views would otherwise be empty. (Still one `rand()` call.)
-      const r = rand()
-      const age = [0.12 + r * 0.25, 1.4 + r * 1.6, 4 + r * 2, 1 + r * 25][recentSeen - 1]
-      closedMs = nowMs - age * DAY
+      // One closed this morning, one in the last few days, then roughly one every
+      // few days: a live business has closings today and this week, and the revenue
+      // chart's "today" and "this week" views would otherwise be empty.
+      closedMs = nowMs - (RECENT_AGES[recentSeen - 1] + (recentSeen === 1 ? rand() * 0.22 : rand() * 1.2)) * DAY
       lastMs = closedMs
     } else if (index === 0) {
       // Fresh leads: the first two are minutes old so the inbox feels alive.
@@ -351,5 +365,16 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
   contacts.sort((a, b) => Date.parse(b.lastContactAt) - Date.parse(a.lastContactAt))
   appointments.sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
 
-  return { tenant, pack, now: nowIso, basePath: `/crm/${tenant.slug}`, demo: true, contacts, appointments, catalog }
+  // The older deals behind the chart: sized from this business's own recent deals (so a
+  // dental clinic and a real-estate agent each get believable amounts) and jittered from
+  // their own random stream, so the contacts above are exactly what they would be without them.
+  const recentValues = contacts.filter((c) => c.stageId === pack.stages[last].id && c.closedAt && nowMs - Date.parse(c.closedAt) < 30 * DAY).map((c) => c.value)
+  const typical = recentValues.length ? recentValues.reduce((sum, v) => sum + v, 0) / recentValues.length : 0
+  const past = mulberry32(hash(`${tenant.slug}:history`))
+  const history = HISTORY.map(([age, share]) => ({
+    closedAt: toIso(nowMs - (age + (past() - 0.5) * 1.6) * DAY),
+    value: Math.max(10, Math.round((typical * share) / 10) * 10),
+  }))
+
+  return { tenant, pack, now: nowIso, basePath: `/crm/${tenant.slug}`, demo: true, contacts, appointments, catalog, history }
 }

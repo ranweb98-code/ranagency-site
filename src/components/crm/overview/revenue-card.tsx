@@ -49,31 +49,38 @@ export function RevenueCard({ data, className, base }: { data: CrmData; classNam
       ]}
     >
       {/* The card can be stretched by the row it sits in (next to a taller card):
-          the chart takes whatever height is left instead of leaving a hollow. */}
+          the chart takes whatever height is left instead of leaving a hollow.
+          Everything above the chart has a fixed shape, so switching range never
+          moves the controls, the figure or the plot. */}
       <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
+        <Segmented<RevenueRange>
+          label="טווח הזמן"
+          className="max-w-full self-start overflow-x-auto crm-hide-scrollbar"
+          value={range}
+          onChange={setRange}
+          options={REVENUE_RANGES.map((r) => ({ value: r.id, label: r.label }))}
+        />
+
+        <div className="mt-4">
+          <div className="flex min-h-[44px] items-center gap-2.5">
             <p className="text-[32px] font-medium leading-none tracking-tight md:text-[38px]">{formatMoney(series.total)}</p>
             {series.delta !== null && series.delta <= DELTA_CEILING ? (
               <Pill tone={series.delta >= 0 ? "warm" : "soft"} aria-label={`${series.delta >= 0 ? "עלייה" : "ירידה"} של ${Math.abs(series.delta)} אחוז מול התקופה הקודמת`}>
                 <Ltr>
                   {series.delta > 0 ? "+" : ""}
                   {series.delta}%
-                </Ltr>{" "}
-                מול הקודמת
+                </Ltr>
+                <span className="hidden sm:inline"> מול הקודמת</span>
               </Pill>
             ) : null}
           </div>
-          <p className="mt-1.5 text-[12px] text-crm-muted">
+          <p className="mt-1.5 min-h-[34px] text-[12px] leading-[17px] text-crm-muted md:min-h-[17px]">
             {vocab.revenue} · {REVENUE_RANGES.find((r) => r.id === range)?.window} · {deals(series.count)}
             {series.count > 0 ? ` · ממוצע ${formatMoney(series.average)} לעסקה` : ""}
           </p>
         </div>
-        <Segmented<RevenueRange> label="טווח הזמן" className="max-w-full overflow-x-auto crm-hide-scrollbar" value={range} onChange={setRange} options={REVENUE_RANGES.map((r) => ({ value: r.id, label: r.label }))} />
-      </div>
 
-      <RevenueChart key={range} series={series} emptyHint={data.demo ? undefined : `כשעסקה תסומן כנסגרה היא תופיע כאן.`} />
+        <RevenueChart key={range} series={series} emptyHint={data.demo ? undefined : `כשעסקה תסומן כנסגרה היא תופיע כאן.`} />
       </div>
     </SectionCard>
   )
@@ -105,12 +112,12 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
   }
 
   return (
-    <figure className="mt-5 flex flex-1 flex-col">
+    <figure className="mt-4 flex flex-1 flex-col">
       <figcaption className="sr-only">
         הכנסות שנסגרו, {kind === "hour" ? "לפי שעה" : kind === "day" ? "לפי יום" : kind === "week" ? "לפי שבוע" : "לפי חודש"}. חצים ימינה ושמאלה עוברים בין התקופות.
       </figcaption>
 
-      <div className="grid flex-1 grid-cols-[2rem_minmax(0,1fr)] grid-rows-[minmax(168px,1fr)_auto] gap-x-2 md:grid-rows-[minmax(200px,1fr)_auto]">
+      <div className="grid flex-1 grid-cols-[2rem_minmax(0,1fr)] grid-rows-[minmax(clamp(150px,24dvh,240px),1fr)_auto] gap-x-2">
         {/* y axis: the numbers the gridlines stand for */}
         <div aria-hidden className="relative text-[10.5px] text-crm-muted tabular-nums">
           {[0, 1, 2, 3].map((k) => (
@@ -189,7 +196,8 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
       </p>
 
       {/* the same numbers as a table, for screen readers */}
-      <table className="sr-only">
+      <div className="sr-only">
+        <table>
         <caption>הכנסות שנסגרו לפי תקופה</caption>
         <thead>
           <tr>
@@ -207,13 +215,12 @@ function RevenueChart({ series, emptyHint }: { series: RevenueSeries; emptyHint?
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
 
-      {series.peak && !empty ? (
-        <p className="mt-3 text-[12px] text-crm-muted">
-          התקופה החזקה: {describe(series.peak, kind)} · {formatMoney(series.peak.total)}
-        </p>
-      ) : null}
+      <p className="mt-3 min-h-[17px] text-[12px] leading-[17px] text-crm-muted">
+        {series.peak && !empty ? `התקופה החזקה: ${describe(series.peak, kind)} · ${formatMoney(series.peak.total)}` : ""}
+      </p>
     </figure>
   )
 }
