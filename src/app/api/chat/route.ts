@@ -8,7 +8,7 @@ import { parseChatBody } from "@/lib/chat/validate"
 
 export const maxDuration = 30
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite"
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite"
 // The base can be pointed at a stand-in server when testing without a real key.
 const BASE = process.env.GEMINI_API_BASE ?? "https://generativelanguage.googleapis.com"
 const ENDPOINT = `${BASE}/v1beta/models/${MODEL}:streamGenerateContent?alt=sse`
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         contents: parsed.turns.map((t) => ({ role: t.role === "user" ? "user" : "model", parts: [{ text: t.text }] })),
         generationConfig: {
           temperature: 0.5,
-          maxOutputTokens: 500,
+          maxOutputTokens: 800,
           // 2.5 models "think" before answering by default; for a short, grounded
           // reply that is only latency.
           ...(MODEL.includes("2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
