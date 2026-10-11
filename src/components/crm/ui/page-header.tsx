@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
 
+import { AutoScrollRow } from "./auto-scroll"
 import { IconButton } from "./icon-button"
 
 /** Big page title (with an optional back circle) and a slot for header KPIs. */
@@ -31,7 +32,7 @@ export function PageHeader({
           <h1 className="text-[34px] font-medium leading-[1.05] tracking-tight md:text-[44px]">{title}</h1>
         </div>
       </div>
-      {children ? <div className="crm-hide-scrollbar -mx-3 flex gap-6 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 md:gap-8 md:pb-0">{children}</div> : null}
+      {children ? <AutoScrollRow className="crm-hide-scrollbar -mx-3 flex gap-6 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 md:gap-8 md:pb-0">{children}</AutoScrollRow> : null}
     </div>
   )
 }

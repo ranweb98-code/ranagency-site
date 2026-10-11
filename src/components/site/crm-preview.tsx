@@ -19,6 +19,7 @@ import Link from "next/link"
 import { memo, useEffect, useRef, useState } from "react"
 
 import { Avatar } from "@/components/crm/ui/avatar"
+import { AutoScrollRow } from "@/components/crm/ui/auto-scroll"
 import { ChannelDot, CHANNELS } from "@/components/crm/ui/channel"
 import { IconButton } from "@/components/crm/ui/icon-button"
 import { Ltr } from "@/components/crm/ui/ltr"
@@ -225,7 +226,7 @@ export function CrmPreview({
                 </p>
                 <p className="text-[34px] font-medium leading-[1.05] tracking-tight md:text-[44px]">סקירה</p>
               </div>
-              <div className="crm-hide-scrollbar -mx-3 flex gap-6 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 md:gap-8 md:pb-0">
+              <AutoScrollRow className="crm-hide-scrollbar -mx-3 flex gap-6 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 md:gap-8 md:pb-0">
                 <StatTile
                   icon={BarChart3}
                   value={formatMoneyCompact(stats.closed30)}
@@ -246,7 +247,7 @@ export function CrmPreview({
                   badge={`${stats.upcomingToday} היום`}
                   badgeTone="soft"
                 />
-              </div>
+              </AutoScrollRow>
             </div>
           </div>
 

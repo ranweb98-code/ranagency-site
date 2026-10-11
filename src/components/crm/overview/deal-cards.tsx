@@ -2,8 +2,10 @@
 
 import { ArrowUpLeft } from "lucide-react"
 import Link from "next/link"
+import { useRef } from "react"
 
 import { AvatarStack } from "@/components/crm/ui/avatar"
+import { useAutoScroll } from "@/components/crm/ui/auto-scroll"
 import { ChannelDot } from "@/components/crm/ui/channel"
 import { formatDateLabel, formatMoney } from "@/lib/crm/format"
 import type { Contact, CatalogItem, Stage } from "@/lib/crm/types"
@@ -37,9 +39,11 @@ export function DealCards({
   onSelect: (id: string) => void
 }) {
   const itemById = new Map(catalog.map((c) => [c.id, c]))
+  const strip = useRef<HTMLUListElement>(null)
+  useAutoScroll(strip)
 
   return (
-    <ul className="crm-hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0">
+    <ul ref={strip} className="crm-hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0">
       {deals.map((deal, i) => {
         const tone = TONES[i] ?? TONES[5]
         const item = itemById.get(deal.itemId)
