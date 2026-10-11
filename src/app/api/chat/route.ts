@@ -74,7 +74,11 @@ export async function POST(request: Request) {
     return fail("busy", 502)
   }
   if (upstream.status === 429) return fail("rate", 429)
-  if (!upstream.ok || !upstream.body) return fail("busy", 502)
+  if (!upstream.ok || !upstream.body) {
+    // The reason (a bad key, a retired model, a region block) is otherwise invisible: the visitor only sees "busy".
+    console.error("chat: model refused", upstream.status, MODEL, (await upstream.text().catch(() => "")).slice(0, 400))
+    return fail("busy", 502)
+  }
 
   const reader = upstream.body.getReader()
   const decoder = new TextDecoder()
