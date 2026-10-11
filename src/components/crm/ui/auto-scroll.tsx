@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, type ElementType, type ReactNode, type RefObject } from "react"
 
-const SPEED = 26 // px per second
+const MIN_SPEED = 26 // px per second, for short strips
+const MAX_SPEED = 90
+const CROSS_SECONDS = 12 // a long strip is sped up so it still crosses in about this long
 const HOLD_MS = 1300 // rest at each end
 const IDLE_MS = 5000 // after the person touches it, leave it alone this long
 
@@ -67,7 +69,7 @@ export function useAutoScroll(ref: RefObject<HTMLElement | null>) {
       }
       if (now < holdUntil) return
 
-      pos += direction * SPEED * dt
+      pos += direction * Math.min(MAX_SPEED, Math.max(MIN_SPEED, max / CROSS_SECONDS)) * dt
       if (pos >= max) {
         pos = max
         direction = -1
