@@ -926,3 +926,55 @@ html[data-curtain="skip"] .hero-rise {
     animation: none;
   }
 }
+
+/* ── Chat assistant ───────────────────────────────────────────────────────
+   A blob that slowly changes shape, eyes that blink (a quick close, a long
+   rest) or pulse while it talks, a wobble while it thinks, and the typing
+   dots. All of it is stilled under prefers-reduced-motion. */
+@keyframes chat-blob {
+  0%, 100% { border-radius: 58% 42% 55% 45% / 52% 58% 42% 48%; }
+  33% { border-radius: 45% 55% 48% 52% / 58% 44% 56% 42%; }
+  66% { border-radius: 52% 48% 42% 58% / 45% 52% 48% 55%; }
+}
+@keyframes chat-blink {
+  0%, 42%, 46%, 100% { transform: scaleY(1); }
+  44% { transform: scaleY(0.12); }
+}
+@keyframes chat-talk {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.55); }
+}
+@keyframes chat-wobble {
+  0%, 100% { rotate: -6deg; }
+  50% { rotate: 6deg; }
+}
+@keyframes chat-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+.chat-blob-morph {
+  animation: chat-blob 9s ease-in-out infinite;
+}
+.chat-blob[data-mood="thinking"] {
+  animation: chat-blob 9s ease-in-out infinite, chat-wobble 1.4s ease-in-out infinite;
+}
+.chat-eye-blink {
+  animation: chat-blink 6.5s infinite;
+}
+.chat-eye-talk {
+  animation: chat-talk 0.5s ease-in-out infinite;
+}
+.chat-dot {
+  animation: chat-dot 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-blob-morph,
+  .chat-blob[data-mood="thinking"],
+  .chat-eye-blink,
+  .chat-eye-talk,
+  .chat-dot {
+    animation: none;
+  }
+}

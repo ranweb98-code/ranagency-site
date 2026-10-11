@@ -63,6 +63,8 @@ export function PrivacyNotice() {
 
   const dismiss = () => {
     setIsOpen(false)
+    // The chat launcher shares this corner and waits for the notice to go.
+    window.dispatchEvent(new Event("napuch:notice-dismissed"))
     try {
       localStorage.setItem(STORAGE_KEY, "1")
     } catch {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Geist_Mono, Rubik } from "next/font/google";
 import { CurtainLoader } from "@/components/motion/curtain-loader";
 import { LenisProvider } from "@/components/motion/lenis-provider";
+import { ChatWidget } from "@/components/site/chat/chat-widget";
 import { PrivacyNotice } from "@/components/site/privacy-notice";
 import "../globals.css";
 
@@ -132,6 +133,8 @@ export default function RootLayout({
           {children}
         </LenisProvider>
         <PrivacyNotice />
+        {/* Only offered once a key is configured: a chat that can only say "unavailable" is worse than none. */}
+        <ChatWidget available={Boolean(process.env.GEMINI_API_KEY)} />
       </body>
     </html>
   );
