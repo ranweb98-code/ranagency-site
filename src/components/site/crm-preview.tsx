@@ -14,7 +14,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react"
-import { AnimatePresence, animate, motion, useInView, useReducedMotion } from "motion/react"
+import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { memo, useEffect, useRef, useState } from "react"
 
@@ -228,20 +228,20 @@ export function CrmPreview({
               <div className="crm-hide-scrollbar -mx-3 flex gap-6 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0 md:gap-8 md:pb-0">
                 <StatTile
                   icon={BarChart3}
-                  value={<CountUp to={stats.closed30} format={formatMoneyCompact} />}
+                  value={formatMoneyCompact(stats.closed30)}
                   label={`${vocab.revenue}\n${stats.closedCount30} עסקאות ב־30 יום`}
                   badge={delta === null ? undefined : <><Ltr>{delta > 0 ? "+" : ""}{delta}%</Ltr> חודש</>}
                 />
                 <StatTile
                   icon={UserPlus}
-                  value={<Ltr>+<CountUp to={stats.newLeads7} /></Ltr>}
+                  value={<Ltr>+{stats.newLeads7}</Ltr>}
                   label={"פניות חדשות\nב־7 ימים אחרונים"}
                   badge={<><Ltr>+{stats.newLeadsToday}</Ltr> היום</>}
                   badgeTone="accent"
                 />
                 <StatTile
                   icon={CalendarCheck}
-                  value={<CountUp to={stats.upcoming7} />}
+                  value={stats.upcoming7}
                   label={`${vocab.bookings} קרובים\nב־7 ימים`}
                   badge={`${stats.upcomingToday} היום`}
                   badgeTone="soft"
@@ -335,29 +335,3 @@ function DockIcon({ icon: Icon, dot, ping }: { icon: LucideIcon; dot?: boolean; 
     </span>
   )
 }
-
-/** Counts up to its figure the first time it is on screen. Server HTML carries
- *  the final number, so it is right without JavaScript and while off-screen;
- *  the text is driven directly rather than through state, so a count costs no
- *  re-renders. */
-function CountUp({ to, format = String }: { to: number; format?: (n: number) => string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, amount: 0.8 })
-  const prefersReducedMotion = useReducedMotion()
-
-  useEffect(() => {
-    const el = ref.current
-    if (!inView || prefersReducedMotion || !el) return
-    const controls = animate(0, to, {
-      duration: 1.6,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (value) => {
-        el.textContent = format(Math.round(value))
-      },
-    })
-    return () => controls.stop()
-  }, [inView, prefersReducedMotion, to, format])
-
-  return <span ref={ref}>{format(to)}</span>
-}
-

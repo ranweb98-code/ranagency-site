@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  ArrowRight,
   Bot,
   Building2,
   CalendarDays,
@@ -196,6 +197,14 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
           </nav>
 
           <div className="flex items-center justify-end gap-2">
+            {account ? null : (
+              // The public demo is reached from the marketing site, so the way back is a plain, always-visible button.
+              <Link href="/#dashboard" className="flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-crm-ink px-3.5 text-[13px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink">
+                <ArrowRight className="size-4" aria-hidden />
+                <span className="sm:hidden">לאתר</span>
+                <span className="hidden sm:inline">חזרה לאתר</span>
+              </Link>
+            )}
             {account ? null : (
               <Link href="/crm" className="hidden lg:block" aria-label="חזרה לבחירת עסק לדוגמה">
                 <Pill tone="white" className="px-3 py-1 text-[11px]">
