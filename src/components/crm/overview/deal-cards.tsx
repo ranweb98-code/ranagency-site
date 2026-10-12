@@ -43,7 +43,11 @@ export function DealCards({
   useAutoScroll(strip)
 
   return (
-    <ul ref={strip} className="crm-hide-scrollbar -mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0">
+    // A strip that scrolls sideways also clips vertically, and the selected card
+    // grows (scale, ring, shadow) past its own box, so its top edge was cut off.
+    // The padding gives it room; the negative margins give the space back, so
+    // nothing around the strip moves. The desktop grid doesn't clip and resets all of it.
+    <ul ref={strip} className="crm-hide-scrollbar -mx-4 -mt-2 -mb-6 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pt-2 pb-7 md:mx-0 md:mt-0 md:mb-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0 md:pt-0 md:pb-1">
       {deals.map((deal, i) => {
         const tone = TONES[i] ?? TONES[5]
         const item = itemById.get(deal.itemId)
