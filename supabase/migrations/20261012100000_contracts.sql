@@ -123,17 +123,17 @@ alter table public.contract_rate_limits enable row level security;
 -- The owner reads everything and creates / updates contracts. OTPs and rate
 -- limit counters have no policy at all: only the functions below touch them.
 create policy contracts_admin_select on public.contracts for select to authenticated
-  using ((select public.is_super_admin()));
+  using ((select private.is_super_admin()));
 create policy contracts_admin_insert on public.contracts for insert to authenticated
-  with check ((select public.is_super_admin()));
+  with check ((select private.is_super_admin()));
 create policy contracts_admin_update on public.contracts for update to authenticated
-  using ((select public.is_super_admin())) with check ((select public.is_super_admin()));
+  using ((select private.is_super_admin())) with check ((select private.is_super_admin()));
 create policy contract_files_admin_select on public.contract_files for select to authenticated
-  using ((select public.is_super_admin()));
+  using ((select private.is_super_admin()));
 create policy contract_events_admin_select on public.contract_events for select to authenticated
-  using ((select public.is_super_admin()));
+  using ((select private.is_super_admin()));
 create policy contract_events_admin_insert on public.contract_events for insert to authenticated
-  with check ((select public.is_super_admin()));
+  with check ((select private.is_super_admin()));
 
 revoke all on public.contracts, public.contract_files, public.contract_events,
   public.contract_otps, public.contract_rate_limits from anon;
@@ -383,3 +383,13 @@ grant execute on function public.contract_rate_hit(text, text, int, int),
 -- private.contract_public is only ever called from the functions above (which
 -- run as their owner), so no role needs direct execute on it.
 revoke all on function private.contract_public(public.contracts) from public, anon, authenticated;
+
+-- Only the signing page's server (acting as anon) calls these; a signed-in
+-- user has no reason to.
+revoke execute on function public.contract_rate_hit(text, text, int, int),
+  public.contract_open(text, text, text, text),
+  public.contract_begin_sign(text, text, text, boolean, boolean, text, text, text, text),
+  public.contract_verify_otp(text, text, text, text, text),
+  public.contract_finalize(text, text, text, text, text, text),
+  public.contract_resume_finalize(text, text)
+  from authenticated;
