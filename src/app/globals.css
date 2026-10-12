@@ -846,6 +846,14 @@ html:has(.crm-root) {
   scrollbar-color: rgba(17, 17, 17, 0.18) transparent;
 }
 
+/* A strip that is drifting on its own (useAutoScroll): its children are
+   shifted by --drift instead of the scroll position moving, which glides
+   where scrollLeft steps. */
+[data-drifting] > * {
+  transform: translate3d(var(--drift, 0px), 0, 0);
+  will-change: transform;
+}
+
 .crm-hide-scrollbar {
   scrollbar-width: none;
 }
