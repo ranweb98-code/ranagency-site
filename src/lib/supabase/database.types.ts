@@ -1,5 +1,7 @@
 // Generated from the napuch-crm project (`generate_typescript_types`).
 // Regenerate after every migration; do not edit by hand.
+// (The contracts / contract_files / contract_events entries were written by hand
+// to match 20261012100000_contracts.sql until the next regeneration replaces them.)
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
@@ -80,6 +82,153 @@ export type Database = {
         Update: {
           id?: boolean
           usd_ils?: number
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          agreement_sha256: string
+          agreement_snapshot: string
+          agreement_version: string
+          address: string
+          business_name: string
+          contact_name: string
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          id: string
+          monthly_fee_ils: number
+          otp_verified: boolean
+          pdf_sha256: string | null
+          phone: string
+          privacy_accepted_at: string | null
+          privacy_sha256: string
+          privacy_snapshot: string
+          privacy_version: string
+          sent_at: string | null
+          setup_fee_ils: number
+          signed_at: string | null
+          signer_ip: string | null
+          signer_user_agent: string | null
+          status: string
+          tax_id: string
+          terms_accepted_at: string | null
+          token_enc: string
+          token_hash: string
+          typed_name: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          agreement_sha256: string
+          agreement_snapshot: string
+          agreement_version: string
+          address: string
+          business_name: string
+          contact_name: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          monthly_fee_ils: number
+          otp_verified?: boolean
+          pdf_sha256?: string | null
+          phone: string
+          privacy_accepted_at?: string | null
+          privacy_sha256: string
+          privacy_snapshot: string
+          privacy_version: string
+          sent_at?: string | null
+          setup_fee_ils: number
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_user_agent?: string | null
+          status?: string
+          tax_id: string
+          terms_accepted_at?: string | null
+          token_enc: string
+          token_hash: string
+          typed_name?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          agreement_sha256?: string
+          agreement_snapshot?: string
+          agreement_version?: string
+          address?: string
+          business_name?: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          monthly_fee_ils?: number
+          otp_verified?: boolean
+          pdf_sha256?: string | null
+          phone?: string
+          privacy_accepted_at?: string | null
+          privacy_sha256?: string
+          privacy_snapshot?: string
+          privacy_version?: string
+          sent_at?: string | null
+          setup_fee_ils?: number
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_user_agent?: string | null
+          status?: string
+          tax_id?: string
+          terms_accepted_at?: string | null
+          token_enc?: string
+          token_hash?: string
+          typed_name?: string | null
+          viewed_at?: string | null
+        }
+        Relationships: []
+      }
+      contract_files: {
+        Row: {
+          contract_id: string
+          pdf: string | null
+          signature_png: string | null
+        }
+        Insert: {
+          contract_id: string
+          pdf?: string | null
+          signature_png?: string | null
+        }
+        Update: {
+          contract_id?: string
+          pdf?: string | null
+          signature_png?: string | null
+        }
+        Relationships: []
+      }
+      contract_events: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: number
+          ip: string | null
+          type: string
+          user_agent: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: number
+          ip?: string | null
+          type: string
+          user_agent?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: number
+          ip?: string | null
+          type?: string
+          user_agent?: string | null
         }
         Relationships: []
       }

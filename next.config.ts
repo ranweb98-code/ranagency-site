@@ -3,6 +3,20 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   output: "standalone",
+  // The agreement text and the PDF font are read from disk at runtime, which
+  // the file tracer cannot see on its own.
+  outputFileTracingIncludes: {
+    "/api/sign/verify": ["./contracts/**/*", "./assets/fonts/**/*"],
+    "/admin/contracts": ["./contracts/**/*"],
+  },
+  // Signing links and the owner screen are never indexed.
+  async headers() {
+    const noindex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
+    return [
+      { source: "/sign/:path*", headers: noindex },
+      { source: "/admin/:path*", headers: noindex },
+    ]
+  },
   images: {
     qualities: [75, 90, 100],
   },

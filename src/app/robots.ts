@@ -7,7 +7,7 @@ const SITE_URL = "https://napuch.co.il"
 // can only read if they are allowed to fetch it — so /crm is not blocked here.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/app/", "/app"] }],
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/app/", "/app", "/sign/", "/admin/"] }],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   }

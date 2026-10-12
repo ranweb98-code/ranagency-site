@@ -50,3 +50,6 @@ temp/
 
 # MCP server config (contains API keys)
 .mcp.json
+
+# Contracts: emails written here instead of sent when no RESEND_API_KEY is set (dev only)
+.dev-outbox/
