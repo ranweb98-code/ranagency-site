@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, Bot, Send, Sparkles, UserRound } from "lucide-react"
+import { ArrowRight, Bot, MessageCircle, Phone, Send, Sparkles, UserRound } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
@@ -12,9 +12,11 @@ import { IconButton } from "@/components/crm/ui/icon-button"
 import { ItemCard } from "@/components/crm/ui/item-card"
 import { Pill } from "@/components/crm/ui/pill"
 import { Segmented } from "@/components/crm/ui/segmented"
+import { TEMPERATURE, TemperatureTag } from "@/components/crm/ui/temperature"
 import { Timeline } from "@/components/crm/ui/timeline"
-import { dayDiff, formatDayShort, formatDuration, formatMoney, formatTime, toDayKey } from "@/lib/crm/format"
-import type { CatalogItem, Contact, CrmData, Message } from "@/lib/crm/types"
+import { dayDiff, formatDayShort, formatDuration, formatMoney, formatRelative, formatTime, toDayKey } from "@/lib/crm/format"
+import { telLink, whatsappLink } from "@/lib/crm/phone"
+import type { CatalogItem, Contact, CrmData, Message, Temperature } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
 
 type Mode = "agent" | "human"
@@ -70,12 +72,14 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               <Link href={`${base}/contacts/${contact.id}`} className="truncate text-[15px] font-medium hover:underline">
                 {contact.name}
               </Link>
+              <TemperatureTag temperature={contact.temperature} />
               <ChannelTag channel={contact.channel} />
             </div>
             <p className="truncate text-xs text-crm-muted">
-              <bdi dir="ltr">{contact.phone}</bdi> · {pack.stages[stageIndex]?.label}
+              {contact.phone ? <bdi dir="ltr">{contact.phone}</bdi> : "אין מספר טלפון"} · {pack.stages[stageIndex]?.label}
             </p>
           </div>
+          <ReachButtons contact={contact} live={live} />
           {live ? (
             <Pill tone="soft">{contact.handledBy === "human" ? "אצלכם" : "אצל הסוכן"}</Pill>
           ) : (
@@ -159,12 +163,106 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
       {/* context column — wide screens only; the full card is one tap away */}
       <aside className="hidden min-h-0 xl:block" aria-label="הקשר ופעילות">
         <Glass className="crm-scroll flex h-full flex-col overflow-y-auto p-4">
-          {item ? <ItemCard item={item} icon={pack.catalogIcon} label={`${pack.vocab.catalogItem} שמעניין`} /> : null}
+          <LeadStatus contact={contact} now={data.now} stage={pack.stages[stageIndex]?.label} live={live} />
+          {item ? (
+            <div className="mt-4">
+              <ItemCard item={item} icon={pack.catalogIcon} label={`${pack.vocab.catalogItem} שמעניין`} />
+            </div>
+          ) : null}
           <h3 className="mb-2 mt-5 text-[13px] font-medium">פעילות</h3>
           <Timeline events={contact.timeline} now={data.now} />
         </Glass>
       </aside>
     </>
+  )
+}
+
+/** Call / WhatsApp from the thread. In the demo the numbers are made up and could belong to
+ *  a real person, so there the buttons explain themselves instead of dialling. */
+function ReachButtons({ contact, live, wide }: { contact: Contact; live: boolean; wide?: boolean }) {
+  const toast = useToast()
+  const tel = live ? telLink(contact.phone) : null
+  const wa = live ? whatsappLink(contact.phone) : null
+  if (!contact.phone) return null
+  const demo = () => toast("בהדגמה המספרים בדויים ולכן לא מתקשרים באמת. בעסק אמיתי הכפתור מחייג או פותח צ׳אט.")
+  const base = "inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
+  const size = wide ? "flex-1 px-3 py-2.5" : "size-9 md:size-auto md:px-3.5 md:py-2"
+  const label = (text: string) => <span className={wide ? "" : "max-md:sr-only"}>{text}</span>
+  return (
+    <div className={cn("flex items-center gap-1.5", wide && "w-full")}>
+      {tel ? (
+        <a href={tel} className={cn(base, size, "bg-crm-ink text-white hover:opacity-90")}>
+          <Phone className="size-3.5" aria-hidden />
+          {label("התקשר")}
+        </a>
+      ) : (
+        <button type="button" onClick={demo} className={cn(base, size, "bg-crm-ink text-white hover:opacity-90")}>
+          <Phone className="size-3.5" aria-hidden />
+          {label("התקשר")}
+        </button>
+      )}
+      {wa || !live ? (
+        wa ? (
+          <a href={wa} target="_blank" rel="noopener noreferrer" className={cn(base, size, "bg-[#16a34a] text-white hover:opacity-90")}>
+            <MessageCircle className="size-3.5" aria-hidden />
+            {label("וואטסאפ")}
+          </a>
+        ) : (
+          <button type="button" onClick={demo} className={cn(base, size, "bg-[#16a34a] text-white hover:opacity-90")}>
+            <MessageCircle className="size-3.5" aria-hidden />
+            {label("וואטסאפ")}
+          </button>
+        )
+      ) : null}
+    </div>
+  )
+}
+
+const ORDER: Temperature[] = ["cold", "warm", "hot"]
+
+/** Where this lead stands, said three ways: the temperature in words, on a scale, and what to do. */
+function LeadStatus({ contact, now, stage, live }: { contact: Contact; now: string; stage?: string; live: boolean }) {
+  const t = TEMPERATURE[contact.temperature]
+  const reachable = contact.phone ? "טלפון ווואטסאפ" : `רק דרך ${CHANNELS[contact.channel].label}`
+  return (
+    <section aria-label="מצב הליד" className="rounded-[22px] bg-white/70 p-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-[13px] font-medium">מצב הליד</h3>
+        <TemperatureTag temperature={contact.temperature} className="text-xs" />
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-1" role="img" aria-label={`חום הליד: ${t.label}`}>
+        {ORDER.map((level) => (
+          <div key={level}>
+            <span className={cn("block h-2 rounded-full", ORDER.indexOf(level) <= ORDER.indexOf(contact.temperature) ? TEMPERATURE[contact.temperature].solid : "bg-black/[0.08]")} />
+            <span className={cn("mt-1 block text-center text-[10px]", level === contact.temperature ? "font-semibold text-crm-ink" : "text-crm-muted")}>{TEMPERATURE[level].label}</span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2.5 text-xs leading-relaxed">{t.hint}</p>
+      <dl className="mt-3 space-y-1.5 text-xs">
+        {stage ? (
+          <div className="flex justify-between gap-3">
+            <dt className="text-crm-muted">שלב</dt>
+            <dd className="font-medium">{stage}</dd>
+          </div>
+        ) : null}
+        <div className="flex justify-between gap-3">
+          <dt className="text-crm-muted">אפשר לפנות</dt>
+          <dd className="font-medium">{reachable}</dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt className="text-crm-muted">מטפל</dt>
+          <dd className="font-medium">{contact.handledBy === "human" ? "אתם" : "הסוכן"}</dd>
+        </div>
+        <div className="flex justify-between gap-3">
+          <dt className="text-crm-muted">קשר אחרון</dt>
+          <dd className="font-medium">{formatRelative(contact.lastContactAt, now)}</dd>
+        </div>
+      </dl>
+      <div className="mt-3.5">
+        <ReachButtons contact={contact} live={live} wide />
+      </div>
+    </section>
   )
 }
 

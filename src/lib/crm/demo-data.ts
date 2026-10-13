@@ -239,7 +239,9 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     const handledBy = !isWon && index >= 1 && index < last && rand() < 0.22 ? "human" : "agent"
     const unread = !isWon && index <= 1 && rand() > 0.45 ? 1 + Math.floor(rand() * 3) : 0
 
-    const temperature: Temperature = isWon || index >= pack.bookedFromStage ? "hot" : pick<Temperature>(["hot", "warm", "warm", "cold", "cold"])
+    // Booked and closed deals run hot, but not all: a real list mixes hot, interested and cold, and a
+    // demo of "tell them apart at a glance" needs all three. (By position, not by `rand()`, so nothing else shifts.)
+    const temperature: Temperature = isWon ? "hot" : index >= pack.bookedFromStage ? (i % 3 === 1 ? "warm" : "hot") : pick<Temperature>(["hot", "warm", "warm", "cold", "cold"])
 
     // ── appointment ──────────────────────────────────────────────────────
     let appointmentAt: number | undefined
