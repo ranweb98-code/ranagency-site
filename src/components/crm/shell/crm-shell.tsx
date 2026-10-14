@@ -19,7 +19,7 @@ import {
 import { motion } from "motion/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 
 import { Avatar } from "@/components/crm/ui/avatar"
 import { IconButton } from "@/components/crm/ui/icon-button"
@@ -89,6 +89,8 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
   const [leadOpen, setLeadOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [tucked, setTucked] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
 
   const nav: NavItem[] = [
     { key: "overview", href: base, label: "סקירה", icon: LayoutDashboard },
@@ -120,8 +122,17 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
   // turns into frosted glass once content starts to slide under it — without
   // that, scrolled titles and cards show straight through the logo and the
   // buttons and the words pile up.
+  // Scrolling down tucks the bar away so the page gets the whole screen; the
+  // smallest scroll back up (or keyboard focus on it) brings it straight back.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
+    let last = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      setScrolled(y > 8)
+      if (y < 80 || y < last - 4) setTucked(false)
+      else if (y > last + 6 && !headerRef.current?.contains(document.activeElement)) setTucked(true)
+      last = y
+    }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
@@ -142,8 +153,11 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
       <div className="relative z-10">
         {/* ── top bar ─────────────────────────────────────────────── */}
         <header
+          ref={headerRef}
+          onFocus={() => setTucked(false)}
           className={cn(
-            "sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300",
+            "sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter,transform] duration-300",
+            tucked && "-translate-y-full",
             scrolled ? "border-white/70 bg-white/80 backdrop-blur-lg" : "border-transparent",
           )}
         >
