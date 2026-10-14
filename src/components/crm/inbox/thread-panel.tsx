@@ -72,14 +72,12 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               <Link href={`${base}/contacts/${contact.id}`} className="truncate text-[15px] font-medium hover:underline">
                 {contact.name}
               </Link>
-              <TemperatureTag temperature={contact.temperature} />
-              <ChannelTag channel={contact.channel} />
             </div>
             <p className="truncate text-xs text-crm-muted">
               {contact.phone ? <bdi dir="ltr">{contact.phone}</bdi> : "אין מספר טלפון"} · {pack.stages[stageIndex]?.label}
             </p>
           </div>
-          <ReachButtons contact={contact} live={live} />
+
           {live ? (
             <Pill tone="soft">{contact.handledBy === "human" ? "אצלכם" : "אצל הסוכן"}</Pill>
           ) : (
@@ -97,6 +95,14 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
             />
           )}
         </header>
+
+        {/* Below the wide layout there is no side column, so the lead's tags and the call buttons sit in a strip of their own. */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-black/[0.06] px-3.5 py-2 md:px-5 xl:hidden">
+          <TemperatureTag temperature={contact.temperature} />
+          <ChannelTag channel={contact.channel} />
+          <span className="flex-1" />
+          <ReachButtons contact={contact} live={live} />
+        </div>
 
         {/* messages */}
         <div className="crm-scroll min-h-0 flex-1 space-y-2 overflow-y-auto px-3.5 py-4 md:px-5">
@@ -162,7 +168,8 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
 
       {/* context column — wide screens only; the full card is one tap away */}
       <aside className="hidden min-h-0 xl:block" aria-label="הקשר ופעילות">
-        <Glass className="crm-scroll flex h-full flex-col overflow-y-auto p-4">
+        <Glass className="flex h-full flex-col overflow-hidden">
+         <div className="crm-scroll min-h-0 flex-1 overflow-y-auto p-4">
           <LeadStatus contact={contact} now={data.now} stage={pack.stages[stageIndex]?.label} live={live} />
           {item ? (
             <div className="mt-4">
@@ -171,6 +178,7 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
           ) : null}
           <h3 className="mb-2 mt-5 text-[13px] font-medium">פעילות</h3>
           <Timeline events={contact.timeline} now={data.now} />
+         </div>
         </Glass>
       </aside>
     </>
@@ -223,7 +231,7 @@ const ORDER: Temperature[] = ["cold", "warm", "hot"]
 /** Where this lead stands, said three ways: the temperature in words, on a scale, and what to do. */
 function LeadStatus({ contact, now, stage, live }: { contact: Contact; now: string; stage?: string; live: boolean }) {
   const t = TEMPERATURE[contact.temperature]
-  const reachable = contact.phone ? "טלפון ווואטסאפ" : `רק דרך ${CHANNELS[contact.channel].label}`
+  const reachable = contact.phone ? `טלפון ווואטסאפ${contact.channel === "voice" ? "" : `, ${CHANNELS[contact.channel].label}`}` : `רק דרך ${CHANNELS[contact.channel].label}`
   return (
     <section aria-label="מצב הליד" className="rounded-[22px] bg-white/70 p-3.5">
       <div className="flex items-center justify-between gap-2">
@@ -239,6 +247,11 @@ function LeadStatus({ contact, now, stage, live }: { contact: Contact; now: stri
         ))}
       </div>
       <p className="mt-2.5 text-xs leading-relaxed">{t.hint}</p>
+      {contact.phone ? null : (
+        <p className="mt-2 rounded-2xl bg-black/[0.05] px-3 py-2 text-xs leading-relaxed">
+          הליד עוד לא השאיר מספר טלפון, ולכן אי אפשר להתקשר או לכתוב לו בוואטסאפ. אפשר לפנות רק דרך {CHANNELS[contact.channel].label}. כשיעביר מספר, הכפתורים יופיעו כאן.
+        </p>
+      )}
       <dl className="mt-3 space-y-1.5 text-xs">
         {stage ? (
           <div className="flex justify-between gap-3">

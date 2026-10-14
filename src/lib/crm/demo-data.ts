@@ -339,10 +339,13 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
           ? `${item.title} · ${pack.vocab.booking} ${formatSlot(toIso(appointmentAt), nowIso)}`
           : `התעניינות ב${item.title}`
 
+    // Not every lead has left a number: many who write on Instagram never do.
+    const number = `05${pick([0, 2, 3, 4, 8])}-${100 + Math.floor(rand() * 900)}-${1000 + Math.floor(rand() * 9000)}`
+    const noNumber = channel === "instagram" && i % 2 === 0
     contacts.push({
       id,
       name: person.he,
-      phone: `05${pick([0, 2, 3, 4, 8])}-${100 + Math.floor(rand() * 900)}-${1000 + Math.floor(rand() * 9000)}`,
+      phone: noNumber ? "" : number,
       email: `${person.en}@gmail.com`,
       channel,
       temperature,
