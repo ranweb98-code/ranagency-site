@@ -377,7 +377,7 @@ export function ProfileView({
 
       {canEdit ? (
         <div className="sticky bottom-24 z-30 mt-4 md:bottom-4">
-          <Glass className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-full p-2 ps-5 backdrop-blur-xl">
+          <Glass className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-full p-2 ps-5">
             <p role="status" className={cn("min-w-0 truncate text-[13px]", error ? "text-[#b3261e]" : "text-crm-ink/70")}>
               {error ?? (pending ? "שומר…" : dirty ? "יש שינויים שלא נשמרו" : "הכל שמור")}
             </p>

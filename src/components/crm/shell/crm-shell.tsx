@@ -156,9 +156,10 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
           ref={headerRef}
           onFocus={() => setTucked(false)}
           className={cn(
-            "sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter,transform] duration-300",
+            // No backdrop-filter here: blurring whatever scrolls underneath is redone on every frame and is what made scrolling feel like 40 fps. A near-opaque bar looks the same.
+            "sticky top-0 z-40 border-b will-change-transform transition-[background-color,border-color,transform] duration-300",
             tucked && "-translate-y-full",
-            scrolled ? "border-white/70 bg-white/80 backdrop-blur-lg" : "border-transparent",
+            scrolled ? "border-white/70 bg-white/92" : "border-transparent",
           )}
         >
           <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-3 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:ps-[88px] md:py-4">
@@ -177,7 +178,7 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
           </Link>
 
           <nav aria-label="ניווט ראשי" className="hidden md:block">
-            <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1 backdrop-blur-xl">
+            <ul className="crm-glass flex items-center gap-0.5 rounded-full p-1">
               {nav.map((item) => {
                 const active = isActive(item)
                 return (
