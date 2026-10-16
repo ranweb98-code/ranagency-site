@@ -47,10 +47,10 @@ export function DealCards({
     // grows (scale, ring, shadow) past its own box, so its top edge was cut off.
     // The padding gives it room; the negative margins give the space back, so
     // nothing around the strip moves. The desktop grid doesn't clip and resets all of it.
-    // The strip stays inside the card's own padding (it used to bleed out to the
-    // frame, so the cards touched it); a short fade at both ends lets cards slide
-    // away softly instead of being cut by a hard edge.
-    <ul ref={strip} className="crm-hide-scrollbar -mx-1.5 -mt-2 -mb-6 flex scroll-px-1.5 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1.5 pt-2 pb-7 [mask-image:linear-gradient(to_right,transparent,#000_6px,#000_calc(100%-6px),transparent)] md:mx-0 md:mt-0 md:mb-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0 md:pt-0 md:pb-1 md:[mask-image:none]">
+    // The strip sits inside the card's own padding, like an invisible box inside
+    // the frame: cards slide away at that box's edge, never at the frame itself.
+    // Its side padding gives the selected card's ring room to show.
+    <ul ref={strip} className="crm-hide-scrollbar -mt-2 -mb-6 flex scroll-px-2 snap-x snap-mandatory gap-2.5 overflow-x-auto px-2 pt-2 pb-7 md:mt-0 md:mb-0 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:px-0 md:pt-0 md:pb-1">
       {deals.map((deal, i) => {
         const tone = TONES[i] ?? TONES[5]
         const item = itemById.get(deal.itemId)
