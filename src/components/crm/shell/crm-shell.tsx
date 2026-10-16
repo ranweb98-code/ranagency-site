@@ -19,7 +19,7 @@ import {
 import { motion } from "motion/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import { Avatar } from "@/components/crm/ui/avatar"
 import { IconButton } from "@/components/crm/ui/icon-button"
@@ -88,9 +88,6 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [leadOpen, setLeadOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [tucked, setTucked] = useState(false)
-  const headerRef = useRef<HTMLElement>(null)
 
   const nav: NavItem[] = [
     { key: "overview", href: base, label: "סקירה", icon: LayoutDashboard },
@@ -118,25 +115,6 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
     return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  // The bar is transparent at the top of a page (airy, like the reference) and
-  // turns into frosted glass once content starts to slide under it — without
-  // that, scrolled titles and cards show straight through the logo and the
-  // buttons and the words pile up.
-  // Scrolling down tucks the bar away so the page gets the whole screen; the
-  // smallest scroll back up (or keyboard focus on it) brings it straight back.
-  useEffect(() => {
-    let last = window.scrollY
-    const onScroll = () => {
-      const y = window.scrollY
-      setScrolled(y > 8)
-      if (y < 80 || y < last - 4) setTucked(false)
-      else if (y > last + 6 && !headerRef.current?.contains(document.activeElement)) setTucked(true)
-      last = y
-    }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
   const openNewLead = () => setLeadOpen(true)
   const mobilePrimary = nav.filter((n) => ["overview", "inbox", "pipeline", "calendar"].includes(n.key))
   const moreActive = !mobilePrimary.some(isActive)
@@ -152,16 +130,8 @@ export function CrmShell({ children, base, account, businessName, logoUrl, owner
       </a>
       <div className="relative z-10">
         {/* ── top bar ─────────────────────────────────────────────── */}
-        <header
-          ref={headerRef}
-          onFocus={() => setTucked(false)}
-          className={cn(
-            // No backdrop-filter here: blurring whatever scrolls underneath is redone on every frame and is what made scrolling feel like 40 fps. A near-opaque bar looks the same.
-            "sticky top-0 z-40 border-b will-change-transform transition-[background-color,border-color,transform] duration-300",
-            tucked && "-translate-y-full",
-            scrolled ? "border-white/70 bg-white/92" : "border-transparent",
-          )}
-        >
+        {/* Not sticky on purpose: a bar that follows the page had to be re-composited over the scrolling content on every frame, which is what made scrolling feel like 40 fps. It lives at the top of the page; scroll up to reach it. */}
+        <header className="relative z-40">
           <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-3 px-3 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr] md:ps-[88px] md:py-4">
           <Link href={base} className="flex min-w-0 items-center gap-2.5">
             {logoUrl ? (
