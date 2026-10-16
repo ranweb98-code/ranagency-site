@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, type ElementType, type ReactNode, type RefObject } from "react"
 
-const MIN_SPEED = 12 // px per second, for short strips
-const MAX_SPEED = 34
-const CROSS_SECONDS = 26 // a long strip is sped up so it still crosses in about this long
+const MIN_SPEED = 6 // px per second, for short strips
+const MAX_SPEED = 17
+const CROSS_SECONDS = 52 // a long strip is sped up so it still crosses in about this long
 const HOLD_MS = 1800 // rest at each end
 const RAMP_MS = 900 // speed eases up from rest after each hold
 const EDGE_EASE = 90 // px before an end over which it eases to a stop
