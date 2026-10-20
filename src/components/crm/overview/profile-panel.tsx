@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpLeft, CalendarPlus, Mail, MessageCircle, Phone, Star } from "lucide-react"
+import { ArrowUpLeft, CalendarPlus, Camera, Mail, MessageCircle, Phone, Star } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -8,10 +8,12 @@ import { Avatar } from "@/components/crm/ui/avatar"
 import { ChannelDot, CHANNELS } from "@/components/crm/ui/channel"
 import { PackIcon } from "@/components/crm/ui/icon-map"
 import { IconButton } from "@/components/crm/ui/icon-button"
+import { InstagramLink } from "@/components/crm/ui/instagram-link"
 import { Pill } from "@/components/crm/ui/pill"
 import { SectionCard } from "@/components/crm/ui/section-card"
 import { Glass } from "@/components/crm/ui/glass"
 import { formatMoney, formatRelative } from "@/lib/crm/format"
+import { instagramLabel } from "@/lib/crm/instagram"
 import type { Contact, CrmData } from "@/lib/crm/types"
 
 const TEMP: Record<Contact["temperature"], { label: string; tone: "warm" | "soft" | "ink" }> = {
@@ -57,6 +59,11 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
             <IconButton label="התקשרות" tone="glass" tabIndex={-1} className="pointer-events-none"><Phone /></IconButton>
           </a>
         ) : null}
+        {contact.instagram ? (
+          <InstagramLink handle={contact.instagram} demo={data.demo} label={`הפרופיל של ${contact.name} באינסטגרם`}>
+            <IconButton label="הפרופיל באינסטגרם" tone="glass" tabIndex={-1} className="pointer-events-none"><Camera /></IconButton>
+          </InstagramLink>
+        ) : null}
         {contact.email ? (
           <a href={`mailto:${contact.email}`} aria-label="שליחת מייל">
             <IconButton label="שליחת מייל" tone="glass" tabIndex={-1} className="pointer-events-none"><Mail /></IconButton>
@@ -81,6 +88,7 @@ export function ProfileCard({ contact, data, base }: { contact: Contact; data: C
 export function DetailsCard({ contact, data, base }: { contact: Contact; data: CrmData; base: string }) {
   const rows = [
     { key: "phone", label: "טלפון", value: contact.phone, dir: "ltr" as const, icon: "phone" as const, href: contact.phone ? `tel:${contact.phone.replace(/-/g, "")}` : undefined, action: "התקשרות" },
+    ...(contact.instagram ? [{ key: "instagram", label: "אינסטגרם", value: instagramLabel(contact.instagram), dir: "ltr" as const, icon: "camera" as const, href: undefined, action: undefined }] : []),
     { key: "email", label: "מייל", value: contact.email, dir: "ltr" as const, icon: "mail" as const, href: contact.email ? `mailto:${contact.email}` : undefined, action: "שליחת מייל" },
     ...data.pack.fields.map((f) => ({ key: f.key, label: f.label, value: contact.fields[f.key], dir: undefined, icon: f.icon, href: undefined, action: undefined })),
   ]
@@ -95,7 +103,11 @@ export function DetailsCard({ contact, data, base }: { contact: Contact; data: C
               <p className="text-[11px] text-crm-muted">{row.label}</p>
               <p className="truncate text-[15px] font-medium">{row.value ? row.dir ? <bdi dir="ltr">{row.value}</bdi> : row.value : "—"}</p>
             </div>
-            {row.href ? (
+            {row.key === "instagram" ? (
+              <InstagramLink handle={contact.instagram} demo={data.demo} label="פתיחת הפרופיל באינסטגרם" className="grid size-9 shrink-0 place-items-center rounded-full bg-black/[0.06] transition-colors hover:bg-black/10">
+                <ArrowUpLeft className="size-4" aria-hidden />
+              </InstagramLink>
+            ) : row.href ? (
               <a href={row.href} aria-label={row.action} className="grid size-9 shrink-0 place-items-center rounded-full bg-black/[0.06] transition-colors hover:bg-black/10">
                 <ArrowUpLeft className="size-4" aria-hidden />
               </a>

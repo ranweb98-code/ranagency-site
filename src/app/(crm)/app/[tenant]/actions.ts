@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { formatMoney } from "@/lib/crm/format"
 import { sendNotificationEmail } from "@/lib/crm/notification-email"
 import { resolvePack } from "@/lib/crm/live-mapper"
+import { normalizeInstagramHandle } from "@/lib/crm/instagram"
 import { normalizePhone } from "@/lib/crm/phone"
 import { validateProfile } from "@/lib/crm/profile"
 import { requireSession } from "@/lib/crm/session"
@@ -24,15 +25,28 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** A lead typed in by the team: the walk-in, the call no agent took. Whether the
  *  caller may do this is decided by row level security on the insert. */
-export async function createLead(slug: string, input: { name: string; phone: string; itemId: string; source: string }): Promise<Result> {
+export async function createLead(slug: string, input: { name: string; phone: string; instagram?: string; itemId: string; source: string }): Promise<Result> {
   await requireSession()
 
   const name = input.name.trim().replace(/\s+/g, " ")
   if (name.length < 2 || name.length > 80) return { ok: false, error: "כתבו שם (עד 80 תווים)" }
-  const phone = normalizePhone(input.phone)
-  if (!phone) return { ok: false, error: "מספר הטלפון לא נראה תקין" }
   const channel = CHANNEL_BY_SOURCE[input.source]
   if (!channel) return { ok: false, error: "בחרו מאיפה הגיע הליד" }
+
+  // An Instagram lead is known by its username and may have no phone yet; every
+  // other lead needs a number, which is how the agent recognises them later.
+  const phoneText = input.phone.trim()
+  const phone = phoneText ? normalizePhone(phoneText) : null
+  if (phoneText && !phone) return { ok: false, error: "מספר הטלפון לא נראה תקין" }
+  let instagram: string | null = null
+  if (channel === "instagram") {
+    const handleText = (input.instagram ?? "").trim()
+    instagram = handleText ? normalizeInstagramHandle(handleText) : null
+    if (handleText && !instagram) return { ok: false, error: "שם המשתמש באינסטגרם לא נראה תקין" }
+    if (!instagram && !phone) return { ok: false, error: "כתבו שם משתמש באינסטגרם או טלפון" }
+  } else if (!phone) {
+    return { ok: false, error: "כתבו מספר טלפון" }
+  }
 
   const supabase = await createClient()
   const { data: tenant } = await supabase.from("tenants").select("id, industry, brand").eq("slug", slug).is("archived_at", null).maybeSingle()
@@ -55,6 +69,7 @@ export async function createLead(slug: string, input: { name: string; phone: str
       tenant_id: tenant.id,
       name,
       phone,
+      instagram_handle: instagram,
       channel,
       stage_id: pack.stages[0].id,
       item_id: itemId,
@@ -66,7 +81,7 @@ export async function createLead(slug: string, input: { name: string; phone: str
     .single()
 
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "המספר הזה כבר קיים אצלכם" }
+    if (error.code === "23505") return { ok: false, error: error.message.includes("instagram") ? "שם המשתמש הזה כבר קיים אצלכם" : "המספר הזה כבר קיים אצלכם" }
     if (error.code === "42501") return { ok: false, error: "אין לכם הרשאה להוסיף כאן" }
     return { ok: false, error: "לא הצלחנו לשמור. נסו שוב." }
   }

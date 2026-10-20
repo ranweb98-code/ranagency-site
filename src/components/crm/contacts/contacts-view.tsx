@@ -36,7 +36,7 @@ export function ContactsView({ data, initialTemp, initialStage, initialSort }: {
     const q = query.trim()
     return data.contacts
       .filter((c) => (temp === "all" || c.temperature === temp) && (stage === "all" || c.stageId === stage) && (channel === "all" || c.channel === channel))
-      .filter((c) => !q || c.name.includes(q) || c.phone.replace(/-/g, "").includes(q.replace(/-/g, "")))
+      .filter((c) => !q || c.name.includes(q) || c.phone.replace(/-/g, "").includes(q.replace(/-/g, "")) || c.instagram.includes(q.replace(/^@/, "").toLowerCase()))
       .sort((a, b) => (sort === "value" ? b.value - a.value : Date.parse(b.lastContactAt) - Date.parse(a.lastContactAt)))
   }, [data.contacts, temp, stage, channel, sort, query])
 
@@ -127,7 +127,7 @@ function ContactRow({ contact, stageLabel, itemTitle, href, now }: { contact: Co
             {contact.temperature === "hot" ? <Flame className="size-3.5 shrink-0 text-[#ff5b2e]" aria-label="ליד חם" /> : null}
           </span>
           <span className="block text-[11px] text-crm-muted">
-            <bdi dir="ltr">{contact.phone}</bdi>
+            <bdi dir="ltr">{contact.phone || (contact.instagram ? `@${contact.instagram}` : "")}</bdi>
           </span>
         </span>
       </span>

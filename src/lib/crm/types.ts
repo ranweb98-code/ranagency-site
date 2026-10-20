@@ -184,6 +184,8 @@ export interface Contact {
   id: string
   name: string
   phone: string
+  /** Instagram username without the @, "" when the lead did not come through Instagram. */
+  instagram: string
   email: string
   channel: Channel
   temperature: Temperature

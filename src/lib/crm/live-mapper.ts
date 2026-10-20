@@ -129,6 +129,7 @@ export function buildCrmData(rows: LiveRows, ctx: { now: Date; photoUrl: (path: 
     id: c.id,
     name: c.name,
     phone: c.phone ?? "",
+    instagram: c.instagram_handle ?? "",
     email: c.email ?? "",
     channel: oneOf(c.channel, CHANNELS, "whatsapp"),
     temperature: oneOf(c.temperature, TEMPERATURES, "warm"),

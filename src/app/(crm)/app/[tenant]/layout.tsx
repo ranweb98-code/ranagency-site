@@ -54,7 +54,7 @@ export default async function LiveTenantLayout({ children, params }: Params & { 
         notifications={notifications}
         markNotificationsSeen={markNotificationsSeen.bind(null, data.tenant.slug)}
         sendTestNotification={session.isSuperAdmin ? sendTestNotification.bind(null, data.tenant.slug) : undefined}
-        search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
+        search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone || (c.instagram ? `@${c.instagram}` : "") }))}
       >
         {children}
       </CrmShell>

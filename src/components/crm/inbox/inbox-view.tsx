@@ -46,7 +46,7 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
       if (filter in TEMPERATURE && c.temperature !== filter) return false
       if (filter in CHANNELS && c.channel !== filter) return false
       const q = query.trim()
-      return !q || c.name.includes(q) || c.phone.replace(/-/g, "").includes(q.replace(/-/g, ""))
+      return !q || c.name.includes(q) || c.phone.replace(/-/g, "").includes(q.replace(/-/g, "")) || c.instagram.includes(q.replace(/^@/, "").toLowerCase())
     })
     // "hottest first" keeps the newest conversation on top within each temperature
     .sort((a, b) => (sort === "hot" ? RANK[a.temperature] - RANK[b.temperature] : 0) || Date.parse(b.lastContactAt) - Date.parse(a.lastContactAt))
@@ -176,7 +176,7 @@ function ConversationRow({ contact, now, active, onSelect }: { contact: Contact;
           <TemperatureTag temperature={contact.temperature} className="py-0 text-[10px]" />
           <ChannelTag channel={contact.channel} className="py-0 text-[10px]" />
           {contact.handledBy === "human" ? <span className="text-[10px] font-semibold text-crm-accent">ממתין לך</span> : null}
-          {contact.phone ? null : <span className="inline-flex items-center gap-0.5 text-[10px] text-crm-muted"><Phone className="size-2.5" aria-hidden />אין טלפון</span>}
+          {contact.phone ? null : contact.instagram ? <bdi dir="ltr" className="text-[10px] text-crm-muted">@{contact.instagram}</bdi> : <span className="inline-flex items-center gap-0.5 text-[10px] text-crm-muted"><Phone className="size-2.5" aria-hidden />אין טלפון</span>}
         </span>
         <span className="mt-0.5 flex items-center justify-between gap-2 pe-2.5">
           <span className={cn("truncate text-xs", contact.unread ? "text-crm-ink" : "text-crm-muted")}>

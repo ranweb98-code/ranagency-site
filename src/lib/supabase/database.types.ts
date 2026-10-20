@@ -198,6 +198,7 @@ export type Database = {
           first_reply_seconds: number | null
           handled_by: string
           id: string
+          instagram_handle: string | null
           item_id: string | null
           last_contact_at: string
           name: string
@@ -220,6 +221,7 @@ export type Database = {
           first_reply_seconds?: number | null
           handled_by?: string
           id?: string
+          instagram_handle?: string | null
           item_id?: string | null
           last_contact_at?: string
           name: string
@@ -242,6 +244,7 @@ export type Database = {
           first_reply_seconds?: number | null
           handled_by?: string
           id?: string
+          instagram_handle?: string | null
           item_id?: string | null
           last_contact_at?: string
           name?: string

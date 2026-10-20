@@ -38,7 +38,7 @@ export default async function TenantLayout({ children, params }: Params & { chil
         itemOptions={data.catalog.map((c) => ({ id: c.id, title: c.title }))}
         unread={data.contacts.reduce((sum, c) => sum + c.unread, 0)}
         notifications={demoNotifications(data)}
-        search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
+        search={data.contacts.map((c) => ({ id: c.id, name: c.name, phone: c.phone || (c.instagram ? `@${c.instagram}` : "") }))}
       >
         {children}
       </CrmShell>

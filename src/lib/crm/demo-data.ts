@@ -346,6 +346,7 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
       id,
       name: person.he,
       phone: noNumber ? "" : number,
+      instagram: channel === "instagram" ? `${person.en.toLowerCase()}_${10 + ((i * 7) % 89)}` : "",
       email: `${person.en}@gmail.com`,
       channel,
       temperature,

@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, Bot, MessageCircle, Phone, Send, Sparkles, UserRound } from "lucide-react"
+import { ArrowRight, Bot, Camera, MessageCircle, Phone, Send, Sparkles, UserRound } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
@@ -15,6 +15,8 @@ import { Segmented } from "@/components/crm/ui/segmented"
 import { TEMPERATURE, TemperatureTag } from "@/components/crm/ui/temperature"
 import { Timeline } from "@/components/crm/ui/timeline"
 import { dayDiff, formatDayShort, formatDuration, formatMoney, formatRelative, formatTime, toDayKey } from "@/lib/crm/format"
+import { InstagramLink } from "@/components/crm/ui/instagram-link"
+import { instagramLabel } from "@/lib/crm/instagram"
 import { telLink, whatsappLink } from "@/lib/crm/phone"
 import type { CatalogItem, Contact, CrmData, Message, Temperature } from "@/lib/crm/types"
 import { cn } from "@/lib/utils"
@@ -74,7 +76,7 @@ export function ThreadPanel({ data, contact, className, onBack }: { data: CrmDat
               </Link>
             </div>
             <p className="truncate text-xs text-crm-muted">
-              {contact.phone ? <bdi dir="ltr">{contact.phone}</bdi> : "אין מספר טלפון"} · {pack.stages[stageIndex]?.label}
+              {contact.phone ? <bdi dir="ltr">{contact.phone}</bdi> : contact.instagram ? <bdi dir="ltr">{instagramLabel(contact.instagram)}</bdi> : "אין מספר טלפון"} · {pack.stages[stageIndex]?.label}
             </p>
           </div>
 
@@ -191,14 +193,20 @@ function ReachButtons({ contact, live, wide }: { contact: Contact; live: boolean
   const toast = useToast()
   const tel = live ? telLink(contact.phone) : null
   const wa = live ? whatsappLink(contact.phone) : null
-  if (!contact.phone) return null
+  if (!contact.phone && !contact.instagram) return null
   const demo = () => toast("בהדגמה המספרים בדויים ולכן לא מתקשרים באמת. בעסק אמיתי הכפתור מחייג או פותח צ׳אט.")
   const base = "inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
   const size = wide ? "flex-1 px-3 py-2.5" : "size-9 md:size-auto md:px-3.5 md:py-2"
   const label = (text: string) => <span className={wide ? "" : "max-md:sr-only"}>{text}</span>
   return (
     <div className={cn("flex items-center gap-1.5", wide && "w-full")}>
-      {tel ? (
+      {contact.instagram ? (
+        <InstagramLink handle={contact.instagram} demo={!live} label={`הפרופיל של ${contact.name} באינסטגרם`} className={cn(base, size, "bg-[#c2185b] text-white hover:opacity-90")}>
+          <Camera className="size-3.5" aria-hidden />
+          {label("אינסטגרם")}
+        </InstagramLink>
+      ) : null}
+      {!contact.phone ? null : tel ? (
         <a href={tel} className={cn(base, size, "bg-crm-ink text-white hover:opacity-90")}>
           <Phone className="size-3.5" aria-hidden />
           {label("התקשר")}
@@ -209,7 +217,7 @@ function ReachButtons({ contact, live, wide }: { contact: Contact; live: boolean
           {label("התקשר")}
         </button>
       )}
-      {wa || !live ? (
+      {!contact.phone ? null : wa || !live ? (
         wa ? (
           <a href={wa} target="_blank" rel="noopener noreferrer" className={cn(base, size, "bg-[#16a34a] text-white hover:opacity-90")}>
             <MessageCircle className="size-3.5" aria-hidden />
@@ -231,7 +239,7 @@ const ORDER: Temperature[] = ["cold", "warm", "hot"]
 /** Where this lead stands, said three ways: the temperature in words, on a scale, and what to do. */
 function LeadStatus({ contact, now, stage, live }: { contact: Contact; now: string; stage?: string; live: boolean }) {
   const t = TEMPERATURE[contact.temperature]
-  const reachable = contact.phone ? `טלפון ווואטסאפ${contact.channel === "voice" ? "" : `, ${CHANNELS[contact.channel].label}`}` : `רק דרך ${CHANNELS[contact.channel].label}`
+  const reachable = contact.phone ? `טלפון ווואטסאפ${contact.channel === "voice" ? "" : `, ${CHANNELS[contact.channel].label}`}` : `רק דרך ${CHANNELS[contact.channel].label}${contact.instagram ? ` (${instagramLabel(contact.instagram)})` : ""}`
   return (
     <section aria-label="מצב הליד" className="rounded-[22px] bg-white/70 p-3.5">
       <div className="flex items-center justify-between gap-2">

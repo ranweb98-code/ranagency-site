@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Footprints, Phone, User, UserPlus, X, type LucideIcon } from "lucide-react"
+import { AtSign, Check, Footprints, Phone, User, UserPlus, X, type LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition, type FormEvent, type ReactNode } from "react"
 
@@ -40,6 +40,7 @@ function Labeled({ label, optional, children }: { label: string; optional?: bool
 export interface LeadInput {
   name: string
   phone: string
+  instagram: string
   itemId: string
   source: string
 }
@@ -64,6 +65,7 @@ export function NewLeadDialog({
   const router = useRouter()
   const SOURCES = createLead ? LIVE_SOURCES : DEMO_SOURCES
   const [source, setSource] = useState(SOURCES[0])
+  const instagram = source === "אינסטגרם"
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -83,6 +85,7 @@ export function NewLeadDialog({
       const result = await createLead({
         name: String(data.get("name") ?? ""),
         phone: String(data.get("phone") ?? ""),
+        instagram: source === "אינסטגרם" ? String(data.get("instagram") ?? "") : "",
         itemId: String(data.get("item") ?? ""),
         source,
       })
@@ -110,7 +113,7 @@ export function NewLeadDialog({
           </span>
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="text-xl font-semibold leading-tight">ליד חדש</h2>
-            <p className="mt-1 text-[13px] leading-snug text-crm-muted">שם וטלפון מספיקים. אפשר להשלים את השאר אחר כך.</p>
+            <p className="mt-1 text-[13px] leading-snug text-crm-muted">שם ופרט ליצירת קשר מספיקים. אפשר להשלים את השאר אחר כך.</p>
           </div>
           <IconButton label="סגירה" size="sm" onClick={onClose}>
             <X />
@@ -118,26 +121,6 @@ export function NewLeadDialog({
         </div>
 
         <div className="space-y-4">
-          <Labeled label={`שם ה${personLabel}`}>
-            <div className="relative">
-              <User aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-crm-muted" />
-              <input name="name" required placeholder="דנה כהן" className={cn(fieldClass, "ps-12")} aria-label="שם" autoComplete="off" />
-            </div>
-          </Labeled>
-          <Labeled label="טלפון">
-            <div className="relative">
-              <Phone aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-crm-muted" />
-              <input name="phone" required type="tel" inputMode="tel" dir="ltr" placeholder="050-000-0000" className={cn(fieldClass, "pe-12 text-end")} aria-label="טלפון" />
-            </div>
-          </Labeled>
-          <Labeled label="מתעניין ב" optional>
-            <Select
-              name="item"
-              label="מתעניין ב"
-              placeholder="בחירה מהרשימה"
-              options={[{ value: "", label: "בלי העדפה" }, ...items.map((item) => ({ value: item.id, label: item.title }))]}
-            />
-          </Labeled>
           <Labeled label="מאיפה הגיע">
             <div className={cn("grid gap-2", SOURCES.length === 4 ? "grid-cols-2" : "grid-cols-3")} role="radiogroup" aria-label="מקור">
               {SOURCES.map((s) => {
@@ -166,6 +149,45 @@ export function NewLeadDialog({
                 )
               })}
             </div>
+          </Labeled>
+          <Labeled label={`שם ה${personLabel}`}>
+            <div className="relative">
+              <User aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-crm-muted" />
+              <input name="name" required placeholder="דנה כהן" className={cn(fieldClass, "ps-12")} aria-label="שם" autoComplete="off" />
+            </div>
+          </Labeled>
+          {instagram ? (
+            <Labeled label="שם משתמש באינסטגרם">
+              <div className="relative">
+                <AtSign aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-crm-muted" />
+                <input
+                  name="instagram"
+                  required
+                  dir="ltr"
+                  placeholder="dana.cohen"
+                  className={cn(fieldClass, "pe-12 text-end")}
+                  aria-label="שם משתמש באינסטגרם"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
+              <p className="px-2 text-[11.5px] leading-snug text-crm-muted">בלי הקישור: רק מה שאחרי ה-@. לפי השם הזה הסוכן יזהה אותו כשיכתוב.</p>
+            </Labeled>
+          ) : null}
+          <Labeled label="טלפון" optional={instagram}>
+            <div className="relative">
+              <Phone aria-hidden className="pointer-events-none absolute start-4 top-1/2 size-[18px] -translate-y-1/2 text-crm-muted" />
+              <input name="phone" required={!instagram} type="tel" inputMode="tel" dir="ltr" placeholder="050-000-0000" className={cn(fieldClass, "pe-12 text-end")} aria-label="טלפון" />
+            </div>
+          </Labeled>
+          <Labeled label="מתעניין ב" optional>
+            <Select
+              name="item"
+              label="מתעניין ב"
+              placeholder="בחירה מהרשימה"
+              options={[{ value: "", label: "בלי העדפה" }, ...items.map((item) => ({ value: item.id, label: item.title }))]}
+            />
           </Labeled>
         </div>
         {error ? (
