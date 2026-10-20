@@ -763,9 +763,16 @@ html[data-curtain="skip"] .liquid-curtain {
 
 .crm-panel {
   background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 30px 60px -20px rgba(10, 14, 30, 0.45);
+}
+
+/* While a dialog is open the page behind it must not scroll: a wheel or swipe
+   that chains out of the dialog's own list would re-render the blurred page
+   behind it on every frame, which is what made scrolling the lists feel stuck. */
+html:has(dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Dropdown lists: fully opaque, because they open over rows and buttons that

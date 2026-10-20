@@ -112,7 +112,7 @@ function PaletteBody({
         />
         <kbd className="hidden rounded-md bg-black/[0.06] px-1.5 py-0.5 text-[10px] text-crm-muted sm:block">Esc</kbd>
       </div>
-      <ul role="listbox" className="crm-scroll max-h-[50vh] overflow-y-auto p-2">
+      <ul role="listbox" className="crm-scroll max-h-[50vh] overflow-y-auto overscroll-contain p-2 [contain:content]">
         {entries.length === 0 ? <li className="px-4 py-8 text-center text-sm text-crm-muted">לא נמצאו תוצאות</li> : null}
         {entries.map((entry, i) => {
           const Icon = entry.icon
@@ -120,7 +120,7 @@ function PaletteBody({
             <li key={entry.key} role="option" aria-selected={i === cursor}>
               <button
                 type="button"
-                onMouseEnter={() => setCursor(i)}
+                onMouseMove={() => cursor !== i && setCursor(i)}
                 onClick={() => run(entry)}
                 className={cn("flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start text-sm", i === cursor && "bg-black/[0.06]")}
               >
