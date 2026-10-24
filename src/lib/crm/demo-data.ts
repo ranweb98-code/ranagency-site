@@ -1,4 +1,5 @@
 import { formatPrice, formatSlot, toDayKey } from "./format"
+import { FAQS } from "./faqs"
 import { PACKS } from "./industries"
 import type {
   Appointment,
@@ -76,6 +77,7 @@ const CHANNEL_LABEL: Record<Channel, string> = {
 
 const FOLLOW_UPS = ["אחשוב על זה ואחזור אליכם", "אפשר עוד קצת פרטים?", "תודה, אחזור אליכם"]
 const AGREEMENTS = ["מתאים לי, קבעו", "סגור, תודה!", "מעולה, אשמח"]
+const ACKS = ["וואו, מעולה", "מובן, תודה על ההסבר", "יופי, זה בדיוק מה שחיפשתי", "מעולה, זה מרגיע", "אוקיי, נשמע טוב"]
 
 function hash(text: string): number {
   let h = 2166136261
@@ -293,19 +295,40 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     push("customer", fill(pick(pack.openers), vars), createdMs)
     const sendsMedia = item.photos > 0 && (pack.mode === "listings" || rand() > 0.35)
     push("agent", fill(pack.reply, vars), createdMs + firstReplySeconds * 1000, sendsMedia ? item.id : undefined)
+
+    // The questions a real customer asks before deciding, each answered with specifics, so the
+    // thread reads like talking to the owner. Deterministic from the lead's position (no rand()
+    // here: drawing from it would shift every value generated after this point).
+    const faqs = FAQS[pack.id]
+    const asked = 2 + ((i + index) % 3) + (index >= pack.bookedFromStage ? 1 : 0)
+    const gap = Math.max(20_000, Math.min(4 * MIN, (lastMs - createdMs) / (asked + 3)))
+    const afterReply = createdMs + firstReplySeconds * 1000
+    let cursor = afterReply
+    for (let k = 0; k < asked; k++) {
+      const faq = faqs[(i * 3 + k * 4 + index) % faqs.length]
+      cursor += gap
+      push("customer", fill(faq.q, vars), cursor)
+      cursor += 5000 + ((i + k) % 5) * 2000
+      push("agent", fill(faq.a, vars), cursor)
+      if ((i + k) % 3 === 1 && k < asked - 1) {
+        cursor += 15_000 + ((i * 7 + k) % 4) * 5000
+        push("customer", ACKS[(i + k * 2) % ACKS.length], cursor)
+      }
+    }
+    const faqSpan = cursor - afterReply
     if (index >= pack.bookedFromStage) {
-      push("customer", pick(AGREEMENTS), createdMs + (60 + rand() * 120) * 1000)
-      push("agent", fill(pack.confirm, vars), createdMs + (70 + rand() * 120) * 1000 + firstReplySeconds * 1000)
-      push("agent", fill(pack.close, vars), createdMs + 5 * MIN)
+      push("customer", pick(AGREEMENTS), createdMs + faqSpan + (60 + rand() * 120) * 1000)
+      push("agent", fill(pack.confirm, vars), createdMs + faqSpan + (70 + rand() * 120) * 1000 + firstReplySeconds * 1000)
+      push("agent", fill(pack.close, vars), createdMs + faqSpan + 5 * MIN)
     } else {
       const followUp = pick(FOLLOW_UPS)
-      push("customer", followUp, createdMs + (3 + rand() * 30) * MIN)
+      push("customer", followUp, createdMs + faqSpan + (3 + rand() * 30) * MIN)
       if (followUp !== FOLLOW_UPS[2]) {
-        push("agent", "בטח, אני כאן לכל שאלה. אפשר גם להשאיר טלפון ונחזור אליכם.", createdMs + (4 + rand() * 30) * MIN)
+        push("agent", "בטח, אני כאן לכל שאלה. אפשר גם להשאיר טלפון ונחזור אליכם.", createdMs + faqSpan + (4 + rand() * 30) * MIN)
       }
     }
     if (handledBy === "human") {
-      push("human", `היי, כאן ${firstName}. ראיתי שהתעניינת — אשמח לדבר 🙂`, Math.max(lastMs, createdMs + 10 * MIN))
+      push("human", `היי, כאן ${firstName}. ראיתי שהתעניינת — אשמח לדבר 🙂`, Math.max(lastMs, createdMs + faqSpan + 10 * MIN))
     }
 
     // ── timeline ─────────────────────────────────────────────────────────
