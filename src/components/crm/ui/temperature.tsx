@@ -17,7 +17,7 @@ export function TemperatureTag({ temperature, className }: { temperature: Temper
   const { label, icon: Icon, tag } = TEMPERATURE[temperature]
   return (
     <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pe-2 ps-1.5 text-[11px] font-semibold leading-4", tag, className)}>
-      <Icon className="size-3" aria-hidden />
+      {temperature === "hot" ? <Icon className="size-3" aria-hidden /> : null}
       {label}
     </span>
   )

@@ -103,7 +103,7 @@ export function InboxView({ data, initialId }: { data: CrmData; initialId?: stri
                     on ? tag : "bg-black/[0.06] text-crm-ink/75 hover:bg-black/10",
                   )}
                 >
-                  <Icon className="size-3.5" aria-hidden />
+                  {t === "hot" ? <Icon className="size-3.5" aria-hidden /> : null}
                   {label}
                   <span className={cn("tabular-nums", on ? "opacity-90" : "text-crm-muted")}>{count(t)}</span>
                 </button>
@@ -176,7 +176,7 @@ function ConversationRow({ contact, now, active, onSelect }: { contact: Contact;
           <TemperatureTag temperature={contact.temperature} className="py-0 text-[10px]" />
           <ChannelTag channel={contact.channel} className="py-0 text-[10px]" />
           {contact.handledBy === "human" ? <span className="text-[10px] font-semibold text-crm-accent">ממתין לך</span> : null}
-          {contact.phone ? null : contact.instagram ? <bdi dir="ltr" className="text-[10px] text-crm-muted">@{contact.instagram}</bdi> : <span className="inline-flex items-center gap-0.5 text-[10px] text-crm-muted"><Phone className="size-2.5" aria-hidden />אין טלפון</span>}
+          {contact.phone || contact.instagram ? null : <span className="inline-flex items-center gap-0.5 text-[10px] text-crm-muted"><Phone className="size-2.5" aria-hidden />אין טלפון</span>}
         </span>
         <span className="mt-0.5 flex items-center justify-between gap-2 pe-2.5">
           <span className={cn("truncate text-xs", contact.unread ? "text-crm-ink" : "text-crm-muted")}>
