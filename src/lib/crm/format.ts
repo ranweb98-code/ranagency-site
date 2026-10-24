@@ -20,6 +20,18 @@ function trim(n: number, digits: number) {
   return Number(n.toFixed(digits)).toString()
 }
 
+/** What an agent says instead of a single figure: a business does not quote a firm price
+ *  before it has seen the job, so the agent names a believable range around the list price
+ *  ("בין 330 ל-430 ₪ לסועד"), rounded so it reads like something a person would say. */
+export function formatPriceRange(price: number, suffix?: string): string {
+  const step = price >= 1_000_000 ? 50_000 : price >= 20_000 ? 5_000 : price >= 3_000 ? 500 : price >= 1_000 ? 100 : price >= 300 ? 50 : 10
+  const low = Math.max(step, Math.round((price * 0.88) / step) * step)
+  let high = Math.round((price * 1.14) / step) * step
+  if (high <= low) high = low + step
+  const unit = suffix && suffix !== "₪" ? ` ${suffix}` : ""
+  return `בין ${formatMoney(low)} ל-${formatMoney(high)}${unit}`
+}
+
 export function formatPrice(price: number, suffix?: string): string {
   const base = formatMoney(price)
   return suffix && suffix !== "₪" ? `${base} ${suffix}` : base

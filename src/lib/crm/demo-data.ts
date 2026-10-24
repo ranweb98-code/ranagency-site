@@ -1,4 +1,4 @@
-import { formatPrice, formatSlot, toDayKey } from "./format"
+import { formatPrice, formatPriceRange, formatSlot, toDayKey } from "./format"
 import { FAQS } from "./faqs"
 import { PACKS } from "./industries"
 import type {
@@ -283,7 +283,7 @@ export function generateCrmData(tenant: Tenant, now: Date = new Date()): CrmData
     const slotIso = appointmentAt ? toIso(appointmentAt) : toIso(zonedTime(toDayKey(new Date(nowMs + DAY)), 14, 0))
     const vars = {
       item: item.title,
-      price: formatPrice(item.price, item.priceSuffix),
+      price: formatPriceRange(item.price, item.priceSuffix),
       slot: formatSlot(slotIso, nowIso),
       name: person.he.split(" ")[0],
     }
