@@ -196,12 +196,12 @@ function ReachButtons({ contact, live, wide }: { contact: Contact; live: boolean
   if (!contact.phone && !contact.instagram) return null
   const demo = () => toast("בהדגמה המספרים בדויים ולכן לא מתקשרים באמת. בעסק אמיתי הכפתור מחייג או פותח צ׳אט.")
   const base = "inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
-  const size = wide ? "flex-1 px-3 py-2.5" : "size-9 md:size-auto md:px-3.5 md:py-2"
+  const size = wide ? "min-w-0 whitespace-nowrap px-3 py-2.5" : "size-9 md:size-auto md:px-3.5 md:py-2"
   const label = (text: string) => <span className={wide ? "" : "max-md:sr-only"}>{text}</span>
   return (
-    <div className={cn("flex items-center gap-1.5", wide && "w-full")}>
+    <div className={cn(wide ? "grid grid-cols-2 gap-1.5" : "flex items-center gap-1.5")}>
       {contact.instagram ? (
-        <InstagramLink handle={contact.instagram} demo={!live} label={`הפרופיל של ${contact.name} באינסטגרם`} className={cn(base, size, "bg-[#c2185b] text-white hover:opacity-90")}>
+        <InstagramLink handle={contact.instagram} demo={!live} label={`הפרופיל של ${contact.name} באינסטגרם`} className={cn(base, size, wide && "col-span-2", "bg-[#c2185b] text-white hover:opacity-90")}>
           <Camera className="size-3.5" aria-hidden />
           {label("אינסטגרם")}
         </InstagramLink>
