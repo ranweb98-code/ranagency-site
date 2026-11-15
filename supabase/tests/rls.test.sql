@@ -339,3 +339,93 @@ begin
   perform test.back();
   raise notice 'PASS  photo uploads are confined to the owner''s own folder';
 end $$;
+
+-- ── voice agent: a finished call becomes a lead ────────────────────────────
+do $$
+declare
+  key1 text := 'nk_test_key_for_acme_dental_0123456789abcdef';
+  key2 text := 'nk_test_key_for_beta_bridal_0123456789abcdef';
+  r jsonb; n int; ok boolean; cid uuid;
+  call jsonb := jsonb_build_object(
+    'phone', '050-123-4567', 'name', 'דנה כהן', 'summary', 'מתעניינת בטיפול שורש', 'temperature', 'hot',
+    'durationSeconds', 185, 'startedAt', to_char(now() - interval '1 hour', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+    'turns', jsonb_build_array(
+      jsonb_build_object('author', 'agent', 'text', 'שלום, הגעתם למרפאה', 'at', null),
+      jsonb_build_object('author', 'customer', 'text', 'כמה עולה טיפול שורש?', 'at', null),
+      jsonb_build_object('author', 'agent', 'text', '   ', 'at', null)));
+begin
+  -- the guard trigger lets only a super admin set the key; this block runs as the database owner
+  alter table public.tenants disable trigger guard_tenant_update;
+  update public.tenants set ingest_key_hash = encode(sha256(convert_to(key1, 'UTF8')), 'hex') where slug = 'acme-dental';
+  update public.tenants set ingest_key_hash = encode(sha256(convert_to(key2, 'UTF8')), 'hex') where slug = 'beta-bridal';
+  alter table public.tenants enable trigger guard_tenant_update;
+
+  -- the webhook runs as the anonymous role: it can call the function and nothing else
+  perform test.as_anon();
+  r := public.ingest_voice_call('wrong-key-wrong-key-wrong-key-12345', 'evt-1', call, '{}'::jsonb);
+  assert r ->> 'status' = 'unauthorized', 'a wrong key is refused';
+  r := public.ingest_voice_call(encode(sha256(convert_to(key1, 'UTF8')), 'hex'), 'evt-1', call, '{}'::jsonb);
+  assert r ->> 'status' = 'unauthorized', 'the stored hash is not a key: reading it must not be enough to call';
+  r := public.ingest_voice_call(key1, 'evt-1', call, '{"hello":"raw"}'::jsonb);
+  assert r ->> 'status' = 'ok' and (r ->> 'created')::boolean, 'a valid key creates the lead';
+  cid := (r ->> 'contactId')::uuid;
+  ok := test.rejected($q$select count(*) from public.contacts$q$);
+  assert ok, 'the anonymous role still cannot read any lead';
+  ok := test.rejected($q$insert into public.contacts (tenant_id, name, channel, stage_id) values ('11111111-1111-1111-1111-111111111111', 'x', 'voice', 'new')$q$);
+  assert ok, 'nor write one directly';
+  perform test.back();
+
+  select count(*) into n from public.contacts where tenant_id = '11111111-1111-1111-1111-111111111111' and phone = '050-123-4567' and channel = 'voice' and stage_id = 'new' and temperature = 'hot' and call_seconds = 185 and unread = 1;
+  assert n = 1, 'the lead carries the number, channel, first stage, temperature, length and an unread mark';
+  select count(*) into n from public.messages where contact_id = cid;
+  assert n = 2, 'the blank turn is dropped and the two spoken ones kept';
+  select count(*) into n from public.timeline_events where contact_id = cid and kind in ('lead', 'agent');
+  assert n = 2, 'the timeline records the first contact and the answered call';
+  raise notice 'PASS  a call with the right key becomes a lead; the anonymous role can do nothing else';
+
+  -- a retried delivery changes nothing
+  perform test.as_anon();
+  r := public.ingest_voice_call(key1, 'evt-1', call, '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'duplicate', 'the same event id is recognised';
+  select count(*) into n from public.messages where contact_id = cid; assert n = 2, 'no messages doubled';
+  select count(*) into n from public.contacts where tenant_id = '11111111-1111-1111-1111-111111111111' and phone = '050-123-4567'; assert n = 1, 'no second lead';
+  raise notice 'PASS  a retried webhook is ignored';
+
+  -- the same number calling again is the same person
+  perform test.as_anon();
+  r := public.ingest_voice_call(key1, 'evt-2', jsonb_set(call, '{summary}', '"חזרה לברר על תור"'), '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'ok' and not (r ->> 'created')::boolean and (r ->> 'contactId')::uuid = cid, 'a second call from the number reuses the card';
+  select count(*) into n from public.contacts where id = cid and unread = 2 and summary = 'חזרה לברר על תור'; assert n = 1, 'unread grows and the summary is refreshed';
+  select count(*) into n from public.messages where contact_id = cid; assert n = 4, 'the second call adds its own turns';
+  raise notice 'PASS  a repeat caller lands on the same card';
+
+  -- a call without a number still becomes a lead, with a placeholder name
+  perform test.as_anon();
+  r := public.ingest_voice_call(key1, 'evt-3', jsonb_build_object('summary', 'שיחה ללא מספר', 'turns', '[]'::jsonb), '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'ok', 'a call with no caller id is accepted';
+  select count(*) into n from public.contacts where tenant_id = '11111111-1111-1111-1111-111111111111' and phone is null and name = 'מתקשר/ת ללא מספר'; assert n = 1, 'it gets a placeholder name';
+
+  -- one business's key never writes into another's
+  perform test.as_anon();
+  r := public.ingest_voice_call(key2, 'evt-1', call, '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'ok' and (r ->> 'created')::boolean, 'the other business has its own event ids and its own card for the same number';
+  select count(*) into n from public.contacts where tenant_id = '22222222-2222-2222-2222-222222222222' and phone = '050-123-4567'; assert n = 1, 'the card is in the business whose key was used';
+  select count(*) into n from public.contacts where tenant_id = '11111111-1111-1111-1111-111111111111' and phone = '050-123-4567'; assert n = 1, 'the first business is untouched';
+  raise notice 'PASS  each key writes only its own business';
+
+  -- garbage in: bounded, never an error that leaks
+  perform test.as_anon();
+  r := public.ingest_voice_call(key1, 'evt-4', jsonb_build_object('temperature', 'boiling', 'durationSeconds', -50, 'phone', '050-999-0000', 'turns', 'not-an-array'), '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'ok', 'odd values are normalised, not trusted';
+  select count(*) into n from public.contacts where phone = '050-999-0000' and temperature = 'warm' and call_seconds = 0; assert n = 1, 'an unknown temperature becomes warm and a negative length zero';
+  perform test.as_anon();
+  r := public.ingest_voice_call(key1, '', call, '{}'::jsonb);
+  perform test.back();
+  assert r ->> 'status' = 'rejected', 'an empty event id is rejected';
+  raise notice 'PASS  malformed calls are normalised or rejected';
+end $$;

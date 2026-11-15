@@ -33,15 +33,15 @@ alter table public.notification_seen enable row level security;
 -- from the browser: agents use the service role (which bypasses RLS), and the
 -- super admin may add one by hand to test the flow.
 create policy notifications_select on public.notifications for select to authenticated
-  using ((select public.is_member(tenant_id)));
+  using ((select private.is_member(tenant_id)));
 create policy notifications_admin_insert on public.notifications for insert to authenticated
-  with check ((select public.is_super_admin()));
+  with check ((select private.is_super_admin()));
 
 -- Your own "seen up to here", for businesses you belong to.
 create policy notification_seen_select on public.notification_seen for select to authenticated
   using (user_id = (select auth.uid()));
 create policy notification_seen_insert on public.notification_seen for insert to authenticated
-  with check (user_id = (select auth.uid()) and (select public.is_member(tenant_id)));
+  with check (user_id = (select auth.uid()) and (select private.is_member(tenant_id)));
 create policy notification_seen_update on public.notification_seen for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()) and (select public.is_member(tenant_id)));
+  with check (user_id = (select auth.uid()) and (select private.is_member(tenant_id)));
