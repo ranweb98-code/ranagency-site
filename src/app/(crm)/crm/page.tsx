@@ -27,7 +27,18 @@ export default function CrmDemoPicker() {
           המונחים, שלבי המכירה, השדות, הקטלוג והמיתוג משתנים לפי סוג העסק. בחרו עסק וראו איך אותו CRM מתאים את עצמו.
         </p>
 
-        <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/crm/restaurant"
+          className="crm-glass mt-8 flex items-center justify-between gap-4 rounded-[30px] p-5 transition-transform duration-300 hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-crm-ink"
+        >
+          <span>
+            <span className="block text-lg font-medium">חדש: הדגמה למסעדה עם סוכן קולי</span>
+            <span className="mt-0.5 block text-[13px] text-crm-muted">מקומות פנויים בזמן אמת, והסוכן מזמין שולחנות לבד</span>
+          </span>
+          <ArrowUpLeft className="size-5 shrink-0" aria-hidden />
+        </Link>
+
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {tenants.map((tenant) => {
             const pack = PACKS[tenant.industry]
             return (
