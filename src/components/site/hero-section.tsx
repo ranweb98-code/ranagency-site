@@ -2,14 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { MagneticButton } from "@/components/ui/magnetic-button"
-import { TypewriterWord } from "@/components/ui/typewriter-word"
 import { SectionContainer } from "@/components/site/section-container"
 import { handleGlareMove } from "@/lib/utils"
-
-// The shared "ב" prefix is rendered statically outside the typewriter, not
-// baked into these words: with it included, the line went completely blank at
-// the bottom of every delete cycle, leaving a visible hole under the headline.
-const HERO_CHANNEL_WORDS = ["וואטסאפ", "אינסטגרם", "טלפון"]
 
 export function HeroSection() {
   return (
@@ -18,7 +12,7 @@ export function HeroSection() {
         <p
           className="hero-rise [--d:0.1s] text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted"
         >
-          הסוכנים של נפוץ&apos;
+          הסוכן הקולי של נפוץ&apos;
         </p>
 
         {/* No entrance of its own: this headline is the page's largest paint, and
@@ -29,15 +23,14 @@ export function HeroSection() {
         >
           אף לקוח לא הולך לאיבוד
           <br />
-          ב
-          <TypewriterWord words={HERO_CHANNEL_WORDS} srLabel="וואטסאפ, אינסטגרם וטלפון" />
+          בטלפון
         </h1>
 
         <p
           className="hero-rise [--d:0.3s] mt-6 max-w-xl text-ran-text-on-light-muted"
           style={{ fontSize: "var(--text-body-lg)", lineHeight: 1.65 }}
         >
-          שלושה סוכני AI עונים במקומכם בכל ערוץ — מסווגים כל ליד כחם או קר, וקובעים תורים
+          סוכן קולי עונה במקומכם לכל שיחה, לכל סוג עסק — מסווג כל ליד כחם או קר, וקובע תורים
           אוטומטית. הכל זורם לדשבורד CRM אחד.
         </p>
 
