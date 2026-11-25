@@ -14,14 +14,9 @@ const PAGE_LINKS = [
   { href: "/#faq", label: "שאלות נפוצות" },
 ]
 
-// No Facebook entry: there is no page to point at yet, and a link to the
-// bare facebook.com homepage is worse than no link at all.
-const SOCIAL_LINKS = [
-  { href: "https://wa.me/972503610061", label: "וואטסאפ" },
-  {
-    href: "https://www.instagram.com/napuchai?stkn=MXhhNnRrM3U4aXFlMA%3D%3D&utm_source=qr",
-    label: "אינסטגרם",
-  },
+const CONTACT_LINKS = [
+  { href: "tel:0503610061", label: "050-361-0061" },
+  { href: "mailto:hello@napuch.co.il", label: "hello@napuch.co.il" },
 ]
 
 export function Footer() {
@@ -31,7 +26,7 @@ export function Footer() {
         <div className="max-w-sm space-y-4">
           <Logo height={26} onDark />
           <p className="text-sm text-ran-text-on-dark-muted">
-            הסוכנים של נפוץ&apos; — סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים, מסווגים לידים וקובעים תורים במקומכם
+            הסוכנים של נפוץ&apos; — סוכן AI קולי שעונה לשיחות, מסווג לידים וקובע תורים במקומכם
           </p>
         </div>
 
@@ -50,14 +45,13 @@ export function Footer() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-xs font-semibold tracking-wide text-ran-text-on-dark-muted">עקבו אחרינו</p>
+            <p className="text-xs font-semibold tracking-wide text-ran-text-on-dark-muted">יצירת קשר</p>
             <ul className="space-y-2 text-sm text-ran-text-on-dark-muted">
-              {SOCIAL_LINKS.map((link) => (
+              {CONTACT_LINKS.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    dir="ltr"
                     className="hover:text-ran-text-on-dark"
                   >
                     {link.label}

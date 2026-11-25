@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react"
 import { AnimatePresence, motion } from "motion/react"
-import { Check, Mail, MessageCircle, X } from "lucide-react"
+import { Check, Mail, Phone, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { sendLeadEmail } from "@/app/actions"
@@ -17,9 +17,8 @@ interface Question {
 
 const QUESTIONS: Question[] = [
   {
-    question: "איזה סוכן הכי מעניין אותך?",
-    options: ["סוכן וואטסאפ", "סוכן אינסטגרם", "סוכן קולי"],
-    multi: true,
+    question: "איזה סוג עסק יש לך?",
+    options: ["קבלן / בעל מקצוע", "מסעדה / אוכל", "מכון / קליניקה / טיפולים", "אחר"],
   },
   {
     question: "מה גודל העסק שלך?",
@@ -179,11 +178,11 @@ export function ConsultationCard() {
               <Button
                 variant="outline"
                 className="gap-2 rounded-full border-ran-glass-border-light bg-ran-surface-light-raised text-ran-text-on-light hover:bg-ran-surface-light-raised"
-                render={<a href="https://wa.me/972503610061" target="_blank" rel="noopener noreferrer" />}
+                render={<a href="tel:0503610061" />}
                 nativeButton={false}
               >
-                <MessageCircle className="h-4 w-4" />
-                וואטסאפ
+                <Phone className="h-4 w-4" />
+                טלפון
               </Button>
               <Button
                 variant="outline"
@@ -341,17 +340,13 @@ export function ConsultationCard() {
 
             {submitError && (
               <div className="mt-4 w-full rounded-2xl border border-ran-glass-border-light bg-ran-surface-subtle px-4 py-3 text-sm text-ran-text-on-light">
-                <p>לא הצלחנו לשלוח את הפרטים כרגע. אפשר לנסות שוב, או לפנות ישירות בוואטסאפ.</p>
+                <p>לא הצלחנו לשלוח את הפרטים כרגע. אפשר לנסות שוב, או לפנות ישירות בטלפון או במייל.</p>
                 <a
-                  href={`https://wa.me/972503610061?text=${encodeURIComponent(
-                    `היי, אני ${name} ומעוניין/ת בייעוץ חינם. טלפון ליצירת קשר: ${phone}`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="mailto:hello@napuch.co.il"
                   className="mt-2 inline-flex items-center gap-1.5 font-semibold underline underline-offset-2"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  פתח וואטסאפ
+                  <Mail className="h-3.5 w-3.5" />
+                  hello@napuch.co.il
                 </a>
               </div>
             )}

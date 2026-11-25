@@ -23,9 +23,9 @@ const anton = Anton({
 });
 
 const SITE_URL = "https://napuch.co.il";
-const SITE_TITLE = "נפוץ' — סוכני AI לוואטסאפ, אינסטגרם וטלפון";
+const SITE_TITLE = "נפוץ' — סוכן קולי לעסקים";
 const SITE_DESCRIPTION =
-  "סוכני AI לוואטסאפ, אינסטגרם וטלפון שעונים ללקוחות, מסווגים לידים חמים וקרים וקובעים תורים אוטומטית — הכל בדשבורד CRM אחד";
+  "סוכן AI קולי שעונה לשיחות הטלפון של העסק, מסווג לידים חמים וקרים וקובע תורים אוטומטית — הכל בדשבורד CRM אחד";
 
 // The share card itself is src/app/opengraph-image.jpg (and its twitter
 // twin), picked up by Next's file convention — which is also what fills in

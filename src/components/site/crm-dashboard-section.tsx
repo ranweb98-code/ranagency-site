@@ -33,10 +33,10 @@ export async function CrmDashboardSection() {
             className="font-extrabold text-ran-text-on-light"
             style={{ fontSize: "var(--text-h2)", letterSpacing: "-0.025em" }}
           >
-            כל ליד, מכל ערוץ, במקום אחד
+            כל ליד, מכל שיחה, במקום אחד
           </h2>
           <p className="text-ran-text-on-light-muted" style={{ fontSize: "var(--text-body-lg)", lineHeight: 1.6 }}>
-            כל שיחה מוואטסאפ, אינסטגרם וטלפון נכנסת אוטומטית לדשבורד אחד — עם סטטוס חם או קר, סיכום
+            כל שיחה שהסוכן הקולי מקבל נכנסת אוטומטית לדשבורד אחד — עם סטטוס חם או קר, סיכום
             שיחה ומצב תור, בלי שתצטרכו לעבור בין אפליקציות.
           </p>
         </Reveal>

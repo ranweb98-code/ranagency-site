@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react"
 import { AnimatePresence, motion, useInView } from "motion/react"
-import { Camera, Check, MessageCircle, Phone, type LucideIcon } from "lucide-react"
+import { Check, Phone, type LucideIcon } from "lucide-react"
 
 import { Reveal } from "@/components/motion/reveal"
+import { RecordedCallPlaceholder } from "@/components/site/recorded-call-placeholder"
 import { SectionContainer } from "@/components/site/section-container"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { cn } from "@/lib/utils"
@@ -47,93 +48,6 @@ interface Agent {
 
 const AGENTS: Agent[] = [
   {
-    uid: "wa",
-    title: "סוכן וואטסאפ",
-    subtitle: "WhatsApp Agent",
-    accent: "#16a34a",
-    icon: MessageCircle,
-    status: "מקוון · מגיב תוך שניות",
-    conversations: [
-      {
-        script: [
-          { from: "customer", text: "היי, כמה עולה טיפול פנים ויש מקום השבוע?", hold: 1700 },
-          { from: "agent", text: "היי! טיפול פנים קלאסי 280₪, כולל ניקוי עמוק. פנוי ג׳ ב-14:00 או ה׳ ב-10:30.", hold: 2300 },
-          { from: "customer", text: "ג׳ ב-14:00 מעולה", hold: 1500 },
-          { from: "agent", text: "קבעתי לך 🙂 אשלח תזכורת יום לפני.", hold: 1900 },
-        ],
-        outcome: "תור נקבע · ג׳ 14:00 · ליד חם",
-      },
-      {
-        script: [
-          { from: "customer", text: "עד מתי אתם פתוחים היום?", hold: 1600 },
-          { from: "agent", text: "היום עד 23:00, מטבח אחרון ב-22:15.", hold: 1900 },
-          { from: "customer", text: "יש חניה באזור?", hold: 1500 },
-          { from: "agent", text: "יש חניון ציבורי דקה הליכה מאיתנו, ואחרי 19:00 החניה ברחוב חופשית.", hold: 2300 },
-        ],
-        outcome: "נענה אוטומטית · 23:41",
-      },
-      {
-        script: [
-          { from: "customer", text: "הזמנתי ביום ראשון, מתי זה מגיע?", hold: 1700 },
-          { from: "agent", text: "בדקתי — ההזמנה יצאה אתמול ותגיע מחר עד 18:00.", hold: 2200 },
-          { from: "customer", text: "אפשר לשנות כתובת?", hold: 1500 },
-          { from: "agent", text: "בטח. שלחי לי את הכתובת החדשה ואעדכן את השליח.", hold: 2100 },
-        ],
-        outcome: "פנייה טופלה · בלי נציג",
-      },
-    ],
-    traits: [
-      "מענה תוך שניות, בכל שעה",
-      "מבין את כוונת הפנייה",
-      "מסנן לידים איכותיים",
-      "עברית טבעית, לא תשובות רובוטיות",
-    ],
-  },
-  {
-    uid: "ig",
-    title: "סוכן אינסטגרם",
-    subtitle: "Instagram Agent",
-    accent: "#c2185b",
-    icon: Camera,
-    status: "הודעה פרטית · נענתה",
-    conversations: [
-      {
-        script: [
-          { from: "customer", text: "יש משלוח לחיפה?", hold: 1500 },
-          { from: "agent", text: "כן, 25₪ עד 3 ימי עסקים. מעל 300₪ המשלוח עלינו.", hold: 2200 },
-          { from: "customer", text: "מעולה, אני רוצה להזמין", hold: 1500 },
-          { from: "agent", text: "אשמח לקחת פרטים — שם וטלפון?", hold: 1800 },
-          { from: "customer", text: "נועה, 054-555-1234", hold: 1600 },
-        ],
-        outcome: "פרטי קשר נשמרו ב-CRM",
-      },
-      {
-        script: [
-          { from: "customer", text: "ראיתי את הפוסט — ה-20 לחודש פנוי אצלכם?", hold: 1800 },
-          { from: "agent", text: "כן, ה-20 עדיין פנוי. לכמה אנשים האירוע?", hold: 2000 },
-          { from: "customer", text: "בערך 40", hold: 1400 },
-          { from: "agent", text: "ל-40 איש החבילה 95₪ לאדם. שומר לך את התאריך ומעביר לרן שיחזור אליך.", hold: 2400 },
-        ],
-        outcome: "ליד חם · הועבר לטיפול",
-      },
-      {
-        script: [
-          { from: "customer", text: "כמה זה עולה?", hold: 1400 },
-          { from: "agent", text: "תלוי בדגם — הקלאסי 190₪, הפרימיום 260₪. איזה עניין אותך?", hold: 2300 },
-          { from: "customer", text: "הפרימיום", hold: 1400 },
-          { from: "agent", text: "שלחתי לך קישור להזמנה, מחכה שם על שמך 🙂", hold: 2100 },
-        ],
-        outcome: "המרה · קישור נשלח",
-      },
-    ],
-    traits: [
-      "עונה לכל הודעה פרטית",
-      "אותה אינטליגנציה כמו בוואטסאפ",
-      "אוסף פרטי קשר אוטומטית",
-      "זמין 24/7, גם בשבת",
-    ],
-  },
-  {
     uid: "voice",
     title: "סוכן קולי",
     subtitle: "Voice Agent",
@@ -175,6 +89,17 @@ const AGENTS: Agent[] = [
         ],
         outcome: "ליד נשמר · חזרה מתוזמנת 9:10",
       },
+      {
+        script: [
+          { from: "customer", text: "היי, יש לי נזילה מתחת לכיור, אפשר שמישהו יבוא?", hold: 1800 },
+          { from: "agent", text: "בטח, אני רושם. באיזו עיר ומה הכתובת?", hold: 1800 },
+          { from: "customer", text: "חיפה, הרצל 14", hold: 1400 },
+          { from: "agent", text: "יש לנו ביקור פנוי מחר ב-10:00 או ב-15:30. מה נוח?", hold: 2200 },
+          { from: "customer", text: "10:00", hold: 1300 },
+          { from: "agent", text: "קבעתי, והטכנאי יתקשר חצי שעה לפני.", hold: 2100 },
+        ],
+        outcome: "ביקור נקבע · מחר 10:00 · ליד חם",
+      },
     ],
     traits: [
       "עונה כמו מזכירה אישית",
@@ -201,7 +126,7 @@ export function AgentsSection() {
       <SectionContainer>
         <Reveal className="mx-auto mb-14 max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ran-text-on-light-muted">
-            שלושה סוכנים, מערכת אחת
+            סוכן קולי אחד, כל סוגי העסקים
           </p>
           <h2
             className="mt-4 font-extrabold text-ran-text-on-light"
@@ -218,14 +143,11 @@ export function AgentsSection() {
           </p>
         </Reveal>
 
-        {/* Three phones standing side by side is the whole picture — one
-            customer, three channels, same answer — so they go abreast at
-            md rather than waiting for lg, where a 1000px-wide laptop window
-            would still be stacking them into a column. */}
-        <div className="grid justify-items-center gap-12 md:grid-cols-3 md:gap-6">
-          {AGENTS.map((agent, index) => (
-            <AgentCard key={agent.uid} agent={agent} startDelay={index * 900} />
+        <div className="grid items-center justify-items-center gap-12 md:grid-cols-2 md:gap-10">
+          {AGENTS.map((agent) => (
+            <AgentCard key={agent.uid} agent={agent} startDelay={0} />
           ))}
+          <RecordedCallPlaceholder />
         </div>
       </SectionContainer>
     </section>
